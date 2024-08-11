@@ -149,6 +149,7 @@ Made it so that when you press on profile the bar goes above only new issue (Mak
 <img width="1440" alt="image" src="https://github.com/user-attachments/assets/685e302b-c688-4650-8965-ca08b2a921ef">
 
 
+Task Aug:10 - Fix week + fix light mode for profile -> Landing Pages + sign up pages 
 
 
 Current Structure Could implement later new things
