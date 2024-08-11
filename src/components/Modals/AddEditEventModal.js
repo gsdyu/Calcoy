@@ -1,18 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const AddEditEventModal = ({ onClose, onSave }) => {
+const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   const { darkMode } = useTheme();
   const [newEvent, setNewEvent] = useState({
     title: '',
-    date: new Date().toISOString().split('T')[0],
+    date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
     startTime: '',
     endTime: '',
     frequency: 'Does not repeat',
     location: '',
     calendar: 'Personal'
   });
+
+  useEffect(() => {
+    if (initialDate) {
+      setNewEvent(prev => ({ 
+        ...prev, 
+        date: initialDate.toISOString().split('T')[0],
+        startTime: initialDate.toTimeString().slice(0, 5)
+      }));
+    }
+  }, [initialDate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

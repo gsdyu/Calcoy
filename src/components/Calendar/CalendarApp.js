@@ -17,18 +17,22 @@ const CalendarApp = () => {
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
-  const handleAddEvent = () => {
+  const handleAddEvent = (date = null) => {
+    setSelectedDate(date);
     setIsAddingEvent(true);
   };
 
   const handleCloseModal = () => {
     setIsAddingEvent(false);
+    setSelectedDate(null);
   };
 
   const handleSaveEvent = (newEvent) => {
     setEvents(prevEvents => [...prevEvents, { ...newEvent, id: Date.now() }]);
     setIsAddingEvent(false);
+    setSelectedDate(null);
   };
 
   const toggleSidebar = () => {
@@ -51,13 +55,21 @@ const CalendarApp = () => {
           view={view}
           onDateChange={handleDateChange}
           onViewChange={handleViewChange}
-          onAddEvent={handleAddEvent}
+          onAddEvent={() => handleAddEvent()}
         />
         <div className="flex-1 overflow-auto">
           {view === 'Month' ? (
-            <MonthView currentDate={currentDate} events={events} />
+            <MonthView 
+              currentDate={currentDate} 
+              events={events} 
+              onDateDoubleClick={handleAddEvent}
+            />
           ) : (
-            <WeekView currentDate={currentDate} events={events} />
+            <WeekView 
+              currentDate={currentDate} 
+              events={events} 
+              onDateDoubleClick={handleAddEvent}
+            />
           )}
         </div>
       </div>
@@ -65,6 +77,7 @@ const CalendarApp = () => {
         <AddEditEventModal 
           onClose={handleCloseModal}
           onSave={handleSaveEvent}
+          initialDate={selectedDate}
         />
       )}
       {isProfileOpen && <ProfileModal onClose={handleProfileClose} />}

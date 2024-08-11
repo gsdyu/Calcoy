@@ -40,9 +40,9 @@ const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggle
           {!isCollapsed && <span>{displayName}</span>}
         </button>
         {isProfileMenuOpen && (
-          <div className={`absolute bottom-full left-0 mb-2 ${isCollapsed ? 'w-60 -left-44' : 'w-full'} bg-gray-800 rounded-md shadow-lg py-1`}>
+          <div className={`absolute bottom-full left-0 mb-2 ${isCollapsed ? 'w-60 -left-44' : 'w-full'} ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1`}>
             <button 
-              className="w-full text-left px-4 py-2 hover:bg-gray-700"
+              className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}
               onClick={() => {
                 onProfileOpen();
                 setIsProfileMenuOpen(false);
@@ -50,17 +50,17 @@ const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggle
             >
               <User size={18} className="inline mr-2" /> Profile
             </button>
-            <button className="w-full text-left px-4 py-2 hover:bg-gray-700">
+            <button className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}>
               <Settings size={18} className="inline mr-2" /> Settings
             </button>
-            <button className="w-full text-left px-4 py-2 hover:bg-gray-700">
+            <button className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}>
               Subscription
             </button>
-            <div className="flex items-center justify-between px-4 py-2">
+            <div className={`flex items-center justify-between px-4 py-2 ${darkMode ? 'text-white' : 'text-gray-800'}`}>
               Dark Theme
               <Toggle isOn={darkMode} onToggle={toggleDarkMode} />
             </div>
-            <button className="w-full text-left px-4 py-2 hover:bg-gray-700 text-red-400">
+            <button className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-red-400' : 'hover:bg-gray-100 text-red-500'}`}>
               <LogOut size={18} className="inline mr-2" /> Log Out
             </button>
           </div>
