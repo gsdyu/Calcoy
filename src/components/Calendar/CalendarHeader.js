@@ -28,7 +28,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEv
       </div>
       <div className="flex items-center space-x-2">
         <div className="mr-2 text-sm font-medium">
-          My Calendar
+          
         </div>
         <div className="flex rounded-md overflow-hidden">
           <button 

@@ -2,7 +2,7 @@
 import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const MonthView = ({ currentDate }) => {
+const MonthView = ({ currentDate, onDateDoubleClick }) => {
   const { darkMode } = useTheme();
 
   const isToday = (date) => {
@@ -54,6 +54,7 @@ const MonthView = ({ currentDate }) => {
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } p-1`}
+          onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
         >
           <span
             className={`inline-flex items-center justify-center w-6 h-6 text-sm ${

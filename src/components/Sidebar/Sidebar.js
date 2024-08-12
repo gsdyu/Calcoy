@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { User, Settings, LogOut, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 import PersonalCalendar from './PersonalCalendar';
@@ -6,9 +6,29 @@ import CheckIns from './CheckIns';
 import Tasks from './Tasks';
 import Toggle from '../common/Toggle';
 
+const DefaultProfileIcon = () => (
+  <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+  </svg>
+);
+
 const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggleSidebar }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-60'} ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex flex-col relative transition-all duration-300`}>
@@ -32,15 +52,22 @@ const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggle
           onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} 
           className={`flex items-center space-x-2 w-full ${isCollapsed ? 'justify-center' : ''}`}
         >
-          <img
-            src={profileImage}
-            alt="Profile"
-            className="w-8 h-8 rounded-full object-cover"
-          />
+          {profileImage ? (
+            <img
+              src={profileImage}
+              alt="Profile"
+              className="w-8 h-8 rounded-full object-cover"
+            />
+          ) : (
+            <DefaultProfileIcon />
+          )}
           {!isCollapsed && <span>{displayName}</span>}
         </button>
         {isProfileMenuOpen && (
-          <div className={`absolute bottom-full left-0 mb-2 ${isCollapsed ? 'w-60 -left-44' : 'w-full'} ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1`}>
+          <div 
+            ref={profileMenuRef}
+            className={`absolute bottom-full left-0 mb-2 ${isCollapsed ? 'w-60 -left-44' : 'w-full'} ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1`}
+          >
             <button 
               className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}
               onClick={() => {
