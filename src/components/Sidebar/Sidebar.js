@@ -5,6 +5,7 @@ import PersonalCalendar from './PersonalCalendar';
 import CheckIns from './CheckIns';
 import Tasks from './Tasks';
 import Toggle from '../common/Toggle';
+import MiniCalendar from './MiniCalendar';
 
 const DefaultProfileIcon = () => (
   <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -12,10 +13,12 @@ const DefaultProfileIcon = () => (
   </svg>
 );
 
-const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggleSidebar }) => {
+const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggleSidebar, onDateSelect, currentView, onViewChange }) => {
   const { darkMode, toggleDarkMode } = useTheme();
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [lastNonDayView, setLastNonDayView] = useState('Month');
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -30,12 +33,40 @@ const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggle
     };
   }, []);
 
+  const handleMiniCalendarDateSelect = (date) => {
+    const isSameDate = selectedDate && selectedDate.getTime() === date.getTime();
+
+    if (currentView !== 'Day') {
+      setLastNonDayView(currentView);
+    }
+
+    if (isSameDate) {
+      if (currentView === 'Day') {
+        onViewChange(lastNonDayView);
+      } else {
+        onViewChange('Day');
+      }
+    } else {
+      setSelectedDate(date);
+      onDateSelect(date);
+      if (currentView === 'Day') {
+        onViewChange(lastNonDayView);
+      }
+    }
+  };
+
   return (
     <div className={`${isCollapsed ? 'w-16' : 'w-60'} ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex flex-col relative transition-all duration-300`}>
       <div className="flex-grow overflow-hidden">
         {!isCollapsed && (
           <>
             <PersonalCalendar />
+            <MiniCalendar 
+              onDateSelect={handleMiniCalendarDateSelect} 
+              currentView={currentView} 
+              onViewChange={onViewChange}
+              selectedDate={selectedDate}
+            />
             <CheckIns />
             <Tasks />
           </>
@@ -43,7 +74,7 @@ const Sidebar = ({ onProfileOpen, displayName, profileImage, isCollapsed, toggle
       </div>
       <button 
         onClick={toggleSidebar}
-        className={`absolute -right-3 top-1/2 transform -translate-y-1/2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'} rounded-full p-1`}
+        className={`absolute -right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md`}
       >
         {isCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
       </button>

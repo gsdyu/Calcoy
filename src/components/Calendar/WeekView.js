@@ -22,8 +22,46 @@ const WeekView = ({ currentDate, events, onDateDoubleClick }) => {
     };
   };
 
+  const formatWeekHeader = () => {
+    const firstDay = weekDays[0];
+    const lastDay = weekDays[6];
+    const firstMonth = firstDay.toLocaleString('default', { month: 'short' });
+    const lastMonth = lastDay.toLocaleString('default', { month: 'short' });
+    const year = lastDay.getFullYear();
+
+    if (firstMonth === lastMonth) {
+      return `${firstMonth} ${year}`;
+    } else {
+      return `${firstMonth} - ${lastMonth} ${year}`;
+    }
+  };
+
+  const scrollbarStyles = darkMode ? `
+    .dark-scrollbar::-webkit-scrollbar {
+      width: 12px;
+    }
+    .dark-scrollbar::-webkit-scrollbar-track {
+      background: #2D3748;
+    }
+    .dark-scrollbar::-webkit-scrollbar-thumb {
+      background-color: #4A5568;
+      border-radius: 6px;
+      border: 3px solid #2D3748;
+    }
+    .dark-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #4A5568 #2D3748;
+    }
+  ` : '';
+
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
+      <style>{scrollbarStyles}</style>
+      {/* Week header */}
+      <div className="text-center py-2 border-b border-gray-700">
+        <h2 className="text-lg font-semibold">{formatWeekHeader()}</h2>
+      </div>
+      
       {/* Header row with days */}
       <div className="flex border-b border-gray-700">
         <div className="w-16 flex-shrink-0"></div>
@@ -40,7 +78,7 @@ const WeekView = ({ currentDate, events, onDateDoubleClick }) => {
       </div>
 
       {/* Time slots */}
-      <div className="flex-1 overflow-y-auto">
+      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
         {hours.map((hour) => (
           <div key={hour} className="flex border-b border-gray-700 min-h-[60px]">
             <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">

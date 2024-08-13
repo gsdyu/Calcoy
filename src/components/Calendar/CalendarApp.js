@@ -4,6 +4,7 @@ import GroupCalendars from '../Sidebar/GroupCalendars';
 import CalendarHeader from './CalendarHeader';
 import MonthView from './MonthView';
 import WeekView from './WeekView';
+import DayView from './DayView';
 import AddEditEventModal from '../Modals/AddEditEventModal';
 import ProfileModal from '../Modals/ProfileModal';
 import { useCalendar } from '../../hooks/useCalendar';
@@ -18,6 +19,7 @@ const CalendarApp = () => {
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [previousView, setPreviousView] = useState(null);
 
   const handleAddEvent = (date = null) => {
     setSelectedDate(date);
@@ -39,6 +41,15 @@ const CalendarApp = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
 
+  const handleMiniCalendarDateSelect = (date) => {
+    handleDateChange(date);
+  };
+
+  const handleMiniCalendarViewChange = (newView) => {
+    setPreviousView(view);
+    handleViewChange(newView);
+  };
+
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       <GroupCalendars />
@@ -48,24 +59,39 @@ const CalendarApp = () => {
         profileImage={profileImage}
         isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
+        onDateSelect={handleMiniCalendarDateSelect}
+        currentView={view}
+        previousView={previousView}
+        onViewChange={handleMiniCalendarViewChange}
       />
       <div className="flex-1 flex flex-col overflow-hidden">
         <CalendarHeader 
           currentDate={currentDate}
           view={view}
           onDateChange={handleDateChange}
-          onViewChange={handleViewChange}
+          onViewChange={(newView) => {
+            setPreviousView(view);
+            handleViewChange(newView);
+          }}
           onAddEvent={() => handleAddEvent()}
         />
         <div className="flex-1 overflow-auto">
-          {view === 'Month' ? (
+          {view === 'Month' && (
             <MonthView 
               currentDate={currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
             />
-          ) : (
+          )}
+          {view === 'Week' && (
             <WeekView 
+              currentDate={currentDate} 
+              events={events} 
+              onDateDoubleClick={handleAddEvent}
+            />
+          )}
+          {view === 'Day' && (
+            <DayView 
               currentDate={currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
