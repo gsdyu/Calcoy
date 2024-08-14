@@ -17,9 +17,8 @@ const CalendarApp = () => {
   const { darkMode } = useTheme();
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
-  const [previousView, setPreviousView] = useState(null);
 
   const handleAddEvent = (date = null) => {
     setSelectedDate(date);
@@ -38,7 +37,7 @@ const CalendarApp = () => {
   };
 
   const toggleSidebar = () => {
-    setIsSidebarCollapsed(!isSidebarCollapsed);
+    setIsSidebarOpen(!isSidebarOpen);
   };
 
   const handleMiniCalendarDateSelect = (date) => {
@@ -46,33 +45,32 @@ const CalendarApp = () => {
   };
 
   const handleMiniCalendarViewChange = (newView) => {
-    setPreviousView(view);
     handleViewChange(newView);
   };
 
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
-      <GroupCalendars />
-      <Sidebar 
+      <GroupCalendars 
         onProfileOpen={handleProfileOpen}
         displayName={displayName}
         profileImage={profileImage}
-        isCollapsed={isSidebarCollapsed}
         toggleSidebar={toggleSidebar}
-        onDateSelect={handleMiniCalendarDateSelect}
-        currentView={view}
-        previousView={previousView}
-        onViewChange={handleMiniCalendarViewChange}
+        isSidebarOpen={isSidebarOpen}
       />
+      <div className={`flex transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+        <Sidebar 
+          onDateSelect={handleMiniCalendarDateSelect}
+          currentView={view}
+          onViewChange={handleMiniCalendarViewChange}
+          onClose={toggleSidebar}
+        />
+      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <CalendarHeader 
           currentDate={currentDate}
           view={view}
           onDateChange={handleDateChange}
-          onViewChange={(newView) => {
-            setPreviousView(view);
-            handleViewChange(newView);
-          }}
+          onViewChange={handleViewChange}
           onAddEvent={() => handleAddEvent()}
         />
         <div className="flex-1 overflow-auto">

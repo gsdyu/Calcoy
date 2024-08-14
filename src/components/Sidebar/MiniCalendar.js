@@ -12,6 +12,7 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+  const daysInPrevMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 0).getDate();
 
   const prevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -21,12 +22,41 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
-  const handleDateClick = (day) => {
-    const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-    onDateSelect(clickedDate);
+  const handleDateClick = (day, isCurrentMonth) => {
+    if (isCurrentMonth) {
+      const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      onDateSelect(clickedDate);
+    } else {
+      const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + (day > 20 ? -1 : 1), day);
+      setCurrentDate(newDate);
+      onDateSelect(newDate);
+    }
   };
 
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
+  const renderCalendarDays = () => {
+    const calendarDays = [];
+    const totalDays = 42; // 6 rows * 7 days
+
+    for (let i = 0; i < totalDays; i++) {
+      if (i < firstDayOfMonth) {
+        // Previous month
+        const day = daysInPrevMonth - firstDayOfMonth + i + 1;
+        calendarDays.push({ day, isCurrentMonth: false });
+      } else if (i < firstDayOfMonth + daysInMonth) {
+        // Current month
+        const day = i - firstDayOfMonth + 1;
+        calendarDays.push({ day, isCurrentMonth: true });
+      } else {
+        // Next month
+        const day = i - (firstDayOfMonth + daysInMonth) + 1;
+        calendarDays.push({ day, isCurrentMonth: false });
+      }
+    }
+
+    return calendarDays;
+  };
 
   return (
     <div className={`p-4 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
@@ -39,27 +69,26 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
         {days.map(day => (
           <div key={day} className="text-center text-sm font-bold">{day}</div>
         ))}
-        {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-          <div key={`empty-${index}`} className="text-center p-1"></div>
-        ))}
-        {Array.from({ length: daysInMonth }).map((_, index) => {
-          const day = index + 1;
+        {renderCalendarDays().map(({ day, isCurrentMonth }, index) => {
           const isSelected = selectedDate && 
                              selectedDate.getDate() === day && 
                              selectedDate.getMonth() === currentDate.getMonth() &&
-                             selectedDate.getFullYear() === currentDate.getFullYear();
+                             selectedDate.getFullYear() === currentDate.getFullYear() &&
+                             isCurrentMonth;
           const isToday = new Date().getDate() === day && 
                           new Date().getMonth() === currentDate.getMonth() && 
-                          new Date().getFullYear() === currentDate.getFullYear();
+                          new Date().getFullYear() === currentDate.getFullYear() &&
+                          isCurrentMonth;
           
           return (
             <div 
-              key={day} 
-              onClick={() => handleDateClick(day)}
+              key={index} 
+              onClick={() => handleDateClick(day, isCurrentMonth)}
               className={`text-center p-1 text-sm cursor-pointer rounded-full
+                ${isCurrentMonth ? '' : 'text-gray-500'}
                 ${isToday ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
                 ${isSelected && !isToday ? 'bg-gray-200' : ''}
-                ${!isSelected && !isToday ? 'hover:bg-gray-200' : ''}
+                ${!isSelected && !isToday && isCurrentMonth ? 'hover:bg-gray-200' : ''}
               `}
             >
               {day}
