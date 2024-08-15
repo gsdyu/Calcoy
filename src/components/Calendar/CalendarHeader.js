@@ -5,7 +5,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEvent }) => {
   const { darkMode } = useTheme();
 
-  const goToToday = () => onDateChange(new Date());
+  const goToToday = () => onDateChange(new Date(), 'none');
 
   const goToPrevious = () => {
     const newDate = new Date(currentDate);
@@ -16,7 +16,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEv
     } else {
       newDate.setMonth(newDate.getMonth() - 1);
     }
-    onDateChange(newDate);
+    onDateChange(newDate, 'left');
   };
 
   const goToNext = () => {
@@ -28,7 +28,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEv
     } else {
       newDate.setMonth(newDate.getMonth() + 1);
     }
-    onDateChange(newDate);
+    onDateChange(newDate, 'right');
   };
 
   const formatHeaderDate = () => {

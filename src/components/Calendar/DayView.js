@@ -2,7 +2,7 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { isToday, formatHour } from '../../utils/dateUtils';
 
-const DayView = ({ currentDate, events, onDateDoubleClick }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -49,7 +49,12 @@ const DayView = ({ currentDate, events, onDateDoubleClick }) => {
       <style>{scrollbarStyles}</style>
       {/* Day header */}
       <div className={`text-center py-2 border-b border-gray-700 ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''}`}>
-        <h2 className="text-lg font-semibold">
+        <h2 className={`text-lg font-semibold
+          transition-all duration-300 ease-in-out
+          ${shiftDirection === 'left' ? 'translate-x-4 opacity-0' : 
+            shiftDirection === 'right' ? '-translate-x-4 opacity-0' : 
+            'translate-x-0 opacity-100'}
+        `}>
           {currentDate.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
         </h2>
       </div>

@@ -12,13 +12,20 @@ import { useProfile } from '../../hooks/useProfile';
 import { useTheme } from '../../contexts/ThemeContext';
 
 const CalendarApp = () => {
-  const { currentDate, view, handleDateChange, handleViewChange } = useCalendar();
+  const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [shiftDirection, setShiftDirection] = useState(null);
+
+  const handleDateChange = (date, direction) => {
+    setShiftDirection(direction);
+    setSelectedDate(date);
+    setTimeout(() => setShiftDirection(null), 300);
+  };
 
   const handleAddEvent = (date = null) => {
     setSelectedDate(date);
@@ -41,7 +48,7 @@ const CalendarApp = () => {
   };
 
   const handleMiniCalendarDateSelect = (date) => {
-    handleDateChange(date);
+    handleDateChange(date, 'none');
   };
 
   const handleMiniCalendarViewChange = (newView) => {
@@ -67,7 +74,7 @@ const CalendarApp = () => {
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <CalendarHeader 
-          currentDate={currentDate}
+          currentDate={selectedDate || currentDate}
           view={view}
           onDateChange={handleDateChange}
           onViewChange={handleViewChange}
@@ -76,23 +83,26 @@ const CalendarApp = () => {
         <div className="flex-1 overflow-auto">
           {view === 'Month' && (
             <MonthView 
-              currentDate={currentDate} 
+              currentDate={selectedDate || currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
+              shiftDirection={shiftDirection}
             />
           )}
           {view === 'Week' && (
             <WeekView 
-              currentDate={currentDate} 
+              currentDate={selectedDate || currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
+              shiftDirection={shiftDirection}
             />
           )}
           {view === 'Day' && (
             <DayView 
-              currentDate={currentDate} 
+              currentDate={selectedDate || currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
+              shiftDirection={shiftDirection}
             />
           )}
         </div>

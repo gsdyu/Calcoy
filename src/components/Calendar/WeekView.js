@@ -2,10 +2,15 @@ import React from 'react';
 import { useTheme } from '../../contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '../../utils/dateUtils';
 
-const WeekView = ({ currentDate, events, onDateDoubleClick }) => {
+const WeekView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   const weekDays = getWeekDays(currentDate);
   const hours = Array.from({ length: 24 }, (_, i) => i);
+
+  const isWeekend = (date) => {
+    const day = date.getDay();
+    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+  };
 
   const getEventStyle = (event) => {
     const startHour = parseInt(event.startTime.split(':')[0]);
@@ -65,16 +70,26 @@ const WeekView = ({ currentDate, events, onDateDoubleClick }) => {
       {/* Header row with days */}
       <div className="flex border-b border-gray-700">
         <div className="w-16 flex-shrink-0"></div>
-        {weekDays.map((day, index) => (
-          <div key={index} className="flex-1 text-center py-2">
-            <div>{['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day.getDay()]}</div>
-            <div className={`flex items-center justify-center w-8 h-8 mx-auto ${
-              isToday(day) ? 'bg-blue-500 text-white rounded-full' : ''
-            }`}>
-              {day.getDate()}
+        {weekDays.map((day, index) => {
+          const isWeekendDay = isWeekend(day);
+          return (
+            <div key={index} className={`flex-1 text-center py-2 ${isWeekendDay ? darkMode ? 'bg-gray-800' : 'bg-gray-100' : ''}`}>
+              <div className={isWeekendDay ? darkMode ? 'text-gray-400' : 'text-gray-600' : ''}>
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day.getDay()]}
+              </div>
+              <div className={`flex items-center justify-center w-8 h-8 mx-auto 
+                ${isToday(day) ? 'bg-blue-500 text-white rounded-full' : ''}
+                ${isWeekendDay && !isToday(day) ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
+                transition-all duration-300 ease-in-out
+                ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
+                  shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
+                  'translate-x-0 opacity-100'}
+              `}>
+                {day.getDate()}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Time slots */}
@@ -84,36 +99,39 @@ const WeekView = ({ currentDate, events, onDateDoubleClick }) => {
             <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
               {formatHour(hour)}
             </div>
-            {weekDays.map((day, dayIndex) => (
-              <div
-                key={`${hour}-${dayIndex}`}
-                className="flex-1 border-l border-gray-700 relative"
-                onDoubleClick={() => {
-                  const clickedDate = new Date(day);
-                  clickedDate.setHours(hour);
-                  onDateDoubleClick(clickedDate);
-                }}
-              >
-                {events
-                  .filter(event => {
-                    const eventDate = new Date(event.date);
-                    return eventDate.getDate() === day.getDate() &&
-                           eventDate.getMonth() === day.getMonth() &&
-                           eventDate.getFullYear() === day.getFullYear() &&
-                           parseInt(event.startTime.split(':')[0]) === hour;
-                  })
-                  .map(event => (
-                    <div
-                      key={event.id}
-                      className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 overflow-hidden rounded"
-                      style={getEventStyle(event)}
-                    >
-                      {event.title}
-                    </div>
-                  ))
-                }
-              </div>
-            ))}
+            {weekDays.map((day, dayIndex) => {
+              const isWeekendDay = isWeekend(day);
+              return (
+                <div
+                  key={`${hour}-${dayIndex}`}
+                  className={`flex-1 border-l border-gray-700 relative ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}`}
+                  onDoubleClick={() => {
+                    const clickedDate = new Date(day);
+                    clickedDate.setHours(hour);
+                    onDateDoubleClick(clickedDate);
+                  }}
+                >
+                  {events
+                    .filter(event => {
+                      const eventDate = new Date(event.date);
+                      return eventDate.getDate() === day.getDate() &&
+                             eventDate.getMonth() === day.getMonth() &&
+                             eventDate.getFullYear() === day.getFullYear() &&
+                             parseInt(event.startTime.split(':')[0]) === hour;
+                    })
+                    .map(event => (
+                      <div
+                        key={event.id}
+                        className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 overflow-hidden rounded"
+                        style={getEventStyle(event)}
+                      >
+                        {event.title}
+                      </div>
+                    ))
+                  }
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
