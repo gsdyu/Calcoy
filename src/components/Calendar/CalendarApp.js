@@ -70,6 +70,7 @@ const CalendarApp = () => {
           currentView={view}
           onViewChange={handleMiniCalendarViewChange}
           onClose={toggleSidebar}
+          mainCalendarDate={selectedDate || currentDate}
         />
       </div>
       <div className="flex-1 flex flex-col overflow-hidden">

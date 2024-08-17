@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import { useTheme } from '../../contexts/ThemeContext';
 
-const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate }) => {
+const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, mainCalendarDate }) => {
   const { darkMode } = useTheme();
   const [currentDate, setCurrentDate] = useState(new Date());
 
   useEffect(() => {
-    setCurrentDate(selectedDate || new Date());
-  }, [selectedDate]);
+    setCurrentDate(mainCalendarDate || new Date());
+  }, [mainCalendarDate]);
 
   const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -22,15 +22,20 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
   };
 
+  const goToToday = () => {
+    const today = new Date();
+    setCurrentDate(today);
+    onDateSelect(today);
+  };
+
   const handleDateClick = (day, isCurrentMonth) => {
+    let newDate;
     if (isCurrentMonth) {
-      const clickedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
-      onDateSelect(clickedDate);
+      newDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
     } else {
-      const newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + (day > 20 ? -1 : 1), day);
-      setCurrentDate(newDate);
-      onDateSelect(newDate);
+      newDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + (day > 20 ? -1 : 1), day);
     }
+    onDateSelect(newDate);
   };
 
   const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -58,16 +63,56 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
     return calendarDays;
   };
 
+  const isInSelectedWeek = (day, isCurrentMonth) => {
+    if (!selectedDate || currentView !== 'Week') return false;
+    
+    const selectedWeekStart = new Date(selectedDate);
+    selectedWeekStart.setDate(selectedDate.getDate() - selectedDate.getDay());
+    const selectedWeekEnd = new Date(selectedWeekStart);
+    selectedWeekEnd.setDate(selectedWeekStart.getDate() + 6);
+
+    const checkDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + (isCurrentMonth ? 0 : day > 20 ? -1 : 1), day);
+    
+    return checkDate >= selectedWeekStart && checkDate <= selectedWeekEnd;
+  };
+
   return (
     <div className={`p-4 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
       <div className="flex justify-between items-center mb-2">
-        <button onClick={prevMonth}><ChevronLeft size={20} /></button>
-        <span>{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
-        <button onClick={nextMonth}><ChevronRight size={20} /></button>
+        <span className="text-sm font-semibold">
+          {currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+        </span>
+        <div className="flex items-center space-x-1">
+          <button
+            onClick={goToToday}
+            className={`p-1 rounded-full ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+            }`}
+            title="Today"
+          >
+            <Calendar size={16} />
+          </button>
+          <button
+            onClick={prevMonth}
+            className={`p-1 rounded-full ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+            }`}
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={nextMonth}
+            className={`p-1 rounded-full ${
+              darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-200'
+            }`}
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
       </div>
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0">
         {days.map(day => (
-          <div key={day} className="text-center text-sm font-bold">{day}</div>
+          <div key={day} className="text-center text-xs font-medium">{day}</div>
         ))}
         {renderCalendarDays().map(({ day, isCurrentMonth }, index) => {
           const isSelected = selectedDate && 
@@ -79,19 +124,31 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate })
                           new Date().getMonth() === currentDate.getMonth() && 
                           new Date().getFullYear() === currentDate.getFullYear() &&
                           isCurrentMonth;
+          const isInWeek = isInSelectedWeek(day, isCurrentMonth);
           
           return (
             <div 
               key={index} 
               onClick={() => handleDateClick(day, isCurrentMonth)}
-              className={`text-center p-1 text-sm cursor-pointer rounded-full
+              className={`relative text-center p-1 text-xs cursor-pointer
                 ${isCurrentMonth ? '' : 'text-gray-500'}
-                ${isToday ? 'bg-blue-500 text-white hover:bg-blue-600' : ''}
-                ${isSelected && !isToday ? 'bg-gray-200' : ''}
-                ${!isSelected && !isToday && isCurrentMonth ? 'hover:bg-gray-200' : ''}
+                ${isInWeek ? (darkMode ? 'bg-gray-700' : 'bg-gray-200') : ''}
               `}
             >
-              {day}
+              <div className={`
+                absolute inset-0 rounded-full
+                ${isToday ? 'bg-blue-500' : ''}
+                ${isSelected && !isToday ? 'bg-gray-400' : ''}
+                hover:bg-opacity-50 hover:bg-gray-400
+                transition-colors duration-200
+              `}></div>
+              <span className={`
+                relative z-10
+                ${isToday ? 'text-white' : ''}
+                ${isSelected && !isToday ? 'text-white' : ''}
+              `}>
+                {day}
+              </span>
             </div>
           );
         })}

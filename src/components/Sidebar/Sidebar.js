@@ -5,7 +5,7 @@ import CheckIns from './CheckIns';
 import Tasks from './Tasks';
 import MiniCalendar from './MiniCalendar';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange }) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -41,6 +41,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange }) => {
           currentView={currentView} 
           onViewChange={onViewChange}
           selectedDate={selectedDate}
+          mainCalendarDate={mainCalendarDate}
         />
         <CheckIns />
         <Tasks />
