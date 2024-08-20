@@ -1,14 +1,12 @@
-import { Providers } from '@/src/Providers';
-import '@/styles/globals.css';
+import './styles/globals.css'
+import { Providers } from './Providers'
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body>
-        <Providers>
-          {children}
-        </Providers>
+        <Providers>{children}</Providers>
       </body>
     </html>
-  );
+  )
 }
