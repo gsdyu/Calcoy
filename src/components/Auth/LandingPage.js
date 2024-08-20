@@ -20,8 +20,8 @@ const LandingPage = () => {
           <button className="text-gray-600 hover:text-gray-900 bg-transparent border-none cursor-pointer">Products</button>
         </div>
         <div className="space-x-4">
-          <Link href="/login" className="text-blue-600 hover:text-blue-800">Log in</Link>
-          <Link href="/signup" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sign up</Link>
+          <Link href="/auth/login" className="text-blue-600 hover:text-blue-800">Log in</Link>
+          <Link href="/auth/signup" className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sign up</Link>
         </div>
       </nav>
 
@@ -34,7 +34,7 @@ const LandingPage = () => {
           Your time, your way. With a little help from AI.
         </p>
         <div className="space-x-4">
-          <Link href="/signup" className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700">
+          <Link href="/auth/signup" className="bg-blue-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700">
             Get Timewise free
           </Link>
           <button 
