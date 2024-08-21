@@ -31,6 +31,8 @@ const SignUpPage = () => {
     if (!/\S+@\S+\.\S+/.test(formData.email)) {
       errors.email = "Email is invalid";
     }
+
+    // Password Validation
     if (formData.password.length < 8) {
       errors.password = "Password must be at least 8 characters long";
     }
@@ -53,7 +55,7 @@ const SignUpPage = () => {
     
     if (Object.keys(formErrors).length === 0) {
       try {
-        const response = await fetch('http://your-python-backend.com/auth/signup', {
+        const response = await fetch('http://your-python-backend.com/auth/signup', { //Fill in later from our python backend
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
