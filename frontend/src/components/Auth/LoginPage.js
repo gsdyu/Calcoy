@@ -2,6 +2,8 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -9,22 +11,45 @@ const LoginPage = () => {
     password: '',
     rememberMe: false
   });
+  const [error, setError] = useState('');
+  const router = useRouter();
 
   const handleChange = (e) => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle login logic here
-    console.log(formData);
+    setError('');
+
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      if (result.error) {
+        setError('Invalid email or password');
+      } else {
+        router.push('/calendar'); // Redirect to the main app page after successful login
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setError('An unexpected error occurred');
+    }
+  };
+
+  const handleSocialLogin = (provider) => {
+    signIn(provider, { callbackUrl: '/calendar' });
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
       <div className="bg-white p-8 rounded-lg shadow-md w-96">
         <h2 className="text-2xl font-bold mb-6 text-center">Log in</h2>
+        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
             <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email</label>
@@ -80,13 +105,13 @@ const LoginPage = () => {
         <div className="mt-4 text-center">
           <p className="text-sm text-gray-600">Or log in with</p>
           <div className="flex justify-center space-x-4 mt-2">
-            <button className="p-2 border rounded-full">
+            <button onClick={() => handleSocialLogin('google')} className="p-2 border rounded-full">
               <img src="/google-icon.png" alt="Google" className="w-6 h-6" />
             </button>
-            <button className="p-2 border rounded-full">
+            <button onClick={() => handleSocialLogin('microsoft')} className="p-2 border rounded-full">
               <img src="/microsoft-icon.png" alt="Microsoft" className="w-6 h-6" />
             </button>
-            <button className="p-2 border rounded-full">
+            <button onClick={() => handleSocialLogin('apple')} className="p-2 border rounded-full">
               <img src="/apple-icon.png" alt="Apple" className="w-6 h-6" />
             </button>
           </div>
