@@ -1,6 +1,8 @@
+'use client';
+
 import React from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
-import { isToday } from '../../utils/dateUtils';
+import { useTheme } from '@/contexts/ThemeContext';
+import { isToday } from '@/utils/dateUtils';
 
 const DayCell = ({ day, currentDate }) => {
   const { darkMode } = useTheme();

@@ -1,6 +1,8 @@
+'use client';
+
 import React, { useState, useRef } from 'react';
-import { useTheme } from '../../contexts/ThemeContext';
-import Button from '../common/Button';
+import { useTheme } from '@/contexts/ThemeContext';
+import Button from '@/components/common/Button';
 
 const ProfileModal = ({ onClose, onSave }) => {
   const { darkMode } = useTheme();
