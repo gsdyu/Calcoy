@@ -4,11 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { GoogleIcon, MicrosoftIcon, AppleIcon } from '@/components/icons/SocialIcons';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: '', 
     rememberMe: false
   });
   const [error, setError] = useState('');
@@ -106,13 +107,13 @@ const LoginPage = () => {
           <p className="text-sm text-gray-600">Or log in with</p>
           <div className="flex justify-center space-x-4 mt-2">
             <button onClick={() => handleSocialLogin('google')} className="p-2 border rounded-full">
-              <img src="/google-icon.png" alt="Google" className="w-6 h-6" />
+             <GoogleIcon className="w-6 h-6" />  
             </button>
             <button onClick={() => handleSocialLogin('microsoft')} className="p-2 border rounded-full">
-              <img src="/microsoft-icon.png" alt="Microsoft" className="w-6 h-6" />
+              <MicrosoftIcon className="w-6 h-6" />
             </button>
             <button onClick={() => handleSocialLogin('apple')} className="p-2 border rounded-full">
-              <img src="/apple-icon.png" alt="Apple" className="w-6 h-6" />
+              <AppleIcon className="w-6 h-6" />
             </button>
           </div>
         </div>
