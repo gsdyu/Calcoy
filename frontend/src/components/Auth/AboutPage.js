@@ -12,7 +12,7 @@ const AboutPage = () => {
         <Link href="/" className="text-2xl font-bold text-indigo-600">Timewise</Link>
         <div className="space-x-4">
           <Link href="/about" className="text-indigo-600 hover:text-indigo-800">About</Link>
-          <a href="#" className="text-gray-600 hover:text-indigo-600">Features</a>
+          <Link href="/auth/features" className="text-gray-600 hover:text-indigo-600">Features</Link>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Contact</a>
         </div>
         <div className="space-x-4">
@@ -65,22 +65,29 @@ const AboutPage = () => {
 
         {/* Team Section */}
         <section className="py-20">
-        <div className="container mx-auto px-6">
+          <div className="container mx-auto px-6">
             <h2 className="text-3xl font-bold text-center mb-12">Meet Our Team</h2>
             <div className="flex flex-wrap justify-center">
-            <div className="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-                <img src="/kev.png" alt="Kev" className="w-full h-64 object-cover object-center" />
-                <div className="p-6">
-                    <h3 className="text-xl font-semibold mb-2">Big D</h3>
-                    <p className="text-gray-600 mb-4">Ceo and Full Stack Developer</p>
-                    <p className="text-gray-700">Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac</p>
+              <div className="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+                <div className="bg-white rounded-lg shadow-lg overflow-hidden relative pt-48">
+                  <img 
+                    src="/kevh.png" 
+                    alt="Big D" 
+                    className="w-full h-64 object-cover object-[center_50%] absolute top-0 left-0"
+                    style={{ objectPosition: '0% 0%' }}
+                  />
+                  <div className="p-6 pt-16">
+                    <h3 className="text-xl font-semibold mb-1">Big D</h3>
+                    <p className="text-gray-600 mb-3">CEO and Full Stack Developer</p>
+                    <p className="text-gray-700 text-sm">
+                      Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac
+                    </p>
+                  </div>
                 </div>
-                </div>
+              </div>
+              {/* Add more team member cards here */}
             </div>
-            {/* Add more team member cards here */}
-            </div>
-        </div>
+          </div>
         </section>
 
       {/* CTA Section */}

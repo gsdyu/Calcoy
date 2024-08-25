@@ -19,7 +19,7 @@ const LandingPage = () => {
         <Link href="/" className="text-2xl font-bold text-indigo-600">Timewise</Link>
         <div className="space-x-4">
           <Link href="/auth/about" className="text-gray-600 hover:text-indigo-600">About</Link>
-          <a href="#" className="text-gray-600 hover:text-indigo-600">Features</a>
+          <Link href="/auth/features" className="text-gray-600 hover:text-indigo-600">Features</Link>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Contact</a>
         </div>
         <div className="space-x-4">
