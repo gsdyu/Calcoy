@@ -16,9 +16,9 @@ const LandingPage = () => {
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white">
       {/* Navigation */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
-        <div className="text-2xl font-bold text-indigo-600">Timewise</div>
+        <Link href="/" className="text-2xl font-bold text-indigo-600">Timewise</Link>
         <div className="space-x-4">
-          <a href="#" className="text-gray-600 hover:text-indigo-600">About</a>
+          <Link href="/auth/about" className="text-gray-600 hover:text-indigo-600">About</Link>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Features</a>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Contact</a>
         </div>
