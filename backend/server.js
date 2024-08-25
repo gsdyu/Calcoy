@@ -1,14 +1,15 @@
-//test comment to initialize server backend
-import {createServer} from "node:http";
+const express = require("express");
+const server = express();
+const port = 3000;
 
-let server = createServer((request, response) => { 
-	response.writeHead(200, {"Content-Type": "text/html"});
-	//the character after write is a grave accent: `(not a quote: ')
-	response.write(`
-	<h1>timewise</h1>
-		<p>back back back</p>	
-		<p>end end end</p>`);
-	response.end();
+server.get('/', (req, res) => {
+	res.send("timewise backend using node express");
 });
-server.listen(8000)
-console.log("timewise backend is working for localhost:8000");
+
+// files in the public folder will be accessible by the public
+// ex: localhost:${port}/images/vampire.jpg
+server.use(express.static("public"));
+
+server.listen(port, () => {
+	console.log("timewise backend on port " + port);
+});
