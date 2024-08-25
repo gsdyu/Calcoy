@@ -13,7 +13,7 @@ const AboutPage = () => {
         <div className="space-x-4">
           <Link href="/about" className="text-indigo-600 hover:text-indigo-800">About</Link>
           <Link href="/auth/features" className="text-gray-600 hover:text-indigo-600">Features</Link>
-          <a href="#" className="text-gray-600 hover:text-indigo-600">Contact</a>
+          <Link href="/auth/contact" className="text-gray-600 hover:text-indigo-600">Contact</Link>
         </div>
         <div className="space-x-4">
           <Link href="/auth/login" className="text-indigo-600 font-medium">Log in</Link>
