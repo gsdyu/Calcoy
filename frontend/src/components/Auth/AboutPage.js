@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Clock, Zap, Users } from 'lucide-react';
+import { Instagram, Linkedin, Globe } from 'lucide-react';
 
 const AboutPage = () => {
   return (
@@ -63,32 +64,26 @@ const AboutPage = () => {
         </div>
       </section>
 
-        {/* Team Section */}
-        <section className="py-20">
-          <div className="container mx-auto px-6">
-            <h2 className="text-3xl font-bold text-center mb-12">Meet Our Team</h2>
-            <div className="flex flex-wrap justify-center">
-              <div className="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
-                <div className="bg-white rounded-lg shadow-lg overflow-hidden relative pt-48">
-                  <img 
-                    src="/kevh.png" 
-                    alt="Big D" 
-                    className="w-full h-64 object-cover object-[center_50%] absolute top-0 left-0"
-                    style={{ objectPosition: '0% 0%' }}
-                  />
-                  <div className="p-6 pt-16">
-                    <h3 className="text-xl font-semibold mb-1">Big D</h3>
-                    <p className="text-gray-600 mb-3">CEO and Full Stack Developer</p>
-                    <p className="text-gray-700 text-sm">
-                      Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac
-                    </p>
-                  </div>
-                </div>
-              </div>
-              {/* Add more team member cards here */}
-            </div>
+      {/* Team Section */}
+      <section className="py-20">
+        <div className="container mx-auto px-6">
+          <h2 className="text-3xl font-bold text-center mb-12">Meet Our Team</h2>
+          <div className="flex flex-wrap justify-center">
+            <TeamMemberCard 
+              name="Big D"
+              role="CEO and Full Stack Developer"
+              description="Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac"
+              image="/kevh.png"
+              socials={{
+                instagram: "Placeholder",
+                linkedin: "placeholder",
+                website: "placeholder"
+              }}
+            />
+            {/* Add more team member cards here */}
           </div>
-        </section>
+        </div>
+      </section>
 
       {/* CTA Section */}
       <section className="bg-indigo-100 py-20">
@@ -110,6 +105,45 @@ const StoryCard = ({ icon, title, description }) => (
     <h3 className="text-xl font-semibold mb-2">{title}</h3>
     <p className="text-gray-600">{description}</p>
   </div>
+);
+
+const TeamMemberCard = ({ name, role, description, image, socials }) => (
+  <div className="w-full md:w-1/2 lg:w-1/3 px-4 mb-8">
+    <div className="bg-white rounded-lg shadow-lg overflow-hidden relative">
+      <img 
+        src={image} 
+        alt={name} 
+        className="w-full h-64 object-cover object-top"
+      />
+      <div className="absolute top-0 right-0 p-4 flex space-x-2">
+        {socials.instagram && (
+          <SocialIcon Icon={Instagram} href={socials.instagram} />
+        )}
+        {socials.linkedin && (
+          <SocialIcon Icon={Linkedin} href={socials.linkedin} />
+        )}
+        {socials.website && (
+          <SocialIcon Icon={Globe} href={socials.website} />
+        )}
+      </div>
+      <div className="p-6">
+        <h3 className="text-xl font-semibold mb-1">{name}</h3>
+        <p className="text-gray-600 mb-3">{role}</p>
+        <p className="text-gray-700 text-sm">{description}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const SocialIcon = ({ Icon, href }) => (
+  <a 
+    href={href} 
+    target="_blank" 
+    rel="noopener noreferrer" 
+    className="bg-white p-2 rounded-full text-gray-600 hover:text-indigo-600 transition duration-300"
+  >
+    <Icon size={20} />
+  </a>
 );
 
 export default AboutPage;
