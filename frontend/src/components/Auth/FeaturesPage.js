@@ -13,6 +13,7 @@ const FeaturesPage = () => {
         <div className="space-x-4">
           <Link href="/auth/about" className="text-gray-600 hover:text-indigo-600">About</Link>
           <Link href="/auth/features" className="text-indigo-600 hover:text-indigo-800">Features</Link>
+          <Link href="/auth/documentation" className="text-gray-600 hover:text-indigo-600">Documentation</Link>
           <Link href="/auth/contact" className="text-gray-600 hover:text-indigo-600">Contact</Link>
         </div>
         <div className="space-x-4">
