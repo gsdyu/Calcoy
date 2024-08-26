@@ -10,6 +10,10 @@ server.get('/', (req, res) => {
 // ex: localhost:${port}/images/vampire.jpg
 server.use(express.static("public"));
 
+const user = require("./routes/user");
+
+server.use("/user", user);
+
 server.listen(port, () => {
 	console.log("timewise backend on port " + port);
 });
