@@ -11,7 +11,7 @@ const AboutPage = () => {
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-indigo-600">Timewise</Link>
         <div className="space-x-4">
-          <Link href="/about" className="text-indigo-600 hover:text-indigo-800">About</Link>
+          <Link href="/auth/about" className="text-indigo-600 hover:text-indigo-800">About</Link>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Features</a>
           <a href="#" className="text-gray-600 hover:text-indigo-600">Contact</a>
         </div>
