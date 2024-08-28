@@ -40,3 +40,4 @@ export const EyeOffIcon = (props) => (
     <line x1="1" y1="1" x2="23" y2="23" />
   </svg>
 );
+
