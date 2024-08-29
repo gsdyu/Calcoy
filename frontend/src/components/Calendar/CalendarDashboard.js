@@ -1,7 +1,8 @@
 'use client'
 
 import React, { useState } from 'react';
-import { Plus, Calendar, Activity, ChevronLeft, ChevronRight, ClipboardList, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, ClipboardList, CheckCircle, XCircle, AlertTriangle, Clock } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 const Card = ({ children, className }) => (
   <div className={`bg-gray-800 rounded-lg shadow-md ${className}`}>{children}</div>
@@ -13,156 +14,176 @@ const CardContent = ({ children }) => <div className="p-4">{children}</div>;
 const DashboardHeader = () => (
   <div className="flex justify-between items-center mb-6">
     <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-    <button className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-md">
-      <Plus size={20} />
-      <span>Add Event</span>
-    </button>
   </div>
 );
 
-const ActivityHeatmap = () => {
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  const getMonthData = (year, month) => {
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const daysInMonth = lastDay.getDate();
-    const startingDay = firstDay.getDay();
+const TaskCompletionComponent = () => {
+  const [timeFrame, setTimeFrame] = useState('week');
 
-    let calendarData = [];
-    for (let i = 0; i < startingDay; i++) {
-      calendarData.push(null);
-    }
-    for (let i = 1; i <= daysInMonth; i++) {
-      const date = new Date(year, month, i);
-      const eventCount = Math.floor(Math.random() * 5);
-      calendarData.push({ date, eventCount });
-    }
-    return calendarData;
+  const getCurrentDate = () => {
+    const now = new Date();
+    return now.toISOString().split('T')[0];
   };
 
-  const monthData = getMonthData(currentDate.getFullYear(), currentDate.getMonth());
+  // This function simulates task data generation
+  // In the future, this will be replaced with actual data from the backend
+  const generateTaskData = () => {
+    const currentDate = new Date();
+    const weekStart = new Date(currentDate.setDate(currentDate.getDate() - currentDate.getDay()));
+    
+    return [...Array(7)].map((_, index) => {
+      const date = new Date(weekStart);
+      date.setDate(date.getDate() + index);
+      const dateString = date.toISOString().split('T')[0];
+      const isToday = dateString === getCurrentDate();
+      const isPast = date < new Date(getCurrentDate());
 
-  const getColor = (eventCount) => {
-    if (eventCount === null) return 'bg-transparent';
-    if (eventCount === 0) return 'bg-gray-700';
-    if (eventCount === 1) return 'bg-blue-800';
-    if (eventCount === 2) return 'bg-blue-600';
-    if (eventCount === 3) return 'bg-blue-400';
-    return 'bg-blue-200';
+      // Requirements:
+      // 1. Previous days: completed + missed tasks
+      // 2. Future days: completed (early finish) + upcoming tasks
+      // 3. Today: completed + upcoming + missed tasks (only day with all three)
+      let completed = Math.floor(Math.random() * 5);
+      let missed = 0;
+      let upcoming = 0;
+
+      if (isPast) {
+        missed = Math.floor(Math.random() * 3);
+      } else if (isToday) {
+        missed = Math.floor(Math.random() * 2);
+        upcoming = Math.floor(Math.random() * 3);
+      } else {
+        upcoming = Math.floor(Math.random() * 5);
+      }
+
+      const total = completed + missed + upcoming;
+
+      return {
+        name: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][date.getDay()],
+        date: dateString,
+        completed,
+        missed,
+        upcoming,
+        total
+      };
+    });
   };
 
-  const changeMonth = (increment) => {
-    const newDate = new Date(currentDate);
-    newDate.setMonth(newDate.getMonth() + increment);
-    setCurrentDate(newDate);
-  };
+  const taskData = generateTaskData();
 
-  return (
-    <div className="text-white">
-      <div className="flex justify-between items-center mb-2">
-        <button onClick={() => changeMonth(-1)} className="p-1 text-gray-400 hover:text-white"><ChevronLeft size={16} /></button>
-        <h3 className="text-xs font-semibold">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</h3>
-        <button onClick={() => changeMonth(1)} className="p-1 text-gray-400 hover:text-white"><ChevronRight size={16} /></button>
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {daysOfWeek.map(day => (
-          <div key={day} className="text-[8px] font-semibold text-center text-gray-400 mb-1">{day}</div>
-        ))}
-        {monthData.map((data, index) => (
-          <div
-            key={index}
-            className={`w-4 h-4 ${getColor(data?.eventCount)} rounded-sm flex items-center justify-center`}
-            title={data ? `${data.date.toDateString()}: ${data.eventCount} events` : ''}
-          >
-            {data && <span className="text-[6px]">{data.date.getDate()}</span>}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
+  // Calculate completion rate
+  const totalCompleted = taskData.reduce((acc, day) => acc + day.completed, 0);
+  const totalTasks = taskData.reduce((acc, day) => acc + day.completed + day.missed, 0);
+  const completionRate = totalTasks > 0 ? ((totalCompleted / totalTasks) * 100).toFixed(1) : '0.0';
 
-const WeeklyActivity = () => {
-  const weekData = [
-    { day: 'Mon', events: 4 },
-    { day: 'Tue', events: 3 },
-    { day: 'Wed', events: 2 },
-    { day: 'Thu', events: 5 },
-    { day: 'Fri', events: 4 },
-    { day: 'Sat', events: 3 },
-    { day: 'Sun', events: 1 },
-  ];
-
-  return (
-    <div className="space-y-1">
-      {weekData.map(({ day, events }) => (
-        <div key={day} className="flex items-center">
-          <span className="w-8 text-xs text-gray-400">{day}:</span>
-          <div className="flex-grow h-4 bg-gray-700 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-blue-600"
-              style={{ width: `${(events / 5) * 100}%` }}
-            ></div>
-          </div>
-          <span className="ml-2 text-xs text-gray-400">{events}</span>
+  const CustomTooltip = ({ active, payload, label }) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload;
+      return (
+        <div className="bg-gray-800 p-4 rounded shadow-lg">
+          <p className="text-white font-bold">{label}</p>
+          <p className="text-green-400">Completed: {data.completed}</p>
+          <p className="text-red-400">Missed: {data.missed}</p>
+          <p className="text-blue-400">Upcoming: {data.upcoming}</p>
+          <p className="text-white font-bold mt-2">Total: {data.total}</p>
         </div>
-      ))}
-    </div>
-  );
-};
-
-const ActivityOverview = () => {
-  const [viewType, setViewType] = useState('heatmap');
+      );
+    }
+    return null;
+  };
 
   return (
     <Card className="mb-6">
       <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle>Activity Overview</CardTitle>
-          <div className="flex space-x-2">
-            <button
-              className={`px-2 py-1 rounded-md ${viewType === 'heatmap' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-              onClick={() => setViewType('heatmap')}
-            >
-              <Calendar size={14} />
-            </button>
-            <button
-              className={`px-2 py-1 rounded-md ${viewType === 'weekly' ? 'bg-blue-600 text-white' : 'bg-gray-700 text-gray-300'}`}
-              onClick={() => setViewType('weekly')}
-            >
-              <Activity size={14} />
-            </button>
-          </div>
-        </div>
+        <CardTitle>Task Completion Overview</CardTitle>
       </CardHeader>
       <CardContent>
-        {viewType === 'heatmap' ? <ActivityHeatmap /> : <WeeklyActivity />}
+        <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="text-green-400" />
+            <span className="text-white text-xl font-semibold">{completionRate}% Completion Rate</span>
+          </div>
+          <select 
+            value={timeFrame} 
+            onChange={(e) => setTimeFrame(e.target.value)}
+            className="bg-gray-700 text-white rounded p-2"
+          >
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="year">This Year</option>
+          </select>
+        </div>
+
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={taskData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <XAxis dataKey="name" stroke="#fff" />
+            <YAxis stroke="#fff" />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend />
+            <Bar dataKey="completed" stackId="a" fill="#10B981" name="Completed" />
+            <Bar dataKey="missed" stackId="a" fill="#EF4444" name="Missed" />
+            <Bar dataKey="upcoming" stackId="a" fill="#3B82F6" name="Upcoming" />
+          </BarChart>
+        </ResponsiveContainer>
+
+        <div className="grid grid-cols-3 gap-4 mt-6">
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <CheckCircle className="text-green-400" />
+              <span className="text-white font-semibold">Completed Tasks</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{taskData.reduce((sum, day) => sum + day.completed, 0)}</p>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <AlertTriangle className="text-red-400" />
+              <span className="text-white font-semibold">Missed Tasks</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{taskData.reduce((sum, day) => sum + day.missed, 0)}</p>
+          </div>
+          <div className="bg-gray-700 p-4 rounded-lg">
+            <div className="flex items-center space-x-2 mb-2">
+              <Clock className="text-blue-400" />
+              <span className="text-white font-semibold">Upcoming Tasks</span>
+            </div>
+            <p className="text-2xl font-bold text-white">{taskData.reduce((sum, day) => sum + day.upcoming, 0)}</p>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
 };
 
-const AIRecommendations = () => (
-  <Card className="mb-6">
-    <CardHeader>
-      <CardTitle>AI Recommendations</CardTitle>
-    </CardHeader>
-    <CardContent>
-      <ul className="space-y-2 text-white">
-        <li className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-          <span>Schedule a break between long meetings</span>
-        </li>
-        <li className="flex items-center space-x-2">
-          <div className="w-2 h-2 rounded-full bg-green-500"></div>
-          <span>Set a reminder for upcoming project milestone</span>
-        </li>
-      </ul>
-    </CardContent>
-  </Card>
-);
+// Later connect to AI(Train to respond something on the lines of this (Can learn from completions))
+const AIInsightsComponent = () => { 
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle>AI Insights</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ul className="space-y-4">
+          <li className="flex items-start space-x-2 text-white">
+            <Calendar className="text-purple-400 mt-1 flex-shrink-0" />
+            <span>You're most productive on Tuesdays. Consider scheduling important tasks for this day.</span>
+          </li>
+          <li className="flex items-start space-x-2 text-white">
+            <AlertTriangle className="text-yellow-400 mt-1 flex-shrink-0" />
+            <span>You often miss tasks scheduled after 4 PM. Try rescheduling these to earlier in the day.</span>
+          </li>
+          <li className="flex items-start space-x-2 text-white">
+            <CheckCircle className="text-green-400 mt-1 flex-shrink-0" />
+            <span>Great job on completing all your high-priority tasks this week!</span>
+          </li>
+          <li className="flex items-start space-x-2 text-white">
+            <Clock className="text-blue-400 mt-1 flex-shrink-0" />
+            <span>You have 3 upcoming deadlines this week. Consider starting on them early.</span>
+          </li>
+        </ul>
+      </CardContent>
+    </Card>
+  );
+};
 
 const RecentCheckIns = () => {
   const [events, setEvents] = useState([
@@ -262,12 +283,10 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-900 text-white p-6">
       <div className="max-w-6xl mx-auto">
         <DashboardHeader />
-        <div className="grid grid-cols-3 gap-6">
-          <ActivityOverview />
-          <AIRecommendations />
-          <div className="col-span-3">
-            <RecentCheckIns />
-          </div>
+        <div className="grid grid-cols-1 gap-6">
+          <TaskCompletionComponent />
+          <AIInsightsComponent />
+          <RecentCheckIns />
         </div>
       </div>
     </div>
