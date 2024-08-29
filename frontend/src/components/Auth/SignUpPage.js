@@ -58,7 +58,7 @@ const SignUpPage = () => {
     
     if (Object.keys(formErrors).length === 0) {
       try {
-        const response = await fetch('http://your-python-backend.com/auth/signup', { //Fill in later from our python backend
+        const response = await fetch('http://localhost:5000/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(formData)
