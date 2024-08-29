@@ -1,61 +1,50 @@
-const { app, pool } = require('./server');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { Pool } = require('pg');
 
-// Signup route
-app.post('/auth/signup', async (req, res) => {
-    const { username, email, password } = req.body;
+const app = express();
 
-    // Check if password contains spaces
-    if (/\s/.test(password)) {
-        return res.status(400).json({ error: 'Password should not contain spaces' });
-    }
+app.use(express.json());
+app.use(cors({
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true
+}));
 
-    try {
-        const hashedPassword = await bcrypt.hash(password, 10);
-
-        const result = await pool.query(
-            'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *',
-            [username, email, hashedPassword]
-        );
-
-        console.log('User created successfully');
-        res.status(201).json({ message: 'User created', user: result.rows[0] });
-    } catch (error) {
-        if (error.code === '23505') { // Unique constraint violation
-            if (error.constraint === 'users_email_key') {
-                console.error('Duplicate email:', email);
-                return res.status(400).json({ error: 'Email already exists' });
-            }
-            if (error.constraint === 'users_username_key') { // Check for username conflict
-                console.error('Duplicate username:', username);
-                return res.status(400).json({ error: 'Username already taken' });
-            }
-        }
-        console.error('Signup error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
 });
 
-// Login route
-app.post('/auth/login', async (req, res) => {
-    const { email, password } = req.body;
-    try {
-        const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-        const user = result.rows[0];
+pool.query(`
+  CREATE TABLE IF NOT EXISTS users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(32) UNIQUE NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password TEXT NOT NULL
+  );
+`).then(() => console.log("Users table is ready"))
+  .catch(err => console.error('Error creating users table:', err));
 
-        if (user && await bcrypt.compare(password, user.password)) {
-            const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-            res.json({ token });
-        } else {
-            res.status(400).json({ error: 'Invalid credentials' });
-        }
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Internal server error' });
-    }
-});
+pool.query(`
+  CREATE TABLE IF NOT EXISTS events (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    description TEXT,
+    start_time TIMESTAMPTZ NOT NULL,
+    end_time TIMESTAMPTZ NOT NULL,
+    location VARCHAR(255),
+    frequency VARCHAR(50),
+    calendar VARCHAR(50),
+    CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time)
+  );
+`).then(() => console.log("Events table is ready"))
+  .catch(err => console.error('Error creating events table:', err));
 
-// Start the server
+require('./routes/auth')(app, pool);
+require('./routes/events')(app, pool);
+
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

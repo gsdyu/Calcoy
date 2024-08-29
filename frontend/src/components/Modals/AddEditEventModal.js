@@ -18,8 +18,8 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
 
   useEffect(() => {
     if (initialDate) {
-      setNewEvent(prev => ({ 
-        ...prev, 
+      setNewEvent(prev => ({
+        ...prev,
         date: initialDate.toISOString().split('T')[0],
         startTime: initialDate.toTimeString().slice(0, 5)
       }));
@@ -33,14 +33,25 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSave(newEvent);
+    const event = {
+      title: newEvent.title,
+      location: newEvent.location,
+      date: newEvent.date,
+      start_time: new Date(`${newEvent.date}T${newEvent.startTime}`).toISOString(),
+      end_time: new Date(`${newEvent.date}T${newEvent.endTime}`).toISOString(),
+      frequency: newEvent.frequency,
+      calendar: newEvent.calendar
+    };
+    console.log('Event being saved:', event);
+    onSave(event); // Pass the event data to the parent component
+    onClose(); // Close the modal
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} p-6 rounded-lg w-96`}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">Edit Event</h3>
+          <h3 className="text-xl font-bold">Add/Edit Event</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-200">
             <X size={20} />
           </button>
@@ -53,6 +64,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             value={newEvent.title}
             onChange={handleChange}
             className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+            required
           />
           <input
             type="date"
@@ -60,6 +72,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             value={newEvent.date}
             onChange={handleChange}
             className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+            required
           />
           <div className="flex justify-between mb-4">
             <input
@@ -68,6 +81,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
               value={newEvent.startTime}
               onChange={handleChange}
               className={`w-5/12 p-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+              required
             />
             <input
               type="time"
@@ -75,8 +89,17 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
               value={newEvent.endTime}
               onChange={handleChange}
               className={`w-5/12 p-2 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+              required
             />
           </div>
+          <input
+            type="text"
+            name="location"
+            placeholder="Location"
+            value={newEvent.location}
+            onChange={handleChange}
+            className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+          />
           <select
             name="frequency"
             value={newEvent.frequency}
@@ -89,14 +112,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             <option>Monthly</option>
             <option>Yearly</option>
           </select>
-          <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={newEvent.location}
-            onChange={handleChange}
-            className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
-          />
           <select
             name="calendar"
             value={newEvent.calendar}
