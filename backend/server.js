@@ -18,7 +18,7 @@ mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTo
   .catch(err => console.log(err));
 
   app.post('/auth/signup', async (req, res) => {
-	console.log('Signup data received:', req.body);
+	console.log('Signup data received:', req.body); // Log the incoming request data
 	const { username, email, password } = req.body;
 	try {
 	  const hashedPassword = await bcrypt.hash(password, 10);
@@ -27,6 +27,17 @@ mongoose.connect(process.env.DATABASE_URL, { useNewUrlParser: true, useUnifiedTo
 	  console.log('User created successfully');
 	  res.status(201).send('User created');
 	} catch (error) {
+	  if (error.code === 11000) {
+		// Duplicate key error
+		if (error.keyPattern.email) {
+		  console.error('Duplicate email:', email); // Log the duplicate email
+		  return res.status(400).json({ error: 'Email already exists' });
+		}
+		if (error.keyPattern.username) {
+		  console.error('Duplicate username:', username); // Log the duplicate username
+		  return res.status(400).json({ error: 'Username already exists' });
+		}
+	  }
 	  console.error('Signup error:', error);
 	  res.status(500).json({ error: 'Internal server error' });
 	}

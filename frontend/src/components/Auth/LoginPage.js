@@ -20,27 +20,46 @@ const LoginPage = () => {
     const value = e.target.type === 'checkbox' ? e.target.checked : e.target.value;
     setFormData({ ...formData, [e.target.name]: value });
   };
+  const handleSocialLogin = (provider) => {
+    signIn(provider, { redirect: false })
+      .then((result) => {
+        if (!result.error) {
+          router.push('/calendar');
+        } else {
+          setError('Social login failed');
+        }
+      })
+      .catch((error) => {
+        console.error('Social login error:', error);
+        setError('An unexpected error occurred');
+      });
+  };
 
+
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-
+  
     try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email: formData.email,
-        password: formData.password,
+      const response = await fetch('http://localhost:5000/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: formData.email, password: formData.password })
       });
-
-      if (result.error) {
-        setError('Invalid email or password');  
-        
+  
+      const data = await response.json();  
+  
+      if (response.ok) {
+        localStorage.setItem('token', data.token);   
+        console.log('Login successful:', data);
+        router.push('/calendar');   
       } else {
-        router.push('/calendar');  
+        setError(data.message || 'Invalid email or password');  
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An unexpected error occurred'); 
+      setError('An unexpected error occurred');
     }
   };
 

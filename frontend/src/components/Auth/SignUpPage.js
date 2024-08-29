@@ -57,26 +57,28 @@ const SignUpPage = () => {
     const formErrors = validateForm();
     
     if (Object.keys(formErrors).length === 0) {
-      try {
-const response = await fetch('http://localhost:5000/auth/signup', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(formData)
-});
-        
-        if (response.ok) {
-          router.push('/auth/login');
-        } else {
-          const data = await response.json();
-          setErrors(data.errors || {});
+        try {
+            const response = await fetch('http://localhost:5000/auth/signup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            if (response.ok) {
+                router.push('/auth/login');
+            } else {
+                const data = await response.json(); // Parse the JSON response
+                setErrors({ ...formErrors, server: data.error });
+            }
+        } catch (error) {
+            console.error('Signup error:', error);
+            setErrors({ ...formErrors, server: 'An unexpected error occurred' });
         }
-      } catch (error) {
-        console.error('Signup error:', error);
-      }
     } else {
-      setErrors(formErrors);
+        setErrors(formErrors);
     }
-  };
+};
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
@@ -85,126 +87,138 @@ const response = await fetch('http://localhost:5000/auth/signup', {
   const toggleConfirmPasswordVisibility = () => {
     setShowConfirmPassword(!showConfirmPassword);
   };
+return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600"> 
+        <div className="bg-white p-8 rounded-lg shadow-md w-96">
+            <h2 className="text-2xl font-bold mb-6 text-center">Create an account</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Username field */}
+                <div>
+                    <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
+                    <input
+                        type="text"
+                        id="username"
+                        name="username"
+                        value={formData.username}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
+                    <p className="mt-1 text-xs text-gray-500">
+                        2-32 characters, lowercase letters, numbers, periods, and underscores only. 
+                        Cannot start or end with a period or underscore.
+                    </p>
+                </div>
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-bold mb-6 text-center">Create an account</h2>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
-            <input
-              type="text"
-              id="username"
-              name="username"
-              value={formData.username}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            {errors.username && <p className="mt-1 text-sm text-red-600">{errors.username}</p>}
-            <p className="mt-1 text-xs text-gray-500">
-              2-32 characters, lowercase letters, numbers, periods, and underscores only. 
-              Cannot start or end with a period or underscore.
+                {/* Email field */}
+                <div>
+                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        required
+                    />
+                    {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
+                </div>
+
+                {/* Password field */}
+                <div>
+                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                    <div className="relative">
+                        <input
+                            type={showPassword ? "text" : "password"}
+                            id="password"
+                            name="password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={togglePasswordVisibility}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
+                        >
+                            {showPassword ? (
+                                <EyeOffIcon className="h-5 w-5" />
+                            ) : (
+                                <EyeIcon className="h-5 w-5" />
+                            )}
+                        </button>
+                    </div>
+                    {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
+                </div>
+
+                {/* Confirm Password field */}
+                <div>
+                    <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
+                    <div className="relative">
+                        <input
+                            type={showConfirmPassword ? "text" : "password"}
+                            id="confirmPassword"
+                            name="confirmPassword"
+                            value={formData.confirmPassword}
+                            onChange={handleChange}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={toggleConfirmPasswordVisibility}
+                            className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
+                        >
+                            {showConfirmPassword ? (
+                                <EyeOffIcon className="h-5 w-5" />
+                            ) : (
+                                <EyeIcon className="h-5 w-5" />
+                            )}
+                        </button>
+                    </div>
+                    {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
+                </div>
+
+                {/* Server Error */}
+                {errors.server && <p className="mt-1 text-sm text-red-600">{errors.server}</p>}
+                
+                <button
+                    type="submit"
+                    className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                >
+                    Sign Up
+                </button>
+            </form>
+
+            {/* Other UI elements */}
+            <div className="mt-6 flex items-center">
+                <div className="flex-grow border-t border-gray-300"></div>
+                <span className="flex-shrink mx-4 text-gray-500">OR</span>
+                <div className="flex-grow border-t border-gray-300"></div>
+            </div>
+            <div className="mt-6 space-y-4">
+                <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                    <GoogleIcon className="w-5 h-5 mr-2" />
+                    Sign up with Google
+                </button>
+                <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                    <MicrosoftIcon className="w-5 h-5 mr-2" />
+                    Sign up with Microsoft
+                </button>
+                <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                    <AppleIcon className="w-5 h-5 mr-2" />
+                    Sign up with Apple
+                </button>
+            </div>
+            <p className="mt-6 text-center text-sm text-gray-600">
+                Already have an account? <Link href="/auth/login" className="text-blue-600 hover:underline">Log in</Link>
             </p>
-          </div>
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-            {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email}</p>}
-          </div>
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
-            <div className="relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <button
-                type="button"
-                onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
-              >
-                {showPassword ? (
-                  <EyeOffIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
-          </div>
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
-            <div className="relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <button
-                type="button"
-                onClick={toggleConfirmPasswordVisibility}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
-              >
-                {showConfirmPassword ? (
-                  <EyeOffIcon className="h-5 w-5" />
-                ) : (
-                  <EyeIcon className="h-5 w-5" />
-                )}
-              </button>
-            </div>
-            {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-          >
-            Sign Up
-          </button>
-        </form>
-        <div className="mt-6 flex items-center">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="flex-shrink mx-4 text-gray-500">OR</span>
-          <div className="flex-grow border-t border-gray-300"></div>
         </div>
-        <div className="mt-6 space-y-4">
-          <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <GoogleIcon className="w-5 h-5 mr-2" />
-            Sign up with Google
-          </button>
-          <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <MicrosoftIcon className="w-5 h-5 mr-2" />
-            Sign up with Microsoft
-          </button>
-          <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <AppleIcon className="w-5 h-5 mr-2" />
-            Sign up with Apple
-          </button>
-        </div>
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Already have an account? <Link href="/auth/login" className="text-blue-600 hover:underline">Log in</Link>
-        </p>
-      </div>
     </div>
-  );
-};
+);
+}
 
 export default SignUpPage;
