@@ -13,7 +13,6 @@ import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
 
-
 const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
@@ -26,17 +25,32 @@ const CalendarApp = () => {
   const [shiftDirection, setShiftDirection] = useState(null);
 
   useEffect(() => {
-    // Initialize selectedWeekStart and selectedDate when the component mounts
-    const today = new Date();
-    const weekStart = new Date(today);
-    weekStart.setDate(today.getDate() - today.getDay());
-    setSelectedWeekStart(weekStart);
-    setSelectedDate(today);
-  }, []);
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    const fetchEvents = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/events', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setEvents(data);
+          console.log('Fetched events:', data);
+        } else {
+          throw new Error('Failed to fetch events');
+        }
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      }
+    };
+
+    fetchEvents();
+  }, [displayName]);
 
   const handleDateChange = (date, direction) => {
     setShiftDirection(direction);
-    
+
     if (view === 'Week') {
       const weekStart = new Date(date);
       weekStart.setDate(date.getDate() - date.getDay());
@@ -65,9 +79,33 @@ const CalendarApp = () => {
     setIsAddingEvent(false);
   };
 
-  const handleSaveEvent = (newEvent) => {
-    setEvents(prevEvents => [...prevEvents, { ...newEvent, id: Date.now() }]);
-    setIsAddingEvent(false);
+  const handleSaveEvent = async (event) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      console.log('Attempting to save event:', event);
+
+      const response = await fetch('http://localhost:5000/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(event),
+      });
+
+      if (response.ok) {
+        const savedEvent = await response.json();
+        setEvents((prevEvents) => [...prevEvents, savedEvent.event]);
+        console.log('Event saved successfully:', savedEvent.event);
+        setIsAddingEvent(false);  // Close modal after saving
+      } else {
+        throw new Error('Failed to save event');
+      }
+    } catch (error) {
+      console.error('Error saving event:', error);
+    }
   };
 
   const toggleSidebar = () => {
