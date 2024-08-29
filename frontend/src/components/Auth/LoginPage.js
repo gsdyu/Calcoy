@@ -33,19 +33,18 @@ const LoginPage = () => {
       });
 
       if (result.error) {
-        setError('Invalid email or password');
+        setError('Invalid email or password');  
+        
       } else {
-        router.push('/calendar'); // Redirect to the main app page after successful login
+        router.push('/calendar');  
       }
     } catch (error) {
       console.error('Login error:', error);
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred'); 
     }
   };
 
-  const handleSocialLogin = (provider) => {
-    signIn(provider, { callbackUrl: '/calendar' });
-  };
+ 
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);

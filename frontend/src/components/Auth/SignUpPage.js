@@ -58,11 +58,11 @@ const SignUpPage = () => {
     
     if (Object.keys(formErrors).length === 0) {
       try {
-        const response = await fetch('http://localhost:5000/auth/signup', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(formData)
-        });
+const response = await fetch('http://localhost:5000/auth/signup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(formData)
+});
         
         if (response.ok) {
           router.push('/auth/login');
