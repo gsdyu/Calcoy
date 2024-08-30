@@ -1,15 +1,25 @@
-## to run express server on CLI:
+## to run express server that can store into a local Postgre server:
 
-install packages if not done so yet
+install necessary packages
 
 ```
 npm install
 ```
 
+have a running local Postgre server.
+1. download and configure Postgre (maybe from the website)
+2. create a db (this backend currently does not set up a database for you)
+3. change the env variable (.env) DATABASE_URL to your correspoding database name. (if you look at the URL in .env it should be intuitive on what to change)
+
 run the server
 
 ```
-node server.js
+node index.js
 ```
 
-features implemented is localhost:3000/user handled by the router in router/user.js
+note: 
+
+- you can create/login an account (not with third party logins) and add events association with an accounts once login
+- currently the code does not have a way to drop tables; you must do so manually through Postgre directly (pgadmin/psql)
+
+

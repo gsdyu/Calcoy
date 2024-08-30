@@ -38,7 +38,8 @@ pool.query(`
     location VARCHAR(255),
     frequency VARCHAR(50),
     calendar VARCHAR(50),
-    CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time)
+    CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time),
+	CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
   );
 `).then(() => console.log("Events table is ready"))
   .catch(err => console.error('Error creating events table:', err));
