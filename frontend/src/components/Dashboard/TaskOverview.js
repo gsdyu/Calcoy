@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
+// Function to generate mock data for different time frames
 const generateData = (timeFrame, year, month) => {
   switch (timeFrame) {
     case 'week':
@@ -37,6 +38,7 @@ const generateData = (timeFrame, year, month) => {
   }
 };
 
+// Function to get the week number of a given date
 const getWeekNumber = (d) => {
   d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
@@ -45,6 +47,7 @@ const getWeekNumber = (d) => {
   return { week: weekNo, year: d.getUTCFullYear() };
 };
 
+// Component for weekly overview
 const WeeklyOverviewComponent = ({ data }) => {
   return (
     <div className="grid grid-cols-7 gap-4">
@@ -68,6 +71,7 @@ const WeeklyOverviewComponent = ({ data }) => {
   );
 };
 
+// Component for monthly calendar view
 const MonthlyCalendarView = ({ data, year, month }) => {
   const firstDayOfMonth = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -110,6 +114,7 @@ const MonthlyCalendarView = ({ data, year, month }) => {
   );
 };
 
+// Component for yearly overview
 const YearlyOverviewComponent = ({ data }) => {
   return (
     <div className="grid grid-cols-4 gap-4">
@@ -133,6 +138,7 @@ const YearlyOverviewComponent = ({ data }) => {
   );
 };
 
+// Main TaskOverviewComponent
 const TaskOverviewComponent = () => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -191,53 +197,88 @@ const TaskOverviewComponent = () => {
           <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-200">
             {timeFrame === 'week' ? 'Weekly' : timeFrame === 'month' ? 'Monthly' : 'Yearly'} Task Overview
           </CardTitle>
+          {/* Navigation Container */}
           <div className="flex space-x-2">
-            <Select value={timeFrame} onValueChange={setTimeFrame}>
-              <SelectTrigger className="w-[160px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-4 py-2">
-                <SelectValue placeholder="Time Frame" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-                <SelectItem value="year">Yearly</SelectItem>
-              </SelectContent>
-            </Select>
-            <div className="flex items-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2 w-[160px] justify-between">
-              <Button variant="ghost" size="sm" onClick={handlePrev}>
+            {/* Time Frame Selector */}
+            <div className="h-10">
+              <Select value={timeFrame} onValueChange={setTimeFrame}>
+                <SelectTrigger className="w-[100px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-4 py-2">
+                  <SelectValue placeholder="Time Frame" />
+                </SelectTrigger>
+                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
+                  <SelectItem value="week" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Weekly</SelectItem>
+                  <SelectItem value="month" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Monthly</SelectItem>
+                  <SelectItem value="year" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Yearly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Date Navigation */}
+            <div className="h-10 flex items-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2">
+              <Button variant="ghost" size="sm" onClick={handlePrev} className="h-full">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-gray-800 dark:text-gray-200">
+              <span className="text-sm text-gray-800 dark:text-gray-200 mx-2">
                 {timeFrame === 'week' && `Week ${currentWeek.week}, ${currentWeek.year}`}
                 {timeFrame === 'month' && selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 {timeFrame === 'year' && selectedDate.getFullYear()}
               </span>
-              <Button variant="ghost" size="sm" onClick={handleNext}>
+              <Button variant="ghost" size="sm" onClick={handleNext} className="h-full">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Calendar className="h-4 w-4" />
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
-                <CalendarComponent
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleDateSelect}
-                  initialFocus
-                />
-              </PopoverContent>
-            </Popover>
+
+            {/* Calendar Popup */}
+            <div className="h-10">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-full">
+                    <Calendar className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={handleDateSelect}
+                    initialFocus
+                    className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-md p-3"
+                    classNames={{
+                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+                      month: "space-y-4",
+                      caption: "flex justify-center pt-1 relative items-center",
+                      caption_label: "text-sm font-medium",
+                      nav: "space-x-1 flex items-center",
+                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+                      nav_button_previous: "absolute left-1",
+                      nav_button_next: "absolute right-1",
+                      table: "w-full border-collapse space-y-1",
+                      head_row: "flex",
+                      head_cell: "text-gray-500 dark:text-gray-400 rounded-md w-8 font-normal text-[0.8rem]",
+                      row: "flex w-full mt-2",
+                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+                      day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100",
+                      day_selected: "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 focus:text-white",
+                      day_today: "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
+                      day_outside: "text-gray-400 dark:text-gray-600 opacity-50",
+                      day_disabled: "text-gray-400 dark:text-gray-600",
+                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+                      day_hidden: "invisible",
+                    }}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
       </CardHeader>
       <CardContent>
+        {/* Content based on selected time frame */}
         {timeFrame === 'week' && <WeeklyOverviewComponent data={data} />}
         {timeFrame === 'month' && <MonthlyCalendarView data={data} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} />}
         {timeFrame === 'year' && <YearlyOverviewComponent data={data} />}
 
+        {/* Summary statistics */}
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
             <div className="flex justify-between items-center">
