@@ -70,29 +70,39 @@ const WeeklyOverviewComponent = ({ data }) => {
 
 const MonthlyCalendarView = ({ data, year, month }) => {
   const firstDayOfMonth = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
   const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+  const days = [...Array(firstDayOfMonth).fill(null), ...data];
 
   return (
     <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
       <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">{monthNames[month]} {year}</h2>
-      <div className="grid grid-cols-7 gap-2 mb-4">
+      <div className="grid grid-cols-7 gap-4">
         {weekdays.map(day => (
-          <div key={day} className="text-center font-bold text-gray-600 dark:text-gray-400 p-2">
+          <div key={day} className="text-center font-semibold text-gray-600 dark:text-gray-400">
             {day}
           </div>
         ))}
-        {Array.from({ length: firstDayOfMonth }).map((_, index) => (
-          <div key={`empty-${index}`} className="p-2"></div>
-        ))}
-        {data.map((day) => (
-          <div key={day.day} className="bg-gray-100 dark:bg-gray-700 p-2 rounded-lg text-center">
-            <div className="font-semibold text-gray-800 dark:text-gray-200 mb-1">{day.day}</div>
-            <div className="flex flex-col items-center space-y-1 text-xs">
-              <span className="text-green-600 dark:text-green-400">{day.completed} ✓</span>
-              <span className="text-red-600 dark:text-red-400">{day.missed} ✗</span>
-              <span className="text-blue-600 dark:text-blue-400">{day.upcoming} ◷</span>
-            </div>
+        {days.map((day, index) => (
+          <div key={index} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
+            {day && (
+              <>
+                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{day.day}</h3>
+                <div className="space-y-1">
+                  <p className="text-sm">
+                    <span className="text-green-600 dark:text-green-400">✓ {day.completed}</span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-red-600 dark:text-red-400">✗ {day.missed}</span>
+                  </p>
+                  <p className="text-sm">
+                    <span className="text-blue-600 dark:text-blue-400">◷ {day.upcoming}</span>
+                  </p>
+                </div>
+              </>
+            )}
           </div>
         ))}
       </div>
