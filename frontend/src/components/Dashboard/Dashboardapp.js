@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react';
-import TaskOverviewComponent from './TaskOverview';
+import TaskOverviewComponent from './Taskoverview/TaskOverview';
 import AIInsightsComponent from './AI';
 import RecentCheckIns from './CheckIns';
 

@@ -1,144 +1,17 @@
 'use client'
 
 import React, { useState, useMemo, useEffect } from 'react';
-import { Calendar, CheckCircle, XCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, CheckCircle, AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import WeeklyOverviewComponent from './WeeklyOverview';
+import MonthlyCalendarView from './MonthlyOverview';
+import YearlyOverviewComponent from './YearlyOverview';
+import { generateData, getWeekNumber } from './dateutils';
 
-// Function to generate mock data for different time frames
-const generateData = (timeFrame, year, month) => {
-  switch (timeFrame) {
-    case 'week':
-      return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => ({
-        name: day,
-        completed: Math.floor(Math.random() * 10),
-        missed: Math.floor(Math.random() * 5),
-        upcoming: Math.floor(Math.random() * 7)
-      }));
-    case 'month':
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      return Array.from({ length: daysInMonth }, (_, i) => ({
-        day: i + 1,
-        completed: Math.floor(Math.random() * 5),
-        missed: Math.floor(Math.random() * 3),
-        upcoming: Math.floor(Math.random() * 4)
-      }));
-    case 'year':
-      return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(month => ({
-        name: month,
-        completed: Math.floor(Math.random() * 100),
-        missed: Math.floor(Math.random() * 50),
-        upcoming: Math.floor(Math.random() * 75)
-      }));
-    default:
-      return [];
-  }
-};
-
-// Function to get the week number of a given date
-const getWeekNumber = (d) => {
-  d = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
-  return { week: weekNo, year: d.getUTCFullYear() };
-};
-
-// Component for weekly overview
-const WeeklyOverviewComponent = ({ data }) => {
-  return (
-    <div className="grid grid-cols-7 gap-4">
-      {data.map((dayData) => (
-        <div key={dayData.name} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{dayData.name}</h3>
-          <div className="space-y-1">
-            <p className="text-sm">
-              <span className="text-green-600 dark:text-green-400">✓ {dayData.completed}</span>
-            </p>
-            <p className="text-sm">
-              <span className="text-red-600 dark:text-red-400">✗ {dayData.missed}</span>
-            </p>
-            <p className="text-sm">
-              <span className="text-blue-600 dark:text-blue-400">◷ {dayData.upcoming}</span>
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Component for monthly calendar view
-const MonthlyCalendarView = ({ data, year, month }) => {
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
-  const days = [...Array(firstDayOfMonth).fill(null), ...data];
-
-  return (
-    <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
-      <h2 className="text-xl font-bold mb-4 text-gray-800 dark:text-gray-200">{monthNames[month]} {year}</h2>
-      <div className="grid grid-cols-7 gap-4">
-        {weekdays.map(day => (
-          <div key={day} className="text-center font-semibold text-gray-600 dark:text-gray-400">
-            {day}
-          </div>
-        ))}
-        {days.map((day, index) => (
-          <div key={index} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-            {day && (
-              <>
-                <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{day.day}</h3>
-                <div className="space-y-1">
-                  <p className="text-sm">
-                    <span className="text-green-600 dark:text-green-400">✓ {day.completed}</span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-red-600 dark:text-red-400">✗ {day.missed}</span>
-                  </p>
-                  <p className="text-sm">
-                    <span className="text-blue-600 dark:text-blue-400">◷ {day.upcoming}</span>
-                  </p>
-                </div>
-              </>
-            )}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-};
-
-// Component for yearly overview
-const YearlyOverviewComponent = ({ data }) => {
-  return (
-    <div className="grid grid-cols-4 gap-4">
-      {data.map((monthData) => (
-        <div key={monthData.name} className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-md border border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-200 mb-2">{monthData.name}</h3>
-          <div className="space-y-1">
-            <p className="text-sm">
-              <span className="text-green-600 dark:text-green-400">✓ {monthData.completed}</span>
-            </p>
-            <p className="text-sm">
-              <span className="text-red-600 dark:text-red-400">✗ {monthData.missed}</span>
-            </p>
-            <p className="text-sm">
-              <span className="text-blue-600 dark:text-blue-400">◷ {monthData.upcoming}</span>
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
-// Main TaskOverviewComponent
 const TaskOverviewComponent = () => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -197,9 +70,7 @@ const TaskOverviewComponent = () => {
           <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-200">
             {timeFrame === 'week' ? 'Weekly' : timeFrame === 'month' ? 'Monthly' : 'Yearly'} Task Overview
           </CardTitle>
-          {/* Navigation Container */}
           <div className="flex space-x-2">
-            {/* Time Frame Selector */}
             <div className="h-10">
               <Select value={timeFrame} onValueChange={setTimeFrame}>
                 <SelectTrigger className="w-[100px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-4 py-2">
@@ -213,7 +84,6 @@ const TaskOverviewComponent = () => {
               </Select>
             </div>
             
-            {/* Date Navigation */}
             <div className="h-10 flex items-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2">
               <Button variant="ghost" size="sm" onClick={handlePrev} className="h-full">
                 <ChevronLeft className="h-4 w-4" />
@@ -228,7 +98,6 @@ const TaskOverviewComponent = () => {
               </Button>
             </div>
 
-            {/* Calendar Popup */}
             <div className="h-10">
               <Popover>
                 <PopoverTrigger asChild>
@@ -243,28 +112,6 @@ const TaskOverviewComponent = () => {
                     onSelect={handleDateSelect}
                     initialFocus
                     className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-md p-3"
-                    classNames={{
-                      months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
-                      month: "space-y-4",
-                      caption: "flex justify-center pt-1 relative items-center",
-                      caption_label: "text-sm font-medium",
-                      nav: "space-x-1 flex items-center",
-                      nav_button: "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
-                      nav_button_previous: "absolute left-1",
-                      nav_button_next: "absolute right-1",
-                      table: "w-full border-collapse space-y-1",
-                      head_row: "flex",
-                      head_cell: "text-gray-500 dark:text-gray-400 rounded-md w-8 font-normal text-[0.8rem]",
-                      row: "flex w-full mt-2",
-                      cell: "text-center text-sm p-0 relative [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
-                      day: "h-8 w-8 p-0 font-normal aria-selected:opacity-100",
-                      day_selected: "bg-blue-600 text-white hover:bg-blue-700 focus:bg-blue-700 focus:text-white",
-                      day_today: "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100",
-                      day_outside: "text-gray-400 dark:text-gray-600 opacity-50",
-                      day_disabled: "text-gray-400 dark:text-gray-600",
-                      day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
-                      day_hidden: "invisible",
-                    }}
                   />
                 </PopoverContent>
               </Popover>
@@ -273,12 +120,10 @@ const TaskOverviewComponent = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {/* Content based on selected time frame */}
         {timeFrame === 'week' && <WeeklyOverviewComponent data={data} />}
         {timeFrame === 'month' && <MonthlyCalendarView data={data} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} />}
         {timeFrame === 'year' && <YearlyOverviewComponent data={data} />}
 
-        {/* Summary statistics */}
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
             <div className="flex justify-between items-center">
