@@ -19,7 +19,7 @@ node index.js
 
 note: 
 
-- you can create/login an account (not with third party logins) and add events associated with an accounts once login
+- you can create/login an account (not with third party logins) and add events associated with an account once login
 - currently the code does not have a way to drop tables; you must do so manually through Postgre directly (pgadmin/psql)
 
 
