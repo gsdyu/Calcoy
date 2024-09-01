@@ -16,13 +16,45 @@ const TaskOverviewComponent = () => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({ week: 0, year: 0 });
+  const [weeklyData, setWeeklyData] = useState([]);
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [yearlyData, setYearlyData] = useState([]);
 
   useEffect(() => {
     const { week, year } = getWeekNumber(selectedDate);
     setCurrentWeek({ week, year });
   }, [selectedDate]);
 
-  const data = useMemo(() => generateData(timeFrame, selectedDate.getFullYear(), selectedDate.getMonth()), [timeFrame, selectedDate]);
+  useEffect(() => {
+    setWeeklyData(generateData('week', selectedDate.getFullYear(), selectedDate.getMonth()));
+    setMonthlyData(generateData('month', selectedDate.getFullYear(), selectedDate.getMonth()));
+    setYearlyData(generateData('year', selectedDate.getFullYear(), selectedDate.getMonth()));
+  }, [selectedDate]);
+
+  const data = useMemo(() => {
+    switch (timeFrame) {
+      case 'week':
+        return weeklyData;
+      case 'month':
+        return monthlyData;
+      case 'year':
+        return yearlyData;
+      default:
+        return [];
+    }
+  }, [timeFrame, weeklyData, monthlyData, yearlyData]);
+
+  const handleWeeklyDataUpdate = (newData) => {
+    setWeeklyData(newData);
+  };
+
+  const handleMonthlyDataUpdate = (newData) => {
+    setMonthlyData(newData);
+  };
+
+  const handleYearlyDataUpdate = (newData) => {
+    setYearlyData(newData);
+  };
 
   const { totalCompleted, totalMissed, totalUpcoming, completionRate } = useMemo(() => {
     if (!data || data.length === 0) {
@@ -120,9 +152,9 @@ const TaskOverviewComponent = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {timeFrame === 'week' && <WeeklyOverviewComponent data={data} />}
-        {timeFrame === 'month' && <MonthlyCalendarView data={data} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} />}
-        {timeFrame === 'year' && <YearlyOverviewComponent data={data} />}
+        {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} />}
+        {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} />}
+        {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} />}
 
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
