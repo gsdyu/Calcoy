@@ -4,6 +4,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Calendar, Plus, User, Settings, LogOut, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import Toggle from '@/components/common/Toggle';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link'; 
 
 const DefaultProfileIcon = () => (
   <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -16,6 +18,7 @@ const GroupCalendars = ({ onProfileOpen, displayName, profileImage, toggleSideba
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
   const profileButtonRef = useRef(null);
+  const router = useRouter(); 
   const groupCalendars = [
     { id: 1, name: "Team Events", icon: "👥" },
     { id: 2, name: "Family Calendar", icon: "👪" },
@@ -82,9 +85,13 @@ const GroupCalendars = ({ onProfileOpen, displayName, profileImage, toggleSideba
             >
               <User size={18} className="inline mr-2" /> Profile
             </button>
-            <button className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}>
-              <Settings size={18} className="inline mr-2" /> Settings
-            </button>
+            <Link 
+              href="/dashboard"
+              className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'} block`}
+              onClick={() => setIsProfileMenuOpen(false)}
+            >
+              <Settings size={18} className="inline mr-2" /> Dashboard
+            </Link>
             <button className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}>
               Subscription
             </button>

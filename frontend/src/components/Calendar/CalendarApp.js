@@ -25,7 +25,16 @@ const CalendarApp = () => {
   const [shiftDirection, setShiftDirection] = useState(null);
 
   useEffect(() => {
+    // Initialize selectedWeekStart and selectedDate when the component mounts
+    const today = new Date();
+    const weekStart = new Date(today);
+    weekStart.setDate(today.getDate() - today.getDay());
+    setSelectedWeekStart(weekStart);
+    setSelectedDate(today);
+
+    // Set up connection to database
     const token = localStorage.getItem('token');
+
     if (!token) return;
 
     const fetchEvents = async () => {
@@ -46,6 +55,7 @@ const CalendarApp = () => {
     };
 
     fetchEvents();
+
   }, [displayName]);
 
   const handleDateChange = (date, direction) => {
