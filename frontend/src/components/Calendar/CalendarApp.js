@@ -124,22 +124,6 @@ const CalendarApp = () => {
 
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
-      <GroupCalendars 
-        onProfileOpen={handleProfileOpen}
-        displayName={displayName}
-        profileImage={profileImage}
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
-      />
-      <div className={`flex transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
-        <Sidebar 
-          onDateSelect={handleMiniCalendarDateSelect}
-          currentView={view}
-          onViewChange={handleViewChange}
-          onClose={toggleSidebar}
-          mainCalendarDate={selectedDate || currentDate}
-        />
-      </div>
       <div className="flex-1 flex flex-col overflow-hidden">
         <CalendarHeader 
           currentDate={selectedDate || currentDate}
@@ -178,6 +162,26 @@ const CalendarApp = () => {
             />
           )}
         </div>
+      </div>
+      <div className="flex">
+        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+          {isSidebarOpen && (
+            <Sidebar 
+              onDateSelect={handleMiniCalendarDateSelect}
+              currentView={view}
+              onViewChange={handleViewChange}
+              onClose={toggleSidebar}
+              mainCalendarDate={selectedDate || currentDate}
+            />
+          )}
+        </div>
+        <GroupCalendars 
+          onProfileOpen={handleProfileOpen}
+          displayName={displayName}
+          profileImage={profileImage}
+          toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
       </div>
       {isAddingEvent && (
         <AddEditEventModal 

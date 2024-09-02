@@ -36,6 +36,7 @@ const Navbar = () => {
       >
         <Plus className="h-5 w-5 min-w-[20px]" />
         {!isCollapsed && <span className="ml-3">Add event</span>}
+        <Plus className={isCollapsed ? collapsedIconSize : "h-5 w-5"} />
       </Button>
       <nav className="w-full px-1 flex-grow">
         <MenuItem 
