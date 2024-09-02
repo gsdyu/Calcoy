@@ -30,13 +30,12 @@ const Navbar = () => {
         variant="primary"
         className={`
           mx-2 my-2 bg-blue-500 text-white hover:bg-blue-600
-          flex items-center justify-start
+          flex items-center justify-center
           ${isCollapsed ? "p-2" : "px-3 py-2"}
         `}
       >
         <Plus className="h-5 w-5 min-w-[20px]" />
         {!isCollapsed && <span className="ml-3">Add event</span>}
-        <Plus className={isCollapsed ? collapsedIconSize : "h-5 w-5"} />
       </Button>
       <nav className="w-full px-1 flex-grow">
         <MenuItem 
