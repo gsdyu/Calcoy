@@ -12,7 +12,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
         <div className="flex items-center">
           <Avatar className="h-8 w-8">
             <AvatarImage src="/api/placeholder/32/32" alt="User" />
-            <AvatarFallback>BD</AvatarFallback>
+            <AvatarFallback className={darkMode ? 'text-white bg-gray-600' : ''}>BD</AvatarFallback>
           </Avatar>
           {!isCollapsed && (
             <div className="ml-3">
@@ -31,7 +31,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
             }`}
           >
             <LogOut className={`h-4 w-4 ${
-              darkMode ? 'text-gray-300' : 'text-gray-500'
+              darkMode ? 'text-white' : 'text-gray-500'
             }`} />
           </Button>
         )}

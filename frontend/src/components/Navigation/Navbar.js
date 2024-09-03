@@ -13,6 +13,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
     setIsCollapsed(!isCollapsed);
   };
 
+  const iconColor = darkMode ? "text-white" : "text-gray-600";
+
   return (
     <div className={`
       fixed top-0 left-0 h-screen shadow-lg 
@@ -28,7 +30,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           className={`rounded-full p-1 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"}`}
           onClick={toggleCollapse}
         >
-          {isCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          {isCollapsed ? <ChevronRight className={`h-4 w-4 ${iconColor}`} /> : <ChevronLeft className={`h-4 w-4 ${iconColor}`} />}
         </Button>
       </div>
       <Button
@@ -51,6 +53,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => setActiveItem('Dashboard')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          iconColor={iconColor}
         />
         <MenuItem 
           icon={Calendar} 
@@ -59,6 +62,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => setActiveItem('Calendar')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          iconColor={iconColor}
         />
         <MenuItem 
           icon={Brain} 
@@ -67,11 +71,12 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => setActiveItem('AI')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          iconColor={iconColor}
         />
       </nav>
       <div className="mt-auto">
-        <Settings isCollapsed={isCollapsed} activeItem={activeItem} setActiveItem={setActiveItem} darkMode={darkMode} />
-        <Profile isCollapsed={isCollapsed} darkMode={darkMode} />
+        <Settings isCollapsed={isCollapsed} activeItem={activeItem} setActiveItem={setActiveItem} darkMode={darkMode} iconColor={iconColor} />
+        <Profile isCollapsed={isCollapsed} darkMode={darkMode} iconColor={iconColor} />
       </div>
     </div>
   );
