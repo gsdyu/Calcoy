@@ -1,4 +1,5 @@
 import React from 'react';
+import { useRouter } from 'next/navigation';  
 import { Button } from "@/components/ui/button";
 import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import MenuItem from './MenuItem';
@@ -8,12 +9,30 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddEvent }) => {
   const { darkMode } = useTheme();
+  const router = useRouter();  
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const iconColor = darkMode ? "text-white" : "text-gray-600";
+
+  // Function to handle navigation
+  const handleNavigation = (route) => {
+    setActiveItem(route);
+    // Routing to pages
+    switch (route) {
+      case 'Calendar':
+        router.push('/calendar');  // Routing to calendar page
+        break;
+      case 'Dashboard':
+        router.push('/dashboard')
+        break;
+      // For future cases gonna be here if we add more 
+      default:
+        router.push('/');  
+    }
+  };
 
   return (
     <div className={`
@@ -51,7 +70,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Home} 
           label="Dashboard" 
           isActive={activeItem === 'Dashboard'} 
-          onClick={() => setActiveItem('Dashboard')} 
+          onClick={() => handleNavigation('Dashboard')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
@@ -59,7 +78,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Calendar} 
           label="Calendar" 
           isActive={activeItem === 'Calendar'} 
-          onClick={() => setActiveItem('Calendar')} 
+          onClick={() => handleNavigation('Calendar')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
@@ -67,7 +86,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Brain} 
           label="AI" 
           isActive={activeItem === 'AI'} 
-          onClick={() => setActiveItem('AI')} 
+          onClick={() => handleNavigation('AI')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />

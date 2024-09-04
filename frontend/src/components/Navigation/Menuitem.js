@@ -18,7 +18,7 @@ const MenuItem = ({ icon: Icon, label, isActive, onClick, collapsed, darkMode })
           : isActive ? "bg-blue-100 hover:bg-blue-200" : "hover:bg-gray-200"
         }
       `}
-      onClick={onClick}
+      onClick={() => onClick(label)}  // Call onClick with the label
     >
       <div className="w-10 flex items-center justify-center">
         <Icon className={`h-5 w-5 ${textColor}`} />
