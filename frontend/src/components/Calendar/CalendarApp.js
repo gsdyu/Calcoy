@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Navbar from '@/components/Navigation/Navbar';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 import CalendarHeader from '@/components/Calendar/CalendarHeader';
@@ -23,6 +24,7 @@ const CalendarApp = () => {
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [shiftDirection, setShiftDirection] = useState(null);
+  const [isNavbarCollapsed, setIsNavbarCollapsed] = useState(false);
 
   useEffect(() => {
     // Initialize selectedWeekStart and selectedDate when the component mounts
@@ -134,23 +136,14 @@ const CalendarApp = () => {
 
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
-      <GroupCalendars 
-        onProfileOpen={handleProfileOpen}
-        displayName={displayName}
-        profileImage={profileImage}
-        toggleSidebar={toggleSidebar}
-        isSidebarOpen={isSidebarOpen}
+      <Navbar 
+        isCollapsed={isNavbarCollapsed}
+        setIsCollapsed={setIsNavbarCollapsed}
+        activeItem={view}
+        setActiveItem={handleViewChange}
+        onAddEvent={() => handleAddEvent()}
       />
-      <div className={`flex transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
-        <Sidebar 
-          onDateSelect={handleMiniCalendarDateSelect}
-          currentView={view}
-          onViewChange={handleViewChange}
-          onClose={toggleSidebar}
-          mainCalendarDate={selectedDate || currentDate}
-        />
-      </div>
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden transition-all duration-300 ${isNavbarCollapsed ? 'ml-14' : 'ml-60'}`}>
         <CalendarHeader 
           currentDate={selectedDate || currentDate}
           view={view}
@@ -188,6 +181,26 @@ const CalendarApp = () => {
             />
           )}
         </div>
+      </div>
+      <div className="flex">
+        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+          {isSidebarOpen && (
+            <Sidebar 
+              onDateSelect={handleMiniCalendarDateSelect}
+              currentView={view}
+              onViewChange={handleViewChange}
+              onClose={toggleSidebar}
+              mainCalendarDate={selectedDate || currentDate}
+            />
+          )}
+        </div>
+        <GroupCalendars 
+          onProfileOpen={handleProfileOpen}
+          displayName={displayName}
+          profileImage={profileImage}
+          toggleSidebar={toggleSidebar}
+          isSidebarOpen={isSidebarOpen}
+        />
       </div>
       {isAddingEvent && (
         <AddEditEventModal 

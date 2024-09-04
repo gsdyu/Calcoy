@@ -41,6 +41,12 @@ const GroupCalendars = ({ onProfileOpen, displayName, profileImage, toggleSideba
 
   return (
     <div className={`w-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} flex flex-col items-center py-4 h-screen relative z-20`}>
+      <button 
+        onClick={toggleSidebar}
+        className={`absolute -left-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition-all duration-300`}
+      >
+        {isSidebarOpen ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
+      </button>
       <div className="flex-grow flex flex-col items-center space-y-4">
         <button className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center">
           <Calendar size={24} />
@@ -74,7 +80,7 @@ const GroupCalendars = ({ onProfileOpen, displayName, profileImage, toggleSideba
         {isProfileMenuOpen && (
           <div 
             ref={profileMenuRef}
-            className={`fixed bottom-16 left-16 w-60 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1 z-50`}
+            className={`fixed bottom-16 right-16 w-60 ${darkMode ? 'bg-gray-800' : 'bg-white'} rounded-md shadow-lg py-1 z-50`}
           >
             <button 
               className={`w-full text-left px-4 py-2 ${darkMode ? 'hover:bg-gray-700 text-white' : 'hover:bg-gray-100 text-gray-800'}`}
@@ -105,12 +111,6 @@ const GroupCalendars = ({ onProfileOpen, displayName, profileImage, toggleSideba
           </div>
         )}
       </div>
-      <button 
-        onClick={toggleSidebar}
-        className={`absolute -right-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition-all duration-300`}
-      >
-        {isSidebarOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
-      </button>
     </div>
   );
 };

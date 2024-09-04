@@ -50,7 +50,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
       {/* Day header */}
-      <div className={`text-center py-2 border-b border-gray-700 ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''}`}>
+      <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''}`}>
         <h2 className={`text-lg font-semibold
           transition-all duration-300 ease-in-out
           ${shiftDirection === 'left' ? 'translate-x-4 opacity-0' : 
@@ -64,7 +64,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
         {hours.map((hour) => (
-          <div key={hour} className="flex border-b border-gray-700 min-h-[60px]">
+          <div key={hour} className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[60px]`}>
             <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
               {formatHour(hour)}
             </div>
