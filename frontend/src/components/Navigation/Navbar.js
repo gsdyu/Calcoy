@@ -1,5 +1,5 @@
-import React from 'react';
-import { useRouter } from 'next/navigation';  
+import React, { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon } from 'lucide-react';
 import MenuItem from './MenuItem';
@@ -8,7 +8,8 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddEvent }) => {
   const { darkMode } = useTheme();
-  const router = useRouter();  
+  const router = useRouter();
+  const pathname = usePathname();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
@@ -37,6 +38,21 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         router.push('/');  
     }
   };
+
+  // Updated useEffect hook to sync activeItem with the current route -> There was an issue regarding sometimes press on dashboard changed screen but not nav (Also when pressing the free demo into it would auto go to nav and not to calendar)
+  useEffect(() => {
+    if (pathname.includes('/calendar')) {
+      setActiveItem('Calendar');
+    } else if (pathname.includes('/dashboard')) {
+      setActiveItem('Dashboard');
+    } else if (pathname.includes('/settings')) {
+      setActiveItem('Settings');
+    } else if (pathname.includes('/ai')) {
+      setActiveItem('AI');
+    } else {
+      setActiveItem('Dashboard'); // Default to Dashboard if no match
+    }
+  }, [pathname, setActiveItem]);
 
   return (
     <div className={`
