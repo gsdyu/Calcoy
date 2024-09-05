@@ -4,7 +4,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import NavBar from './NavBar';
 import SearchBar from './SearchBar';
 import Profile from './Profile';
-import Customization from './Customization';
+import CustomizationPage from './CustomizationPage';
 
 
 const Settings = () => {
@@ -17,7 +17,7 @@ const Settings = () => {
       case 'Profile':
         return <Profile />;
       case 'Customization':
-        return <Customization />;
+        return <CustomizationPage />;
       // Add other cases later
       default:
         return <Profile />;

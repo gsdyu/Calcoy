@@ -21,7 +21,6 @@ const NavBar = ({ currentSection, setCurrentSection }) => {
   const handleNavigation = (route) => {
     setCurrentSection(route);
     // Routing for later
-
   };
 
   return (
@@ -29,7 +28,7 @@ const NavBar = ({ currentSection, setCurrentSection }) => {
       <Button
         variant="ghost"
         className={`
-          w-full flex items-center p-2 my-1 text-sm font-medium
+          w-full flex items-center justify-start p-2 my-1 text-sm font-medium
           transition-colors duration-200
           ${darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-200"}
         `}
@@ -43,7 +42,7 @@ const NavBar = ({ currentSection, setCurrentSection }) => {
           key={item.name}
           variant="ghost"
           className={`
-            w-full flex items-center p-2 my-1 text-sm font-medium
+            w-full flex items-center justify-start p-2 my-1 text-sm font-medium
             transition-colors duration-200
             ${currentSection === item.name
               ? darkMode
