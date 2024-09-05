@@ -25,7 +25,7 @@ const SharedLayout = ({ children }) => {
   };
 
   return (
-    <div className={`flex h-screen w-full overflow-hidden ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
+    <div className={`flex h-screen w-full ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       <Navbar 
         isCollapsed={isCollapsed}
         setIsCollapsed={setIsCollapsed}
@@ -33,8 +33,10 @@ const SharedLayout = ({ children }) => {
         setActiveItem={setActiveItem}
         onAddEvent={handleAddEvent}
       />
-      <main className={`flex-1 overflow-hidden transition-all duration-300 ${isCollapsed ? 'ml-14' : 'ml-60'}`}>
-        {children}
+      <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-14' : 'ml-60'}`}>
+        <div className="h-full overflow-y-auto p-6">
+          {children}
+        </div>
       </main>
       {isAddingEvent && (
         <AddEventModal 
