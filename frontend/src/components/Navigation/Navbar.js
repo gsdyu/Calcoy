@@ -1,10 +1,9 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';  
 import { Button } from "@/components/ui/button";
-import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon } from 'lucide-react';
 import MenuItem from './MenuItem';
 import Profile from './Profile';
-import Settings from './Settings';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddEvent }) => {
@@ -23,12 +22,17 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
     // Routing to pages
     switch (route) {
       case 'Calendar':
-        router.push('/calendar');  // Routing to calendar page
+        router.push('/calendar');
         break;
       case 'Dashboard':
-        router.push('/dashboard')
+        router.push('/dashboard');
         break;
-      // For future cases gonna be here if we add more 
+      case 'Settings':
+        router.push('/settings');
+        break;
+      case 'AI':
+        router.push('/ai');
+        break;
       default:
         router.push('/');  
     }
@@ -92,7 +96,14 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         />
       </nav>
       <div className="mt-auto">
-        <Settings isCollapsed={isCollapsed} activeItem={activeItem} setActiveItem={setActiveItem} darkMode={darkMode} />
+        <MenuItem 
+          icon={SettingsIcon} 
+          label="Settings" 
+          isActive={activeItem === 'Settings'} 
+          onClick={() => handleNavigation('Settings')} 
+          collapsed={isCollapsed}
+          darkMode={darkMode}
+        />
         <Profile isCollapsed={isCollapsed} darkMode={darkMode} />
       </div>
     </div>
