@@ -1,0 +1,36 @@
+{
+"events":[
+	{
+		"title":"Study for math",
+		"day":"monday",
+		"start_time":"5pm"
+	},
+	{
+		"title":"Study for english",
+		"day":"monday",
+		"start_time":"8pm",
+		"end_time":"10pm"
+	},
+	{
+		"title":"Hang out with Milly",
+		"day":"monday",
+		"start_time":"10:30pm",
+		"end_time":"12pm"
+	},
+	{
+		"title":"Attend Bio",
+		"day":"tuesday",
+		"start_time":"6am",
+		"end_time":"10am"
+	},
+	{
+		"title":"Study for history",
+		"day":"tuesday",
+		"start_time":"11am"
+	},
+	{
+		"title":"Party with friends",
+		"day":"tuesday",
+		"start_time":"3pm"
+	}
+]}
