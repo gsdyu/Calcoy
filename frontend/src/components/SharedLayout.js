@@ -34,7 +34,7 @@ const SharedLayout = ({ children }) => {
         onAddEvent={handleAddEvent}
       />
       <main className={`flex-1 transition-all duration-300 ${isCollapsed ? 'ml-14' : 'ml-60'}`}>
-        <div className="h-full overflow-y-auto p-6">
+        <div className="h-full overflow-y-auto">
           {children}
         </div>
       </main>
