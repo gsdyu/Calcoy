@@ -1,6 +1,11 @@
+import React from 'react';
+import SharedLayout from '@/components/SharedLayout';
 import CalendarDashboard from '@/components/Dashboard/Dashboardapp';
 
 export default function Dashboard() {
-  return <CalendarDashboard/>;
+  return (
+    <SharedLayout>
+      <CalendarDashboard />
+    </SharedLayout>
+  );
 }
-
