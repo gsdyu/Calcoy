@@ -69,6 +69,28 @@ const DocumentationPage = () => {
                 - Developed Contact page
                 - Added social media links (Instagram, LinkedIn, personal website) to team member profiles
               `}
+              />
+              <DocumentationEntry
+                date="August 21st - August 25th, 2023"
+                author="Nam Ton"
+                content={`
+                - (Mina) Worked on login functionality and implemented encrypted passwords
+                - (Toan) Worked on Figma designs and completed Milestone 1
+                - Enhanced dashboard with daily tasks, AI recommendations, and event statistics
+                - Redesigned sidebar for improved user experience
+                - Implemented new calendar views:
+                  - Week view with enhanced features
+                  - Improved month view
+                  - Year view with event bubbles
+                - Added tooltip feature for hovering over dates in month and week views
+                - Implemented drag and drop functionality for events
+                - Created separate navigation folder and improved navbar
+                - Added sign out feature and profile picture display
+                - Implemented smooth collapse for UI elements
+                - Moved sidebar to the right side for better layout
+                - Worked on desktop Figma designs for future improvements
+                - Improved overall UI/UX, including event collapsed button and nav insertions
+                `}
             />
           </div>
         </div>
