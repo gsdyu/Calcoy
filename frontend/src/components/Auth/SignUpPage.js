@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon, MicrosoftIcon, AppleIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
-
+import { signIn, signOut, useSession } from 'next-auth/react';
 const SignUpPage = () => {
     const [formData, setFormData] = useState({
     username: '',
@@ -192,10 +192,10 @@ const validateForm = () => {
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
                 <div className="mt-6 space-y-4">
-                    <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                                    <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
                         <GoogleIcon className="w-5 h-5 mr-2" />
                         Sign up with Google
-                    </button>
+                    </a>
                     <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
                         <MicrosoftIcon className="w-5 h-5 mr-2" />
                         Sign up with Microsoft

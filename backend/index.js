@@ -2,8 +2,20 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const passport = require('passport');
+const session = require('express-session');
 
+// Initialize express app
 const app = express();
+
+// Initialize PostgreSQL connection pool
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+// Load passport configuration after defining the pool
+require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
@@ -12,11 +24,31 @@ app.use(cors({
     credentials: true
 }));
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+app.use(session({
+  secret: 'some_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
 
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google Auth Route
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google Auth Callback Route
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
+  (req, res) => {
+    // Successful authentication, redirect to the frontend.
+    res.redirect('http://localhost:3000');
+  }
+);
+
+// Routes for authentication and events
+require('./routes/auth')(app, pool);
+require('./routes/events')(app, pool);
+
+// Create tables if they don't exist
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -39,13 +71,11 @@ pool.query(`
     frequency VARCHAR(50),
     calendar VARCHAR(50),
     CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time),
-	CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
+    CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
   );
 `).then(() => console.log("Events table is ready"))
   .catch(err => console.error('Error creating events table:', err));
 
-require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool);
-
+// Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
