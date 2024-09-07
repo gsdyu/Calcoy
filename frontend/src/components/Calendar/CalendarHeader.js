@@ -42,44 +42,55 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   };
 
   return (
-    <div className={`flex justify-between items-center p-2 ${darkMode ? 'bg-gray-800 text-white' : 'bg-gray-200 text-black'} text-sm`}>
-      <h2 className="text-base font-semibold">
-        {formatHeaderDate()}
-      </h2>
+    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} text-sm`}>
+      <div className="flex-1">
+        <h2 className="text-lg font-semibold">
+          {formatHeaderDate()}
+        </h2>
+      </div>
       
-      <div className="flex rounded-md overflow-hidden">
-        <button 
-          className={`px-3 py-1 ${view === 'Day' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-          onClick={() => onViewChange('Day')}
-        >
-          Day
-        </button>
-        <button 
-          className={`px-3 py-1 ${view === 'Week' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-          onClick={() => onViewChange('Week')}
-        >
-          Week
-        </button>
-        <button 
-          className={`px-3 py-1 ${view === 'Month' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-          onClick={() => onViewChange('Month')}
-        >
-          Month
-        </button>
+      <div className="flex-1 flex justify-center">
+        <div className="flex rounded-full overflow-hidden shadow-md">
+          {['Day', 'Week', 'Month'].map((v) => (
+            <button 
+              key={v}
+              className={`px-4 py-2 transition-colors ${
+                view === v 
+                  ? 'bg-blue-600 text-white' 
+                  : darkMode 
+                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
+                    : 'bg-white text-gray-700 hover:bg-gray-200'
+              }`}
+              onClick={() => onViewChange(v)}
+            >
+              {v}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div className="flex items-center space-x-2">
-        <button onClick={goToPrevious}>
-          <ChevronLeft size={16} />
+      <div className="flex-1 flex justify-end items-center space-x-2">
+        <button 
+          onClick={goToPrevious}
+          className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'} transition-colors`}
+        >
+          <ChevronLeft size={20} />
         </button>
         <button 
-          className={`px-3 py-1 ${darkMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-300 hover:bg-gray-400'} rounded transition-colors`} 
+          className={`px-3 py-1 rounded-full ${
+            darkMode 
+              ? 'bg-gray-800 hover:bg-gray-700 text-white' 
+              : 'bg-white hover:bg-gray-100 text-black'
+          } transition-colors shadow-md`}
           onClick={goToToday}
         >
           Today
         </button>
-        <button onClick={goToNext}>
-          <ChevronRight size={16} />
+        <button 
+          onClick={goToNext}
+          className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'} transition-colors`}
+        >
+          <ChevronRight size={20} />
         </button>
       </div>
     </div>
