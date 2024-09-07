@@ -121,6 +121,12 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                 ${isSelected ? darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-100 bg-opacity-20' : ''}
               `}
+              onClick={() => onDateClick(day)}
+              onDoubleClick={() => {
+                const clickedDate = new Date(day);
+                clickedDate.setHours(0, 0, 0, 0); // Set to midnight for all-day events
+                onDateDoubleClick(clickedDate, true); // Pass true to indicate it's an all-day event
+              }}
             >
               {events
                 .filter(event => event.allDay && isSameDay(new Date(event.date), day))
@@ -159,7 +165,7 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
                   onDoubleClick={() => {
                     const clickedDate = new Date(day);
                     clickedDate.setHours(hour);
-                    onDateDoubleClick(clickedDate);
+                    onDateDoubleClick(clickedDate, false); // Pass false to indicate it's not an all-day event
                   }}
                 >
                   {events
