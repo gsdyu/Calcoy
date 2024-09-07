@@ -108,6 +108,36 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
         })}
       </div>
 
+      {/* All-day events row */}
+      <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px]`}>
+        <div className="w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">All-day</div>
+        {weekDays.map((day, dayIndex) => {
+          const isWeekendDay = isWeekend(day);
+          const isSelected = isSameDay(day, selectedDate);
+          return (
+            <div
+              key={`all-day-${dayIndex}`}
+              className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
+                ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                ${isSelected ? darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-100 bg-opacity-20' : ''}
+              `}
+            >
+              {events
+                .filter(event => event.allDay && isSameDay(new Date(event.date), day))
+                .map(event => (
+                  <div
+                    key={event.id}
+                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded"
+                  >
+                    {event.title}
+                  </div>
+                ))
+              }
+            </div>
+          );
+        })}
+      </div>
+
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
         {hours.map((hour) => (
@@ -135,7 +165,8 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
                   {events
                     .filter(event => {
                       const eventDate = new Date(event.date);
-                      return eventDate.getDate() === day.getDate() &&
+                      return !event.allDay &&
+                             eventDate.getDate() === day.getDate() &&
                              eventDate.getMonth() === day.getMonth() &&
                              eventDate.getFullYear() === day.getFullYear() &&
                              parseInt(event.startTime.split(':')[0]) === hour;
