@@ -1,5 +1,3 @@
-'use client';
-
 import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -70,28 +68,27 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
           {formatHeaderDate()}
         </h2>
       </div>
-      <div className="flex items-center space-x-2">
-        <div className="flex rounded-md overflow-hidden">
-          <button 
-            className={`px-3 py-1 ${view === 'Day' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-            onClick={() => onViewChange('Day')}
-          >
-            Day
-          </button>
-          <button 
-            className={`px-3 py-1 ${view === 'Week' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-            onClick={() => onViewChange('Week')}
-          >
-            Week
-          </button>
-          <button 
-            className={`px-3 py-1 ${view === 'Month' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
-            onClick={() => onViewChange('Month')}
-          >
-            Month
-          </button>
-        </div>
+      <div className="flex rounded-md overflow-hidden">
+        <button 
+          className={`px-3 py-1 ${view === 'Day' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
+          onClick={() => onViewChange('Day')}
+        >
+          Day
+        </button>
+        <button 
+          className={`px-3 py-1 ${view === 'Week' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
+          onClick={() => onViewChange('Week')}
+        >
+          Week
+        </button>
+        <button 
+          className={`px-3 py-1 ${view === 'Month' ? 'bg-blue-600 text-white' : darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-300 text-gray-700'}`} 
+          onClick={() => onViewChange('Month')}
+        >
+          Month
+        </button>
       </div>
+      <div className="w-28"></div> {/* Spacer to balance the layout */}
     </div>
   );
 };
