@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEvent }) => {
+const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   const { darkMode } = useTheme();
 
   const goToToday = () => onDateChange(new Date(), 'none');
@@ -91,12 +91,6 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange, onAddEv
             Month
           </button>
         </div>
-        <button 
-          className="px-3 py-1 bg-blue-600 text-white rounded-md flex items-center" 
-          onClick={onAddEvent}
-        >
-          <Plus size={16} className="mr-1" /> Add
-        </button>
       </div>
     </div>
   );
