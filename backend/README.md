@@ -21,5 +21,7 @@ note:
 
 - you can create/login an account (not with third party logins) and add events associated with an account once login
 - currently the code does not have a way to drop tables; you must do so manually through Postgre directly (pgadmin/psql)
+- have an "DATABASE_URL" environment variable. DATABASE_URL=postgres://postgres:test@localhost:5432/mydatabase8
+	- configure port number and database name appropriately
 
 
