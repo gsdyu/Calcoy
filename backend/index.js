@@ -26,7 +26,6 @@ pool.query(`
   );
 `).then(() => {
 	console.log("Users table is ready")
-})
 	pool.query(`
 	  CREATE TABLE IF NOT EXISTS events (
 		id SERIAL PRIMARY KEY,
@@ -43,7 +42,7 @@ pool.query(`
 	  );
 	`).then(() => console.log("Events table is ready"))
 	  .catch(err => console.error('Error creating events table:', err))
-  .catch(err => console.error('Error creating users table:', err));
+}) .catch(err => console.error('Error creating users table:', err));
 
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
