@@ -39,7 +39,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
     }
   };
 
-  // Updated useEffect hook to sync activeItem with the current route -> There was an issue regarding sometimes press on dashboard changed screen but not nav (Also when pressing the free demo into it would auto go to nav and not to calendar)
+  // Updated useEffect hook to sync activeItem with the current route
   useEffect(() => {
     if (pathname.includes('/calendar')) {
       setActiveItem('Calendar');
@@ -75,15 +75,16 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
       <Button
         variant="primary"
         className={`
-          mx-2 my-2 bg-blue-500 text-white hover:bg-blue-600
+          mx-auto my-2 bg-blue-500 text-white hover:bg-blue-600
           flex items-center justify-center
           transition-colors duration-200
-          ${isCollapsed ? "p-2" : "px-3 py-2"}
+          rounded-full
+          ${isCollapsed ? "w-10 h-10" : "w-[90%] h-10"}
         `}
         onClick={onAddEvent}
       >
         <Plus className="h-5 w-5 min-w-[20px]" />
-        {!isCollapsed && <span className="ml-3">Add event</span>}
+        {!isCollapsed && <span className="ml-2">Create</span>}
       </Button>
       <nav className="w-full px-1 flex-grow">
         <MenuItem 
