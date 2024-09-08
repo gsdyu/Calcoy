@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { ClipboardList, CheckCircle, XCircle } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
-const RecentCheckIns = () => {
+const RecentCheckIns = ({ darkMode }) => {
   const [events, setEvents] = useState([
     { id: 1, title: "Team Meeting", date: "2024-08-15 14:00", status: "pending" },
     { id: 2, title: "Project Deadline", date: "2024-08-10 17:00", status: "pending" },
@@ -36,13 +36,15 @@ const RecentCheckIns = () => {
   };
 
   return (
-    <Card className="bg-white dark:bg-gray-800">
+    <Card className={darkMode ? 'bg-gray-800' : 'bg-white'}>
       <CardHeader>
         <div className="flex justify-between items-center">
-          <CardTitle className="text-gray-800 dark:text-gray-200">Recent Check-ins</CardTitle>
+          <CardTitle className={darkMode ? 'text-gray-200' : 'text-gray-800'}>Recent Check-ins</CardTitle>
           <button
             onClick={() => setShowLog(!showLog)}
-            className="flex items-center space-x-2 bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-white px-3 py-1 rounded-md"
+            className={`flex items-center space-x-2 px-3 py-1 rounded-md ${
+              darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
+            }`}
           >
             <ClipboardList size={16} />
             <span>Activity Log</span>
@@ -53,22 +55,24 @@ const RecentCheckIns = () => {
         {!showLog ? (
           <ul className="space-y-3">
             {events.map(event => (
-              <li key={event.id} className="flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700 rounded-md">
+              <li key={event.id} className={`flex items-center justify-between p-2 rounded-md ${
+                darkMode ? 'bg-gray-700' : 'bg-gray-100'
+              }`}>
                 <div>
-                  <p className="font-semibold text-gray-800 dark:text-white">{event.title}</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{new Date(event.date).toLocaleString()}</p>
+                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{event.title}</p>
+                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{new Date(event.date).toLocaleString()}</p>
                 </div>
                 <div className="flex space-x-2">
                   <button 
                     onClick={() => handleEventStatus(event.id, 'completed')}
-                    className="p-1 text-green-600 dark:text-green-400 hover:text-green-500 dark:hover:text-green-300"
+                    className={`p-1 ${darkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-500'}`}
                     title="Mark as completed"
                   >
                     <CheckCircle size={20} />
                   </button>
                   <button 
                     onClick={() => handleEventStatus(event.id, 'missed')}
-                    className="p-1 text-red-600 dark:text-red-400 hover:text-red-500 dark:hover:text-red-300"
+                    className={`p-1 ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'}`}
                     title="Mark as missed"
                   >
                     <XCircle size={20} />
@@ -79,14 +83,14 @@ const RecentCheckIns = () => {
           </ul>
         ) : (
           <div>
-            <h3 className="text-lg font-semibold mb-3 text-gray-800 dark:text-gray-200">Activity Log</h3>
+            <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Activity Log</h3>
             <ul className="space-y-2">
               {activityLog.map((log, index) => (
                 <li key={index} className="text-sm flex items-start space-x-2">
-                  <span className="text-gray-600 dark:text-gray-400 whitespace-nowrap">{log.timestamp}</span>
-                  <span className="text-blue-600 dark:text-blue-400">{log.user}</span>
-                  <span className="text-gray-800 dark:text-gray-200">{log.action}</span>
-                  <span className="text-gray-600 dark:text-gray-400">"{log.details}"</span>
+                  <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{log.timestamp}</span>
+                  <span className={darkMode ? 'text-blue-400' : 'text-blue-600'}>{log.user}</span>
+                  <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>{log.action}</span>
+                  <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>"{log.details}"</span>
                 </li>
               ))}
             </ul>

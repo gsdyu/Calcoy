@@ -1,19 +1,58 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
-import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon } from 'lucide-react';
 import MenuItem from './MenuItem';
 import Profile from './Profile';
-import Settings from './Settings';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddEvent }) => {
   const { darkMode } = useTheme();
+  const router = useRouter();
+  const pathname = usePathname();
 
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
 
   const iconColor = darkMode ? "text-white" : "text-gray-600";
+
+  // Function to handle navigation
+  const handleNavigation = (route) => {
+    setActiveItem(route);
+    // Routing to pages
+    switch (route) {
+      case 'Calendar':
+        router.push('/calendar');
+        break;
+      case 'Dashboard':
+        router.push('/dashboard');
+        break;
+      case 'Settings':
+        router.push('/settings');
+        break;
+      case 'AI':
+        router.push('/ai');
+        break;
+      default:
+        router.push('/');  
+    }
+  };
+
+  // Updated useEffect hook to sync activeItem with the current route -> There was an issue regarding sometimes press on dashboard changed screen but not nav (Also when pressing the free demo into it would auto go to nav and not to calendar)
+  useEffect(() => {
+    if (pathname.includes('/calendar')) {
+      setActiveItem('Calendar');
+    } else if (pathname.includes('/dashboard')) {
+      setActiveItem('Dashboard');
+    } else if (pathname.includes('/settings')) {
+      setActiveItem('Settings');
+    } else if (pathname.includes('/ai')) {
+      setActiveItem('AI');
+    } else {
+      setActiveItem('Dashboard'); // Default to Dashboard if no match
+    }
+  }, [pathname, setActiveItem]);
 
   return (
     <div className={`
@@ -51,7 +90,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Home} 
           label="Dashboard" 
           isActive={activeItem === 'Dashboard'} 
-          onClick={() => setActiveItem('Dashboard')} 
+          onClick={() => handleNavigation('Dashboard')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
@@ -59,7 +98,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Calendar} 
           label="Calendar" 
           isActive={activeItem === 'Calendar'} 
-          onClick={() => setActiveItem('Calendar')} 
+          onClick={() => handleNavigation('Calendar')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
@@ -67,13 +106,20 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           icon={Brain} 
           label="AI" 
           isActive={activeItem === 'AI'} 
-          onClick={() => setActiveItem('AI')} 
+          onClick={() => handleNavigation('AI')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
       </nav>
       <div className="mt-auto">
-        <Settings isCollapsed={isCollapsed} activeItem={activeItem} setActiveItem={setActiveItem} darkMode={darkMode} />
+        <MenuItem 
+          icon={SettingsIcon} 
+          label="Settings" 
+          isActive={activeItem === 'Settings'} 
+          onClick={() => handleNavigation('Settings')} 
+          collapsed={isCollapsed}
+          darkMode={darkMode}
+        />
         <Profile isCollapsed={isCollapsed} darkMode={darkMode} />
       </div>
     </div>
