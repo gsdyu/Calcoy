@@ -28,6 +28,9 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
     return eventDate.toDateString() === currentDate.toDateString();
   });
 
+  const allDayEvents = filteredEvents.filter(event => event.allDay);
+  const timedEvents = filteredEvents.filter(event => !event.allDay);
+
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
       width: 12px;
@@ -61,6 +64,30 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
         </h2>
       </div>
 
+      {/* All-day events section */}
+      <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px] relative`}>
+        <div className="absolute left-0 top-0 bottom-0 w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">
+          All-day
+        </div>
+        <div 
+          className="ml-16 h-full relative"
+          onDoubleClick={() => {
+            const clickedDate = new Date(currentDate);
+            clickedDate.setHours(0, 0, 0, 0);
+            onDateDoubleClick(clickedDate, true);
+          }}
+        >
+          {allDayEvents.map(event => (
+            <div
+              key={event.id}
+              className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded"
+            >
+              {event.title}
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
         {hours.map((hour) => (
@@ -73,10 +100,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
               onDoubleClick={() => {
                 const clickedDate = new Date(currentDate);
                 clickedDate.setHours(hour);
-                onDateDoubleClick(clickedDate);
+                onDateDoubleClick(clickedDate, false);
               }}
             >
-              {filteredEvents
+              {timedEvents
                 .filter(event => parseInt(event.startTime.split(':')[0]) === hour)
                 .map(event => (
                   <div
