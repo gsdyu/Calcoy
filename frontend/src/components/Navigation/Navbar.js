@@ -62,7 +62,10 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
       ${isCollapsed ? "w-14" : "w-60"}
       ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}
     `}>
-      <div className="flex items-center justify-end p-3">
+      <div className="flex items-center justify-between p-3">
+        {!isCollapsed && (
+          <h1 className="text-xl font-bold font-serif ml-2">TimeWise</h1>
+        )}
         <Button 
           variant="ghost" 
           size="sm" 
