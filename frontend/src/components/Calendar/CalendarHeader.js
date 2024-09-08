@@ -24,21 +24,14 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   };
 
   const formatHeaderDate = () => {
-    if (view === 'Day') {
-      return currentDate.toLocaleString('default', { month: 'long', day: 'numeric', year: 'numeric' });
-    } else if (view === 'Week') {
-      const weekStart = new Date(currentDate);
-      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-      const weekEnd = new Date(weekStart);
-      weekEnd.setDate(weekEnd.getDate() + 6);
-      if (weekStart.getMonth() === weekEnd.getMonth()) {
-        return `${weekStart.toLocaleString('default', { month: 'long' })} ${weekStart.getFullYear()}`;
-      } else {
-        return `${weekStart.toLocaleString('default', { month: 'short' })} - ${weekEnd.toLocaleString('default', { month: 'short' })} ${weekEnd.getFullYear()}`;
-      }
-    } else {
-      return currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-    }
+    const month = currentDate.toLocaleString('default', { month: 'long' });
+    const year = currentDate.getFullYear();
+    return (
+      <>
+        <span className="font-bold">{month}</span>
+        <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+      </>
+    );
   };
 
   return (
