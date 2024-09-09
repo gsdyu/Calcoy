@@ -20,6 +20,9 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return {
       top: `${top}px`,
       height: `${height}px`,
+      left: '0',
+      right: '0',
+      zIndex: 10, // Ensure events are above the grid
     };
   };
 
@@ -30,6 +33,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   const allDayEvents = filteredEvents.filter(event => event.allDay);
   const timedEvents = filteredEvents.filter(event => !event.allDay);
+
+  const handleEventClick = (event, e) => {
+    e.stopPropagation();
+    onEventClick(event);
+  };
+
+  const handleDateDoubleClick = (date, isAllDay, e) => {
+    e.preventDefault();
+    onDateDoubleClick(date, isAllDay);
+  };
 
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
@@ -52,6 +65,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
+      
       {/* Day header */}
       <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''}`}>
         <h2 className={`text-lg font-semibold
@@ -71,22 +85,13 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
         </div>
         <div 
           className="ml-16 h-full relative"
-          onDoubleClick={(e) => {
-            e.preventDefault();
-            const clickedDate = new Date(currentDate);
-            clickedDate.setHours(0, 0, 0, 0);
-            onDateDoubleClick(clickedDate, true);
-          }}
+          onDoubleClick={(e) => handleDateDoubleClick(new Date(currentDate), true, e)}
         >
           {allDayEvents.map(event => (
             <div
               key={event.id}
               className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
-              onClick={(e) => {
-                e.stopPropagation();
-                console.log('All-day event clicked:', event);
-                onEventClick(event);
-              }}
+              onClick={(e) => handleEventClick(event, e)}
             >
               <div className="w-full h-full flex items-center">
                 {event.title}
@@ -97,7 +102,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       </div>
 
       {/* Time slots */}
-      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
+      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
         {hours.map((hour) => (
           <div key={hour} className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[60px]`}>
             <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
@@ -106,37 +111,36 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             <div
               className="flex-1 relative"
               onDoubleClick={(e) => {
-                e.preventDefault();
                 const clickedDate = new Date(currentDate);
                 clickedDate.setHours(hour);
-                onDateDoubleClick(clickedDate, false);
+                handleDateDoubleClick(clickedDate, false, e);
               }}
             >
-              {timedEvents
-                .filter(event => parseInt(event.startTime.split(':')[0]) === hour)
-                .map(event => (
-                  <div
-                    key={event.id}
-                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
-                    style={getEventStyle(event)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      console.log('Timed event clicked:', event);
-                      onEventClick(event);
-                    }}
-                  >
-                    <div className="w-full h-full p-1 flex flex-col justify-between">
-                      <div className="font-bold">{event.title}</div>
-                      <div className="text-xs opacity-75">
-                        {event.startTime} - {event.endTime}
-                      </div>
-                    </div>
-                  </div>
-                ))
-              }
+              {/* This div is intentionally left empty to allow double-clicking for new events */}
             </div>
           </div>
         ))}
+        {/* Render events in a separate layer */}
+        <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
+          {timedEvents.map(event => (
+            <div
+              key={event.id}
+              className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+              style={getEventStyle(event)}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEventClick(event, e);
+              }}
+            >
+              <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
+                <div className="font-bold">{event.title}</div>
+                <div className="text-xs opacity-75">
+                  {event.startTime} - {event.endTime}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
