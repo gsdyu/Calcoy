@@ -4,7 +4,7 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 
-const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -71,7 +71,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
         </div>
         <div 
           className="ml-16 h-full relative"
-          onDoubleClick={() => {
+          onDoubleClick={(e) => {
+            e.preventDefault();
             const clickedDate = new Date(currentDate);
             clickedDate.setHours(0, 0, 0, 0);
             onDateDoubleClick(clickedDate, true);
@@ -80,9 +81,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
           {allDayEvents.map(event => (
             <div
               key={event.id}
-              className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded"
+              className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+              onClick={(e) => {
+                e.stopPropagation();
+                console.log('All-day event clicked:', event);
+                onEventClick(event);
+              }}
             >
-              {event.title}
+              <div className="w-full h-full flex items-center">
+                {event.title}
+              </div>
             </div>
           ))}
         </div>
@@ -97,7 +105,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
             </div>
             <div
               className="flex-1 relative"
-              onDoubleClick={() => {
+              onDoubleClick={(e) => {
+                e.preventDefault();
                 const clickedDate = new Date(currentDate);
                 clickedDate.setHours(hour);
                 onDateDoubleClick(clickedDate, false);
@@ -108,10 +117,20 @@ const DayView = ({ currentDate, events, onDateDoubleClick, shiftDirection }) => 
                 .map(event => (
                   <div
                     key={event.id}
-                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 overflow-hidden rounded"
+                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
                     style={getEventStyle(event)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      console.log('Timed event clicked:', event);
+                      onEventClick(event);
+                    }}
                   >
-                    {event.title}
+                    <div className="w-full h-full p-1 flex flex-col justify-between">
+                      <div className="font-bold">{event.title}</div>
+                      <div className="text-xs opacity-75">
+                        {event.startTime} - {event.endTime}
+                      </div>
+                    </div>
                   </div>
                 ))
               }

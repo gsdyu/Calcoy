@@ -8,6 +8,7 @@ import MonthView from '@/components/Calendar/MonthView';
 import WeekView from '@/components/Calendar/WeekView';
 import DayView from '@/components/Calendar/DayView';
 import AddEditEventModal from '@/components/Modals/AddEditEventModal';
+import EventDetailsModal from '@/components/Modals/EventDetailsModal';
 import ProfileModal from '@/components/Modals/ProfileModal';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
@@ -23,51 +24,53 @@ const CalendarApp = () => {
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [shiftDirection, setShiftDirection] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
+  const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
 
   useEffect(() => {
-    // Initialize selectedWeekStart and selectedDate when the component mounts
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay());
     setSelectedWeekStart(weekStart);
     setSelectedDate(today);
 
-    // Set up connection to database
-    const token = localStorage.getItem('token');
+    fetchEvents();
+  }, [displayName]);
 
+  const fetchEvents = async () => {
+    const token = localStorage.getItem('token');
     if (!token) return;
 
-    const fetchEvents = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/events', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setEvents(data);
-          console.log('Fetched events:', data);
-        } else {
-          throw new Error('Failed to fetch events');
-        }
-      } catch (error) {
-        console.error('Error fetching events:', error);
+    try {
+      const response = await fetch('http://localhost:5000/events', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        const formattedEvents = data.map(event => ({
+          ...event,
+          date: new Date(event.start_time).toISOString().split('T')[0],
+          startTime: new Date(event.start_time).toTimeString().split(' ')[0],
+          endTime: new Date(event.end_time).toTimeString().split(' ')[0],
+        }));
+        setEvents(formattedEvents);
+        console.log('Fetched events:', formattedEvents);
+      } else {
+        throw new Error('Failed to fetch events');
       }
-    };
-
-    fetchEvents();
-
-  }, [displayName]);
+    } catch (error) {
+      console.error('Error fetching events:', error);
+    }
+  };
 
   const handleDateChange = (date, direction) => {
     setShiftDirection(direction);
-
     if (view === 'Week') {
       const weekStart = new Date(date);
       weekStart.setDate(date.getDate() - date.getDay());
       setSelectedWeekStart(weekStart);
     }
     setSelectedDate(date);
-
     setTimeout(() => setShiftDirection(null), 300);
   };
 
@@ -81,12 +84,29 @@ const CalendarApp = () => {
   };
 
   const handleAddEvent = (date = null) => {
+    setSelectedEvent(null);
     setSelectedDate(date || selectedDate);
+    setIsAddingEvent(true);
+  };
+
+  const handleEventClick = (event) => {
+    setSelectedEvent(event);
+    setIsEventDetailsOpen(true);
+  };
+
+  const handleCloseEventDetails = () => {
+    setIsEventDetailsOpen(false);
+    setSelectedEvent(null);
+  };
+
+  const handleEditFromDetails = () => {
+    setIsEventDetailsOpen(false);
     setIsAddingEvent(true);
   };
 
   const handleCloseModal = () => {
     setIsAddingEvent(false);
+    setSelectedEvent(null);
   };
 
   const handleSaveEvent = async (event) => {
@@ -94,10 +114,11 @@ const CalendarApp = () => {
     if (!token) return;
 
     try {
-      console.log('Attempting to save event:', event);
+      const method = event.id ? 'PUT' : 'POST';
+      const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
 
-      const response = await fetch('http://localhost:5000/events', {
-        method: 'POST',
+      const response = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
@@ -107,14 +128,56 @@ const CalendarApp = () => {
 
       if (response.ok) {
         const savedEvent = await response.json();
-        setEvents((prevEvents) => [...prevEvents, savedEvent.event]);
-        console.log('Event saved successfully:', savedEvent.event);
-        setIsAddingEvent(false);  // Close modal after saving
+        const formattedEvent = {
+          ...savedEvent.event,
+          date: new Date(savedEvent.event.start_time).toISOString().split('T')[0],
+          startTime: new Date(savedEvent.event.start_time).toTimeString().split(' ')[0],
+          endTime: new Date(savedEvent.event.end_time).toTimeString().split(' ')[0],
+        };
+
+        setEvents((prevEvents) => {
+          if (event.id) {
+            return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
+          } else {
+            return [...prevEvents, formattedEvent];
+          }
+        });
+
+        console.log('Event saved successfully:', formattedEvent);
+        setIsAddingEvent(false);
+        setSelectedEvent(null);
       } else {
         throw new Error('Failed to save event');
       }
     } catch (error) {
       console.error('Error saving event:', error);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/events/${eventId}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        // Remove the event from the local state
+        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+        setIsEventDetailsOpen(false);
+        setSelectedEvent(null);
+        console.log('Event deleted successfully');
+      } else {
+        throw new Error('Failed to delete event');
+      }
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      // You might want to show an error message to the user here
     }
   };
 
@@ -150,6 +213,7 @@ const CalendarApp = () => {
               events={events} 
               onDateClick={handleDayClick}
               onDateDoubleClick={handleAddEvent}
+              onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
             />
           )}
@@ -160,6 +224,7 @@ const CalendarApp = () => {
               events={events} 
               onDateClick={handleDayClick}
               onDateDoubleClick={handleAddEvent}
+              onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
             />
           )}
@@ -168,6 +233,7 @@ const CalendarApp = () => {
               currentDate={selectedDate || currentDate} 
               events={events} 
               onDateDoubleClick={handleAddEvent}
+              onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
             />
           )}
@@ -193,11 +259,20 @@ const CalendarApp = () => {
           isSidebarOpen={isSidebarOpen}
         />
       </div>
+      {isEventDetailsOpen && (
+        <EventDetailsModal
+          event={selectedEvent}
+          onClose={handleCloseEventDetails}
+          onEdit={handleEditFromDetails}
+          onDelete={handleDeleteEvent}
+        />
+      )}
       {isAddingEvent && (
         <AddEditEventModal 
           onClose={handleCloseModal}
           onSave={handleSaveEvent}
           initialDate={selectedDate}
+          event={selectedEvent}
         />
       )}
       {isProfileOpen && <ProfileModal onClose={handleProfileClose} />}

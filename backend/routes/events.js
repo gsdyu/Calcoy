@@ -34,4 +34,31 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
+  // Delete event route
+  app.delete('/events/:eventId', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const eventId = req.params.eventId;
+
+    try {
+      // First, check if the event belongs to the authenticated user
+      const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Event not found or you do not have permission to delete this event' });
+      }
+
+      // If the event exists and belongs to the user, delete it
+      const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
+      
+      if (deleteResult.rowCount > 0) {
+        res.json({ message: 'Event deleted successfully' });
+      } else {
+        res.status(500).json({ error: 'Failed to delete the event' });
+      }
+    } catch (error) {
+      console.error('Delete event error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 };
