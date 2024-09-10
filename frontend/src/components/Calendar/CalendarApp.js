@@ -219,7 +219,7 @@ const CalendarApp = () => {
           )}
           {view === 'Week' && (
             <WeekView 
-              weekStart={selectedWeekStart}
+              currentDate={selectedDate || currentDate}
               selectedDate={selectedDate}
               events={events} 
               onDateClick={handleDayClick}

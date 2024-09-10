@@ -4,8 +4,18 @@ import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 
-const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
+const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
+  
+  // Ensure currentDate is a valid Date object and set to the start of the week
+  const getWeekStart = (date) => {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+    return new Date(d.setDate(diff));
+  };
+  
+  const weekStart = getWeekStart(currentDate);
   const weekDays = getWeekDays(weekStart);
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
@@ -81,7 +91,14 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
       <style>{scrollbarStyles}</style>
       {/* Week header */}
       <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-        <h2 className="text-lg font-semibold">{formatWeekHeader()}</h2>
+        <h2 className={`text-lg font-semibold
+          transition-all duration-300 ease-in-out
+          ${shiftDirection === 'left' ? 'translate-x-4 opacity-0' : 
+            shiftDirection === 'right' ? '-translate-x-4 opacity-0' : 
+            'translate-x-0 opacity-100'}
+        `}>
+          {formatWeekHeader()}
+        </h2>
       </div>
       
       {/* Header row with days */}
@@ -103,10 +120,6 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
                 ${isToday(day) ? 'bg-blue-500 text-white' : ''}
                 ${isSelected && !isToday(day) ? darkMode ? 'bg-blue-700' : 'bg-blue-200' : ''}
                 ${isWeekendDay && !isToday(day) && !isSelected ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
-                transition-all duration-300 ease-in-out
-                ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
-                  shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
-                  'translate-x-0 opacity-100'}
                 rounded-full
               `}>
                 {day.getDate()}
