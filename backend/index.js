@@ -38,6 +38,7 @@ pool.query(`
 		location VARCHAR(255),
 		frequency VARCHAR(50),
 		calendar VARCHAR(50),
+		time_zone VARCHAR(50),
 		CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time),
 		CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
 	  );

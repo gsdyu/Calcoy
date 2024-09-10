@@ -33,18 +33,26 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
+    const startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
+    const endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+  
+    if (endDateTime <= startDateTime) {
+      alert('End time must be after start time');
+      return;
+    }
+  
     const event = {
       title: newEvent.title,
       location: newEvent.location,
-      date: newEvent.date,
-      start_time: new Date(`${newEvent.date}T${newEvent.startTime}`).toISOString(),
-      end_time: new Date(`${newEvent.date}T${newEvent.endTime}`).toISOString(),
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       frequency: newEvent.frequency,
       calendar: newEvent.calendar
     };
     console.log('Event being saved:', event);
-    onSave(event); // Pass the event data to the parent component
-    onClose(); // Close the modal
+    onSave(event);
+    onClose();
   };
 
   return (

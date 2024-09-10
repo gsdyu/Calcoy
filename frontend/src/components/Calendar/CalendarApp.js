@@ -40,19 +40,24 @@ const CalendarApp = () => {
   const fetchEvents = async () => {
     const token = localStorage.getItem('token');
     if (!token) return;
-
+  
     try {
       const response = await fetch('http://localhost:5000/events', {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (response.ok) {
         const data = await response.json();
-        const formattedEvents = data.map(event => ({
-          ...event,
-          date: new Date(event.start_time).toISOString().split('T')[0],
-          startTime: new Date(event.start_time).toTimeString().split(' ')[0],
-          endTime: new Date(event.end_time).toTimeString().split(' ')[0],
-        }));
+  
+        const formattedEvents = data.map(event => {
+          const startTime = new Date(event.start_time);
+          const endTime = new Date(event.end_time);
+          return {
+            ...event,
+            date: startTime.toLocaleDateString(),
+            startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          };
+        });
         setEvents(formattedEvents);
         console.log('Fetched events:', formattedEvents);
       } else {
@@ -112,11 +117,11 @@ const CalendarApp = () => {
   const handleSaveEvent = async (event) => {
     const token = localStorage.getItem('token');
     if (!token) return;
-
+  
     try {
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
-
+  
       const response = await fetch(url, {
         method,
         headers: {
@@ -125,16 +130,18 @@ const CalendarApp = () => {
         },
         body: JSON.stringify(event),
       });
-
+  
       if (response.ok) {
         const savedEvent = await response.json();
+        const startTime = new Date(savedEvent.event.start_time);
+        const endTime = new Date(savedEvent.event.end_time);
         const formattedEvent = {
           ...savedEvent.event,
-          date: new Date(savedEvent.event.start_time).toISOString().split('T')[0],
-          startTime: new Date(savedEvent.event.start_time).toTimeString().split(' ')[0],
-          endTime: new Date(savedEvent.event.end_time).toTimeString().split(' ')[0],
+          date: startTime.toLocaleDateString(),
+          startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         };
-
+  
         setEvents((prevEvents) => {
           if (event.id) {
             return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
@@ -142,7 +149,7 @@ const CalendarApp = () => {
             return [...prevEvents, formattedEvent];
           }
         });
-
+  
         console.log('Event saved successfully:', formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);

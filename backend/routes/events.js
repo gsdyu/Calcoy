@@ -4,13 +4,22 @@ module.exports = (app, pool) => {
 
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone } = req.body;
     const userId = req.user.userId;
+
+    // Convert start_time and end_time to Date objects
+    const startDate = new Date(start_time);
+    const endDate = new Date(end_time);
+
+    // Check if end time is after start time
+    if (endDate <= startDate) {
+      return res.status(400).json({ error: 'End time must be after start time' });
+    }
 
     try {
       const result = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *',
-        [userId, title, description, start_time, end_time, location, frequency, calendar]
+        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
       );
       res.status(201).json({ message: 'Event created', event: result.rows[0] });
     } catch (error) {
