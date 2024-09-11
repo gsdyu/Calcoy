@@ -25,10 +25,12 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   };
 
   const getEventStyle = (event) => {
-    const startHour = parseInt(event.startTime.split(':')[0]);
-    const startMinute = parseInt(event.startTime.split(':')[1]);
-    const endHour = parseInt(event.endTime.split(':')[0]);
-    const endMinute = parseInt(event.endTime.split(':')[1]);
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    const startHour = startDate.getHours();
+    const startMinute = startDate.getMinutes();
+    const endHour = endDate.getHours();
+    const endMinute = endDate.getMinutes();
 
     const top = (startHour + startMinute / 60) * 60; // 60px per hour
     const height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
@@ -150,7 +152,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               }}
             >
               {events
-                .filter(event => event.allDay && isSameDay(new Date(event.date), day))
+                .filter(event => event.allDay && isSameDay(new Date(event.start_time), day))
                 .map(event => (
                   <div
                     key={event.id}
@@ -202,9 +204,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             <div key={`events-${dayIndex}`} className="absolute top-0 bottom-0" style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}>
               {events
                 .filter(event => {
-                  const eventDate = new Date(event.date);
-                  return !event.allDay &&
-                         isSameDay(eventDate, day);
+                  const eventDate = new Date(event.start_time);
+                  return !event.allDay && isSameDay(eventDate, day);
                 })
                 .map(event => (
                   <div
@@ -219,7 +220,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
                       <div className="font-bold">{event.title}</div>
                       <div className="text-xs opacity-75">
-                        {event.startTime} - {event.endTime}
+                        {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                        {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
                   </div>
