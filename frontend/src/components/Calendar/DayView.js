@@ -9,10 +9,12 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   const getEventStyle = (event) => {
-    const startHour = parseInt(event.startTime.split(':')[0]);
-    const startMinute = parseInt(event.startTime.split(':')[1]);
-    const endHour = parseInt(event.endTime.split(':')[0]);
-    const endMinute = parseInt(event.endTime.split(':')[1]);
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    const startHour = startDate.getHours();
+    const startMinute = startDate.getMinutes();
+    const endHour = endDate.getHours();
+    const endMinute = endDate.getMinutes();
 
     const top = (startHour + startMinute / 60) * 60; // 60px per hour
     const height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
@@ -27,7 +29,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   };
 
   const filteredEvents = events.filter(event => {
-    const eventDate = new Date(event.date);
+    const eventDate = new Date(event.start_time);
     return eventDate.toDateString() === currentDate.toDateString();
   });
 
@@ -135,7 +137,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
                 <div className="font-bold">{event.title}</div>
                 <div className="text-xs opacity-75">
-                  {event.startTime} - {event.endTime}
+                  {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                  {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
             </div>
