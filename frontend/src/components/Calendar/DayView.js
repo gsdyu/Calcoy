@@ -110,7 +110,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           {/* Time column */}
           <div className="w-16 flex-shrink-0 relative">
             {hours.map((hour) => (
-              <div key={hour} className="absolute w-full pr-2 text-right text-xs" style={{ top: `${hour * 60}px`, height: '60px' }}>
+              <div 
+                key={hour} 
+                className="absolute w-full pr-2 text-right text-xs flex items-center justify-end" 
+                style={{ 
+                  top: `${hour * 60}px`, 
+                  height: '60px',
+                  transform: 'translateY(-50%)'  // This centers the text vertically
+                }}
+              >
                 {hour === 0 ? null : formatHour(hour)}
               </div>
             ))}
