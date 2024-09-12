@@ -1,56 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { GoogleIcon, MicrosoftIcon, AppleIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
-import { signIn, signOut, useSession } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { GoogleIcon, EyeIcon, EyeOffIcon,MicrosoftIcon } from '@/components/icons/SocialIcons';
+import { signIn } from 'next-auth/react'; 
+
 const SignUpPage = () => {
     const [formData, setFormData] = useState({
-    username: '',
-    email: '',
-    password: '',
-    confirmPassword: ''
-});
-const [errors, setErrors] = useState({});
-const [showPassword, setShowPassword] = useState(false);
-const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-const router = useRouter();
+        username: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+    });
+    const [errors, setErrors] = useState({});
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const router = useRouter();
+    const searchParams = useSearchParams();
 
-const validateForm = () => {
-    let errors = {};
+    useEffect(() => {
+        // Capture and display errors from URL parameters
+        const error = searchParams.get('error');
+        if (error === 'email_exists') {
+            setErrors({ server: 'Email already exists. Please log in.' });
+        } else if (error === 'access_denied') {
+            setErrors({ server: 'Google sign-in was canceled. Please try again.' });
+        } else if (error === 'database_error') {
+            setErrors({ server: 'An error occurred. Please try again later.' });
+        }
+    }, [searchParams]);
 
-    // Username validation
-    if (formData.username.length < 2 || formData.username.length > 32) {
-        errors.username = "Username must be between 2 and 32 characters";
-    }
-    if (!/^[a-z0-9._]+$/.test(formData.username)) {
-        errors.username = "Username can only contain lowercase letters, numbers, periods, and underscores";
-    }
-    if (/^[._]|[._]$|[.]{2}|[_]{2}/.test(formData.username)) {
-        errors.username = "Username cannot start or end with a period or underscore, or have two consecutive periods or underscores";
-    }
+    const validateForm = () => {
+        let errors = {};
 
-    if (!/\S+@\S+\.\S+/.test(formData.email)) {
-        errors.email = "Email is invalid";
-    }
+        if (formData.username.length < 2 || formData.username.length > 32) {
+            errors.username = "Username must be between 2 and 32 characters";
+        }
+        if (!/^[a-z0-9._]+$/.test(formData.username)) {
+            errors.username = "Username can only contain lowercase letters, numbers, periods, and underscores";
+        }
+        if (/^[._]|[._]$|[.]{2}|[_]{2}/.test(formData.username)) {
+            errors.username = "Username cannot start or end with a period or underscore, or have two consecutive periods or underscores";
+        }
 
-    // Password Validation
-    if (/\s/.test(formData.password)) {
-        errors.password = "Password should not contain spaces";
-    }
-    if (formData.password.length < 8) {
-        errors.password = "Password must be at least 8 characters long";
-    }
-    if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
-        errors.password = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character";
-    }
-    if (formData.password !== formData.confirmPassword) {
-        errors.confirmPassword = "Passwords do not match";
-    }
-    return errors;
-};
-    
+        if (!/\S+@\S+\.\S+/.test(formData.email)) {
+            errors.email = "Email is invalid";
+        }
+
+        if (/\s/.test(formData.password)) {
+            errors.password = "Password should not contain spaces";
+        }
+        if (formData.password.length < 8) {
+            errors.password = "Password must be at least 8 characters long";
+        }
+        if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/.test(formData.password)) {
+            errors.password = "Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character";
+        }
+        if (formData.password !== formData.confirmPassword) {
+            errors.confirmPassword = "Passwords do not match";
+        }
+        return errors;
+    };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -95,6 +106,7 @@ const validateForm = () => {
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
             <div className="bg-white p-8 rounded-lg shadow-md w-96">
                 <h2 className="text-2xl font-bold mb-6 text-center">Create an account</h2>
+                {errors.server && <p className="mt-1 text-sm text-red-600">{errors.server}</p>}
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
                         <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Username</label>
@@ -143,11 +155,7 @@ const validateForm = () => {
                                 onClick={togglePasswordVisibility}
                                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
                             >
-                                {showPassword ? (
-                                    <EyeOffIcon className="h-5 w-5" />
-                                ) : (
-                                    <EyeIcon className="h-5 w-5" />
-                                )}
+                                {showPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                             </button>
                         </div>
                         {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password}</p>}
@@ -169,16 +177,11 @@ const validateForm = () => {
                                 onClick={toggleConfirmPasswordVisibility}
                                 className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
                             >
-                                {showConfirmPassword ? (
-                                    <EyeOffIcon className="h-5 w-5" />
-                                ) : (
-                                    <EyeIcon className="h-5 w-5" />
-                                )}
+                                {showConfirmPassword ? <EyeOffIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
                             </button>
                         </div>
                         {errors.confirmPassword && <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>}
                     </div>
-                    {errors.server && <p className="mt-1 text-sm text-red-600">{errors.server}</p>}
                     <button
                         type="submit"
                         className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
@@ -192,17 +195,16 @@ const validateForm = () => {
                     <div className="flex-grow border-t border-gray-300"></div>
                 </div>
                 <div className="mt-6 space-y-4">
-                                    <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                    <button
+                        onClick={() => signIn('google')}
+                        className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center"
+                    >
                         <GoogleIcon className="w-5 h-5 mr-2" />
                         Sign up with Google
-                    </a>
-                    <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-                        <MicrosoftIcon className="w-5 h-5 mr-2" />
-                        Sign up with Microsoft
                     </button>
-                    <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-                        <AppleIcon className="w-5 h-5 mr-2" />
-                        Sign up with Apple
+                    <button onClick={() => signIn('azure-ad')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                   <MicrosoftIcon className="w-5 h-5 mr-2" />
+                        Continue with Microsoft
                     </button>
                 </div>
                 <p className="mt-6 text-center text-sm text-gray-600">

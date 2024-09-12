@@ -1,9 +1,8 @@
-require('dotenv').config();
+require('dotenv').config({ path: '../.env.local' });  // Go one level up to the root
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const passport = require('passport');
-const session = require('express-session');
+ const session = require('express-session');
 
 // Initialize express app
 const app = express();
@@ -15,8 +14,7 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool);
-
+ 
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -30,19 +28,9 @@ app.use(session({
   saveUninitialized: true
 }));
 
-app.use(passport.initialize());
-app.use(passport.session());
+ 
 
-// Google Auth Route
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
-// Google Auth Callback Route
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
-  (req, res) => {
-    // Successful authentication, redirect to the frontend.
-    res.redirect('http://localhost:3000');
-  }
-);
+ 
 
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
