@@ -1,0 +1,6 @@
+# Environment files
+.env
+.env.local
+
+# Node.js modules
+node_modules/
