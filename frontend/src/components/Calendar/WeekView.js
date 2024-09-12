@@ -10,12 +10,16 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   const getWeekStart = (date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+    const diff = d.getDate() - day;
     return new Date(d.setDate(diff));
   };
   
   const weekStart = getWeekStart(currentDate);
-  const weekDays = getWeekDays(weekStart);
+  const weekDays = Array.from({ length: 7 }, (_, i) => {
+    const day = new Date(weekStart);
+    day.setDate(weekStart.getDate() + i);
+    return day;
+  });
   const hours = Array.from({ length: 24 }, (_, i) => i);
 
   const isWeekend = (date) => {
