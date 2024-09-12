@@ -7,11 +7,10 @@ import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   
-  // Ensure currentDate is a valid Date object and set to the start of the week
   const getWeekStart = (date) => {
     const d = new Date(date);
     const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is Sunday
+    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
     return new Date(d.setDate(diff));
   };
   
@@ -21,7 +20,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
   const isWeekend = (date) => {
     const day = date.getDay();
-    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+    return day === 0 || day === 6;
   };
 
   const getEventStyle = (event) => {
@@ -32,7 +31,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     const endHour = endDate.getHours();
     const endMinute = endDate.getMinutes();
 
-    const top = (startHour + startMinute / 60) * 60; // 60px per hour
+    const top = (startHour + startMinute / 60) * 60;
     const height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
     return {
@@ -40,7 +39,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       height: `${height}px`,
       left: '0',
       right: '0',
-      zIndex: 10, // Ensure events are above the grid
+      zIndex: 30, // Increased z-index to be above highlight
     };
   };
 
@@ -83,6 +82,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       date1.getFullYear() === date2.getFullYear();
   };
 
+  const handleDateClick = (day) => {
+    // Ensure we're passing a new Date object to avoid mutating the original
+    onDateClick(new Date(day));
+  };
+
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     onEventClick(event);
@@ -113,7 +117,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             <div 
               key={index} 
               className={`flex-1 text-center py-2 ${isWeekendDay ? darkMode ? 'bg-gray-800' : 'bg-gray-100' : ''}`}
-              onClick={() => onDateClick(day)}
+              onClick={() => handleDateClick(day)}
             >
               <div className={isWeekendDay ? darkMode ? 'text-gray-400' : 'text-gray-600' : ''}>
                 {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day.getDay()]}
@@ -142,21 +146,23 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               key={`all-day-${dayIndex}`}
               className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
-                ${isSelected ? darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-100 bg-opacity-20' : ''}
               `}
-              onClick={() => onDateClick(day)}
+              onClick={() => handleDateClick(day)}
               onDoubleClick={() => {
                 const clickedDate = new Date(day);
-                clickedDate.setHours(0, 0, 0, 0); // Set to midnight for all-day events
-                onDateDoubleClick(clickedDate, true); // Pass true to indicate it's an all-day event
+                clickedDate.setHours(0, 0, 0, 0);
+                onDateDoubleClick(clickedDate, true);
               }}
             >
+              {isSelected && (
+                <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
+              )}
               {events
                 .filter(event => event.allDay && isSameDay(new Date(event.start_time), day))
                 .map(event => (
                   <div
                     key={event.id}
-                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 z-20"
                     onClick={(e) => handleEventClick(event, e)}
                   >
                     {event.title}
@@ -170,35 +176,55 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
-        {hours.map((hour) => (
-          <div key={hour} className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[60px]`}>
-            <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
-              {formatHour(hour)}
+        <div className="absolute top-0 left-0 w-16 h-full">
+          {hours.map((hour, index) => (
+            <div 
+              key={hour} 
+              className="absolute w-full pr-2 text-right text-xs flex items-center justify-end" 
+              style={{ 
+                top: `${hour * 60}px`, 
+                height: '60px',
+                transform: 'translateY(-50%)'
+              }}
+            >
+              {hour === 0 ? null : formatHour(hour)}
             </div>
-            {weekDays.map((day, dayIndex) => {
-              const isWeekendDay = isWeekend(day);
-              const isSelected = isSameDay(day, selectedDate);
-              return (
-                <div
-                  key={`${hour}-${dayIndex}`}
-                  className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative 
-                    ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
-                    ${isSelected ? darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-100 bg-opacity-20' : ''}
-                  `}
-                  onClick={() => onDateClick(day)}
-                  onDoubleClick={() => {
-                    const clickedDate = new Date(day);
-                    clickedDate.setHours(hour);
-                    onDateDoubleClick(clickedDate, false); // Pass false to indicate it's not an all-day event
-                  }}
-                >
-                  {/* This div is intentionally left empty to allow double-clicking for new events */}
-                </div>
-              );
-            })}
-          </div>
-        ))}
-        {/* Render events in a separate layer */}
+          ))}
+        </div>
+        <div className="absolute top-0 left-16 right-0 h-full">
+          {hours.map((hour, index) => (
+            <div 
+              key={hour} 
+              className={`absolute w-full ${index < hours.length - 1 ? `border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}` : ''}`}
+              style={{ top: `${hour * 60}px`, height: '60px' }}
+            >
+              {weekDays.map((day, dayIndex) => {
+                const isWeekendDay = isWeekend(day);
+                const isSelected = isSameDay(day, selectedDate);
+                return (
+                  <div
+                    key={`${hour}-${dayIndex}`}
+                    className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
+                      ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                    `}
+                    style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
+                    onClick={() => handleDateClick(day)}
+                    onDoubleClick={() => {
+                      const clickedDate = new Date(day);
+                      clickedDate.setHours(hour);
+                      onDateDoubleClick(clickedDate, false);
+                    }}
+                  >
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          ))}
+        </div>
+        {/* Render events */}
         <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
           {weekDays.map((day, dayIndex) => (
             <div key={`events-${dayIndex}`} className="absolute top-0 bottom-0" style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}>
