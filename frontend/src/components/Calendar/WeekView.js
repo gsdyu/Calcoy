@@ -47,19 +47,6 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     };
   };
 
-  const formatWeekHeader = () => {
-    const firstDay = weekDays[0];
-    const lastDay = weekDays[6];
-    const firstMonth = firstDay.toLocaleString('default', { month: 'short' });
-    const lastMonth = lastDay.toLocaleString('default', { month: 'short' });
-    const year = lastDay.getFullYear();
-
-    if (firstMonth === lastMonth) {
-      return `${firstMonth} ${year}`;
-    } else {
-      return `${firstMonth} - ${lastMonth} ${year}`;
-    }
-  };
 
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
@@ -99,17 +86,6 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
-      {/* Week header */}
-      <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-        <h2 className={`text-lg font-semibold
-          transition-all duration-300 ease-in-out
-          ${shiftDirection === 'left' ? 'translate-x-4 opacity-0' : 
-            shiftDirection === 'right' ? '-translate-x-4 opacity-0' : 
-            'translate-x-0 opacity-100'}
-        `}>
-          {formatWeekHeader()}
-        </h2>
-      </div>
       
       {/* Header row with days */}
       <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
