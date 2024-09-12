@@ -81,12 +81,13 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       </div>
 
       {/* All-day events section */}
-      <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px] relative`}>
-        <div className="absolute left-0 top-0 bottom-0 w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">
+      <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px] relative flex`}>
+        <div className="w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">
           All-day
         </div>
+        <div className={`w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
         <div 
-          className="ml-16 h-full relative"
+          className="flex-grow relative"
           onDoubleClick={(e) => handleDateDoubleClick(new Date(currentDate), true, e)}
         >
           {allDayEvents.map(event => (
@@ -105,44 +106,53 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
-        {hours.map((hour) => (
-          <div key={hour} className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[60px]`}>
-            <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
-              {formatHour(hour)}
-            </div>
-            <div
-              className="flex-1 relative"
-              onDoubleClick={(e) => {
-                const clickedDate = new Date(currentDate);
-                clickedDate.setHours(hour);
-                handleDateDoubleClick(clickedDate, false, e);
-              }}
-            >
-              {/* This div is intentionally left empty to allow double-clicking for new events */}
-            </div>
+        <div className="flex" style={{ height: '1440px' }}> {/* 24 hours * 60px per hour */}
+          {/* Time column */}
+          <div className="w-16 flex-shrink-0 relative">
+            {hours.map((hour) => (
+              <div key={hour} className="absolute w-full pr-2 text-right text-xs" style={{ top: `${hour * 60}px`, height: '60px' }}>
+                {hour === 0 ? null : formatHour(hour)}
+              </div>
+            ))}
           </div>
-        ))}
-        {/* Render events in a separate layer */}
-        <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
-          {timedEvents.map(event => (
-            <div
-              key={event.id}
-              className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
-              style={getEventStyle(event)}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleEventClick(event, e);
-              }}
-            >
-              <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
-                <div className="font-bold">{event.title}</div>
-                <div className="text-xs opacity-75">
-                  {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                  {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          
+          {/* Separator line */}
+          <div className={`w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} style={{ height: '1440px' }}></div>
+
+          {/* Events area */}
+          <div className="flex-grow relative" style={{ height: '1440px' }}>
+            {hours.map((hour, index) => (
+              <div 
+                key={hour} 
+                className={`absolute w-full ${index < hours.length - 1 ? `border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}` : ''}`} 
+                style={{ top: `${hour * 60}px`, height: '60px' }}
+                onDoubleClick={(e) => {
+                  const clickedDate = new Date(currentDate);
+                  clickedDate.setHours(hour);
+                  handleDateDoubleClick(clickedDate, false, e);
+                }}
+              ></div>
+            ))}
+            {timedEvents.map(event => (
+              <div
+                key={event.id}
+                className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+                style={getEventStyle(event)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleEventClick(event, e);
+                }}
+              >
+                <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
+                  <div className="font-bold">{event.title}</div>
+                  <div className="text-xs opacity-75">
+                    {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                    {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </div>
