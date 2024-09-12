@@ -24,14 +24,41 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   };
 
   const formatHeaderDate = () => {
-    const month = currentDate.toLocaleString('default', { month: 'long' });
-    const year = currentDate.getFullYear();
-    return (
-      <>
-        <span className="font-bold">{month}</span>
-        <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
-      </>
-    );
+    if (view === 'Week') {
+      const weekStart = new Date(currentDate);
+      weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+      const weekEnd = new Date(weekStart);
+      weekEnd.setDate(weekEnd.getDate() + 6);
+      
+      const startMonth = weekStart.toLocaleString('default', { month: 'short' });
+      const endMonth = weekEnd.toLocaleString('default', { month: 'short' });
+      const year = weekEnd.getFullYear();
+
+      if (startMonth === endMonth) {
+        return (
+          <>
+            <span className="font-bold">{startMonth}</span>
+            <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+          </>
+        );
+      } else {
+        return (
+          <>
+            <span className="font-bold">{`${startMonth} - ${endMonth}`}</span>
+            <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+          </>
+        );
+      }
+    } else {
+      const month = currentDate.toLocaleString('default', { month: 'long' });
+      const year = currentDate.getFullYear();
+      return (
+        <>
+          <span className="font-bold">{month}</span>
+          <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+        </>
+      );
+    }
   };
 
   return (
