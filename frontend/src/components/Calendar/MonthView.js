@@ -116,7 +116,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         key={i}
         className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
           day.isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-        } ${day.isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
+        } ${day.isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative h-36`}
         onClick={() => day.isCurrentMonth && onDateClick(day.date)}
         onDoubleClick={() => day.isCurrentMonth && onDateDoubleClick(day.date)}
       >
@@ -134,7 +134,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         >
           {day.dayNumber}
         </span>
-        <div className="mt-1 overflow-y-auto max-h-16">
+        <div className="mt-1 overflow-y-auto max-h-24">
           {events
             .filter(event => isSameDay(new Date(event.start_time), day.date))
             .slice(0, 3) // Limit to 3 events per day
@@ -157,7 +157,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           </div>
         ))}
       </div>
-      <div className={`flex-1 grid grid-cols-7 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`flex-1 grid grid-cols-7 grid-rows-6 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         {renderCalendar()}
       </div>
     </div>
