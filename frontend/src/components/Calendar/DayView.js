@@ -23,7 +23,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       top: `${top}px`,
       height: `${height}px`,
       left: '0',
-      right: '0',
+      right: '60px',
       zIndex: 10, // Ensure events are above the grid
     };
   };
