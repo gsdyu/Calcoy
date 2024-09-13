@@ -68,11 +68,11 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
       
-      {/* Centered Simplified Header */}
-      <div className={`flex justify-center items-center py-4 px-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-        <div className={`flex items-center ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''} rounded-full p-2`}>
-          <span className="text-4xl font-bold mr-2">{currentDate.getDate()}</span>
-          <span className="text-lg font-semibold">{currentDate.toLocaleString('default', { weekday: 'long' })}</span>
+      {/* Compact, Centered Day header */}
+      <div className={`flex justify-center items-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className={`flex items-center ${isToday(currentDate) ? 'bg-blue-500' : darkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-full px-4 py-1`}>
+          <span className="text-3xl font-bold mr-2">{currentDate.getDate()}</span>
+          <span className="text-lg">{currentDate.toLocaleString('default', { weekday: 'long' })}</span>
         </div>
       </div>
 
