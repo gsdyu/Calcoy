@@ -62,7 +62,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   };
 
   return (
-    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} text-sm`}>
+    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} text-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
       <div className="flex-1">
         <h2 className="text-lg font-semibold">
           {formatHeaderDate()}
