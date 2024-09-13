@@ -3,7 +3,7 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const MonthView = ({ currentDate, selectedDate, onDateClick, onDateDoubleClick, shiftDirection }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
 
   const isToday = (date) => {
@@ -31,6 +31,41 @@ const MonthView = ({ currentDate, selectedDate, onDateClick, onDateDoubleClick, 
 
   const getFirstDayOfMonth = (date) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const formatEventTime = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  };
+
+  const renderEvent = (event) => {
+    const isAllDayEvent = !event.start_time || !event.end_time;
+    return (
+      <div 
+        key={event.id}
+        className={`
+          text-xs mb-1 truncate rounded cursor-pointer
+          ${isAllDayEvent 
+            ? 'bg-blue-500 text-white p-1' 
+            : 'flex items-center'
+          }
+          ${darkMode ? 'text-gray-200' : 'text-gray-800'}
+        `}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+      >
+        {isAllDayEvent ? (
+          <span>{event.title}</span>
+        ) : (
+          <>
+            <span className="w-10 flex-shrink-0">{formatEventTime(event.start_time)}</span>
+            <span className="ml-1 truncate">{event.title}</span>
+          </>
+        )}
+      </div>
+    );
   };
 
   const renderCalendar = () => {
@@ -63,33 +98,51 @@ const MonthView = ({ currentDate, selectedDate, onDateClick, onDateDoubleClick, 
       const isWeekendDay = isWeekend(date);
       const isSelected = isSameDay(date, selectedDate);
 
-      days.push(
-        <div
-          key={i}
-          className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
-            isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
-          onClick={() => isCurrentMonth && onDateClick(date)}
-          onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
-        >
-          <span
-            className={`inline-flex items-center justify-center w-6 h-6 text-sm 
-              ${isCurrentDay ? 'bg-blue-500 text-white rounded-full' : ''}
-              ${isSelected && !isCurrentDay ? darkMode ? 'bg-blue-700 text-white rounded-full' : 'bg-blue-200 rounded-full' : ''}
-              ${isCurrentMonth ? darkMode ? 'text-gray-100' : 'text-gray-700' : darkMode ? 'text-gray-600' : 'text-gray-400'}
-              ${isWeekendDay && !isCurrentDay && !isSelected ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
-              transition-all duration-300 ease-in-out
-              ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
-                shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
-                'translate-x-0 opacity-100'}
-            `}
-          >
-            {dayNumber}
-          </span>
-        </div>
-      );
+      days.push({
+        date,
+        dayNumber,
+        isCurrentMonth,
+        isCurrentDay,
+        isWeekendDay,
+        isSelected
+      });
     }
-    return days;
+
+    return days.map((day, i) => (
+      <div
+        key={i}
+        className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
+          day.isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
+        } ${day.isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
+        onClick={() => day.isCurrentMonth && onDateClick(day.date)}
+        onDoubleClick={() => day.isCurrentMonth && onDateDoubleClick(day.date)}
+      >
+        <span
+          className={`inline-flex items-center justify-center w-6 h-6 text-sm 
+            ${day.isCurrentDay ? 'bg-blue-500 text-white rounded-full' : ''}
+            ${day.isSelected && !day.isCurrentDay ? darkMode ? 'bg-blue-700 text-white rounded-full' : 'bg-blue-200 rounded-full' : ''}
+            ${day.isCurrentMonth ? darkMode ? 'text-gray-100' : 'text-gray-700' : darkMode ? 'text-gray-600' : 'text-gray-400'}
+            ${day.isWeekendDay && !day.isCurrentDay && !day.isSelected ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
+            transition-all duration-300 ease-in-out
+            ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
+              shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
+              'translate-x-0 opacity-100'}
+          `}
+        >
+          {day.dayNumber}
+        </span>
+        <div className="mt-1 overflow-y-auto max-h-16">
+          {events
+            .filter(event => isSameDay(new Date(event.start_time), day.date))
+            .slice(0, 3) // Limit to 3 events per day
+            .map(event => renderEvent(event))
+          }
+          {events.filter(event => isSameDay(new Date(event.start_time), day.date)).length > 3 && (
+            <div className="text-xs text-gray-500">+ more</div>
+          )}
+        </div>
+      </div>
+    ));
   };
 
   return (
