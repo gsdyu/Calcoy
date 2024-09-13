@@ -35,34 +35,37 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
   const formatEventTime = (dateString) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   };
 
   const renderEvent = (event) => {
     const isAllDayEvent = !event.start_time || !event.end_time;
+    const eventColor = event.color || 'blue'; // Default to blue if no color is specified
+
     return (
       <div 
         key={event.id}
         className={`
-          text-xs mb-1 truncate rounded cursor-pointer
+          text-xs mb-1 truncate cursor-pointer
+          rounded-full py-1 px-2
+          border border-${eventColor}-500
           ${isAllDayEvent 
-            ? 'bg-blue-500 text-white p-1' 
-            : 'flex items-center'
+            ? `bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700` 
+            : `bg-${eventColor}-100 bg-opacity-20 text-${eventColor}-700`
           }
-          ${darkMode ? 'text-gray-200' : 'text-gray-800'}
+          ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          hover:bg-opacity-30 transition-colors duration-200
         `}
         onClick={(e) => {
           e.stopPropagation();
           onEventClick(event);
         }}
       >
+        <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1`}></span>
         {isAllDayEvent ? (
           <span>{event.title}</span>
         ) : (
-          <>
-            <span className="w-10 flex-shrink-0">{formatEventTime(event.start_time)}</span>
-            <span className="ml-1 truncate">{event.title}</span>
-          </>
+          <span>{formatEventTime(event.start_time)} {event.title}</span>
         )}
       </div>
     );
