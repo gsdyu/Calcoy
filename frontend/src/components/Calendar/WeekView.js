@@ -42,7 +42,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       top: `${top}px`,
       height: `${height}px`,
       left: '0',
-      right: '0',
+      right: '20px',
       zIndex: 30, // Increased z-index to be above highlight
     };
   };
