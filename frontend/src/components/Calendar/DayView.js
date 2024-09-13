@@ -68,16 +68,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
       
-      {/* Day header */}
-      <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''}`}>
-        <h2 className={`text-lg font-semibold
-          transition-all duration-300 ease-in-out
-          ${shiftDirection === 'left' ? 'translate-x-4 opacity-0' : 
-            shiftDirection === 'right' ? '-translate-x-4 opacity-0' : 
-            'translate-x-0 opacity-100'}
-        `}>
-          {currentDate.toLocaleString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
-        </h2>
+      {/* Apple-style Day header */}
+      <div className={`flex items-center py-4 px-6 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className={`flex items-center ${isToday(currentDate) ? 'bg-blue-500 text-white' : ''} rounded-full p-2`}>
+          <span className="text-4xl font-bold mr-2">{currentDate.getDate()}</span>
+          <div className="flex flex-col">
+            <span className="text-lg font-semibold">{currentDate.toLocaleString('default', { weekday: 'long' })}</span>
+            <span className="text-sm">{currentDate.toLocaleString('default', { month: 'long', year: 'numeric' })}</span>
+          </div>
+        </div>
       </div>
 
       {/* All-day events section */}
