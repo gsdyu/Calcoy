@@ -33,14 +33,47 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
+  const getWeeksInMonth = (date) => {
+    const daysInMonth = getDaysInMonth(date);
+    const firstDay = getFirstDayOfMonth(date);
+    return Math.ceil((daysInMonth + firstDay) / 7);
+  };
+
   const formatEventTime = (dateString) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   };
 
-  const renderEvent = (event) => {
+  const renderEventNormal = (event, isCompact) => {
+    const eventColor = event.color || 'blue';
+    return (
+      <div 
+        key={event.id}
+        className={`
+          text-xs mb-1 truncate cursor-pointer
+          rounded-lg py-1 px-2
+          bg-${eventColor}-100 bg-opacity-50
+          hover:bg-opacity-70 transition-colors duration-200
+          ${darkMode ? `bg-${eventColor}-800 bg-opacity-50 hover:bg-opacity-70` : ''}
+        `}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+      >
+        <span className="font-medium">{event.title}</span>
+        {!isCompact && (
+          <span className={`text-xs ml-1 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
+            {formatEventTime(event.start_time)}
+          </span>
+        )}
+      </div>
+    );
+  };
+
+  const renderEventCompact = (event) => {
     const isAllDayEvent = !event.start_time || !event.end_time;
-    const eventColor = event.color || 'blue'; // Default to blue if no color is specified
+    const eventColor = event.color || 'blue';
 
     return (
       <div 
@@ -72,6 +105,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderCalendar = () => {
+    const weeksInMonth = getWeeksInMonth(currentDate);
+    const isCompactView = weeksInMonth > 5;
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -80,7 +115,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     let dayCounter = 1;
     let nextMonthCounter = 1;
 
-    for (let i = 0; i < 6 * 7; i++) {
+    for (let i = 0; i < (isCompactView ? 6 * 7 : weeksInMonth * 7); i++) {
       let dayNumber;
       let isCurrentMonth = true;
 
@@ -101,51 +136,46 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isWeekendDay = isWeekend(date);
       const isSelected = isSameDay(date, selectedDate);
 
-      days.push({
-        date,
-        dayNumber,
-        isCurrentMonth,
-        isCurrentDay,
-        isWeekendDay,
-        isSelected
-      });
+      const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
+      const displayedEvents = dayEvents.slice(0, isCompactView ? 3 : 2);
+      const additionalEventsCount = Math.max(0, dayEvents.length - (isCompactView ? 3 : 2));
+
+      days.push(
+        <div
+          key={i}
+          className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
+            isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
+          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden ${isCompactView ? '' : 'h-36'}`}
+          onClick={() => isCurrentMonth && onDateClick(date)}
+          onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
+        >
+          <span
+            className={`inline-flex items-center justify-center w-6 h-6 text-sm 
+              ${isCurrentDay ? 'bg-blue-500 text-white rounded-full' : ''}
+              ${isSelected && !isCurrentDay ? darkMode ? 'bg-blue-700 text-white rounded-full' : 'bg-blue-200 rounded-full' : ''}
+              ${isCurrentMonth ? darkMode ? 'text-gray-100' : 'text-gray-700' : darkMode ? 'text-gray-600' : 'text-gray-400'}
+              ${isWeekendDay && !isCurrentDay && !isSelected ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
+              transition-all duration-300 ease-in-out
+              ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
+                shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
+                'translate-x-0 opacity-100'}
+            `}
+          >
+            {dayNumber}
+          </span>
+          <div className={`mt-1 ${isCompactView ? 'overflow-y-auto max-h-16' : 'space-y-1'}`}>
+            {displayedEvents.map(event => isCompactView ? renderEventCompact(event) : renderEventNormal(event, isCompactView))}
+            {additionalEventsCount > 0 && (
+              <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${isCompactView ? '' : 'font-medium'}`}>
+                {isCompactView ? '+ more' : `${additionalEventsCount} more...`}
+              </div>
+            )}
+          </div>
+        </div>
+      );
     }
 
-    return days.map((day, i) => (
-      <div
-        key={i}
-        className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
-          day.isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-        } ${day.isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
-        onClick={() => day.isCurrentMonth && onDateClick(day.date)}
-        onDoubleClick={() => day.isCurrentMonth && onDateDoubleClick(day.date)}
-      >
-        <span
-          className={`inline-flex items-center justify-center w-6 h-6 text-sm 
-            ${day.isCurrentDay ? 'bg-blue-500 text-white rounded-full' : ''}
-            ${day.isSelected && !day.isCurrentDay ? darkMode ? 'bg-blue-700 text-white rounded-full' : 'bg-blue-200 rounded-full' : ''}
-            ${day.isCurrentMonth ? darkMode ? 'text-gray-100' : 'text-gray-700' : darkMode ? 'text-gray-600' : 'text-gray-400'}
-            ${day.isWeekendDay && !day.isCurrentDay && !day.isSelected ? darkMode ? 'text-gray-300' : 'text-gray-600' : ''}
-            transition-all duration-300 ease-in-out
-            ${shiftDirection === 'left' ? 'translate-x-full opacity-0' : 
-              shiftDirection === 'right' ? '-translate-x-full opacity-0' : 
-              'translate-x-0 opacity-100'}
-          `}
-        >
-          {day.dayNumber}
-        </span>
-        <div className="mt-1 overflow-y-auto max-h-16">
-          {events
-            .filter(event => isSameDay(new Date(event.start_time), day.date))
-            .slice(0, 3) // Limit to 3 events per day
-            .map(event => renderEvent(event))
-          }
-          {events.filter(event => isSameDay(new Date(event.start_time), day.date)).length > 3 && (
-            <div className="text-xs text-gray-500">+ more</div>
-          )}
-        </div>
-      </div>
-    ));
+    return days;
   };
 
   return (
