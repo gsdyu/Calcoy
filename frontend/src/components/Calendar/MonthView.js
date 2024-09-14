@@ -33,6 +33,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
+  const getWeeksInMonth = (date) => {
+    const daysInMonth = getDaysInMonth(date);
+    const firstDay = getFirstDayOfMonth(date);
+    return Math.ceil((daysInMonth + firstDay) / 7);
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
 
@@ -59,6 +65,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderCalendar = () => {
+    const weeksInMonth = getWeeksInMonth(currentDate);
+    const isLargeView = weeksInMonth <= 5;
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -97,7 +105,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           key={i}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
+          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden
+          ${isLargeView ? 'h-36' : ''}`}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
         >
