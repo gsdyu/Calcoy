@@ -33,46 +33,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const getWeeksInMonth = (date) => {
-    const daysInMonth = getDaysInMonth(date);
-    const firstDay = getFirstDayOfMonth(date);
-    return Math.ceil((daysInMonth + firstDay) / 7);
-  };
-
-  const formatEventTime = (dateString) => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-  };
-
-  const renderEventNormal = (event, isCompact) => {
-    const eventColor = event.color || 'blue';
-    return (
-      <div 
-        key={event.id}
-        className={`
-          text-xs mb-1 truncate cursor-pointer
-          rounded-lg py-1 px-2
-          bg-${eventColor}-100 bg-opacity-50
-          hover:bg-opacity-70 transition-colors duration-200
-          ${darkMode ? `bg-${eventColor}-800 bg-opacity-50 hover:bg-opacity-70` : ''}
-        `}
-        onClick={(e) => {
-          e.stopPropagation();
-          onEventClick(event);
-        }}
-      >
-        <span className="font-medium">{event.title}</span>
-        {!isCompact && (
-          <span className={`text-xs ml-1 ${darkMode ? 'text-gray-300' : 'text-gray-500'}`}>
-            {formatEventTime(event.start_time)}
-          </span>
-        )}
-      </div>
-    );
-  };
-
   const renderEventCompact = (event) => {
-    const isAllDayEvent = !event.start_time || !event.end_time;
     const eventColor = event.color || 'blue';
 
     return (
@@ -82,10 +43,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
           border border-${eventColor}-500
-          ${isAllDayEvent 
-            ? `bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700` 
-            : `bg-${eventColor}-100 bg-opacity-20 text-${eventColor}-700`
-          }
+          bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
           ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
         `}
@@ -95,18 +53,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1`}></span>
-        {isAllDayEvent ? (
-          <span>{event.title}</span>
-        ) : (
-          <span>{formatEventTime(event.start_time)} {event.title}</span>
-        )}
+        <span className="truncate">{event.title}</span>
       </div>
     );
   };
 
   const renderCalendar = () => {
-    const weeksInMonth = getWeeksInMonth(currentDate);
-    const isCompactView = weeksInMonth > 5;
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -115,7 +67,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     let dayCounter = 1;
     let nextMonthCounter = 1;
 
-    for (let i = 0; i < (isCompactView ? 6 * 7 : weeksInMonth * 7); i++) {
+    for (let i = 0; i < 6 * 7; i++) {
       let dayNumber;
       let isCurrentMonth = true;
 
@@ -137,15 +89,15 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, isCompactView ? 3 : 2);
-      const additionalEventsCount = Math.max(0, dayEvents.length - (isCompactView ? 3 : 2));
+      const displayedEvents = dayEvents.slice(0, 2);
+      const additionalEventsCount = Math.max(0, dayEvents.length - 2);
 
       days.push(
         <div
           key={i}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden ${isCompactView ? '' : 'h-36'}`}
+          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
         >
@@ -163,11 +115,11 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           >
             {dayNumber}
           </span>
-          <div className={`mt-1 ${isCompactView ? 'overflow-y-auto max-h-16' : 'space-y-1'}`}>
-            {displayedEvents.map(event => isCompactView ? renderEventCompact(event) : renderEventNormal(event, isCompactView))}
+          <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: 'calc(100% - 24px)' }}>
+            {displayedEvents.map(event => renderEventCompact(event))}
             {additionalEventsCount > 0 && (
-              <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${isCompactView ? '' : 'font-medium'}`}>
-                {isCompactView ? '+ more' : `${additionalEventsCount} more...`}
+              <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium`}>
+                {`+${additionalEventsCount} more`}
               </div>
             )}
           </div>
@@ -187,7 +139,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           </div>
         ))}
       </div>
-      <div className={`flex-1 grid grid-cols-7 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`flex-1 grid grid-cols-7 grid-rows-6 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         {renderCalendar()}
       </div>
     </div>
