@@ -132,7 +132,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden
-          ${viewType === 'largeView' ? 'h-42' : viewType === 'normalView' ? 'h-36' : ''}`}
+          ${viewType === 'largeView' ? 'h-[11.25rem]' : viewType === 'normalView' ? 'h-36' : ''}`}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
         >
