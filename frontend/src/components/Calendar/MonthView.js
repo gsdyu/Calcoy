@@ -39,6 +39,13 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
+  const getViewType = (date) => {
+    const weeksInMonth = getWeeksInMonth(date);
+    if (weeksInMonth === 4) return 'largeView';
+    if (weeksInMonth === 5) return 'normalView';
+    return 'compactView';
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
     const eventTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -70,8 +77,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderCalendar = () => {
+    const viewType = getViewType(currentDate);
     const weeksInMonth = getWeeksInMonth(currentDate);
-    const isLargeView = weeksInMonth <= 5;
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -102,8 +109,22 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, isLargeView ? 3 : 2);
-      const additionalEventsCount = Math.max(0, dayEvents.length - (isLargeView ? 3 : 2));
+      let displayedEvents, additionalEventsCount;
+
+      switch (viewType) {
+        case 'largeView':
+          displayedEvents = dayEvents.slice(0, 4);
+          additionalEventsCount = Math.max(0, dayEvents.length - 4);
+          break;
+        case 'normalView':
+          displayedEvents = dayEvents.slice(0, 3);
+          additionalEventsCount = Math.max(0, dayEvents.length - 3);
+          break;
+        case 'compactView':
+          displayedEvents = dayEvents.slice(0, 2);
+          additionalEventsCount = Math.max(0, dayEvents.length - 2);
+          break;
+      }
 
       days.push(
         <div
@@ -111,7 +132,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden
-          ${isLargeView ? 'h-36' : ''}`}
+          ${viewType === 'largeView' ? 'h-42' : viewType === 'normalView' ? 'h-36' : ''}`}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
         >
