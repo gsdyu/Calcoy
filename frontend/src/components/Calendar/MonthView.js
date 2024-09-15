@@ -75,7 +75,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     let dayCounter = 1;
     let nextMonthCounter = 1;
 
-    for (let i = 0; i < 6 * 7; i++) {
+    for (let i = 0; i < weeksInMonth * 7; i++) {
       let dayNumber;
       let isCurrentMonth = true;
 
@@ -97,8 +97,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, 2);
-      const additionalEventsCount = Math.max(0, dayEvents.length - 2);
+      const displayedEvents = dayEvents.slice(0, isLargeView ? 2 : 1);
+      const additionalEventsCount = Math.max(0, dayEvents.length - (isLargeView ? 2 : 1));
 
       days.push(
         <div
@@ -148,7 +148,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           </div>
         ))}
       </div>
-      <div className={`flex-1 grid grid-cols-7 grid-rows-6 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`flex-1 grid grid-cols-7 grid-rows-${getWeeksInMonth(currentDate)} border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         {renderCalendar()}
       </div>
     </div>
