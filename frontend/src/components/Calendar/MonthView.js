@@ -97,8 +97,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, isLargeView ? 2 : 1);
-      const additionalEventsCount = Math.max(0, dayEvents.length - (isLargeView ? 2 : 1));
+      const displayedEvents = dayEvents.slice(0, isLargeView ? 3 : 2);
+      const additionalEventsCount = Math.max(0, dayEvents.length - (isLargeView ? 3 : 2));
 
       days.push(
         <div
