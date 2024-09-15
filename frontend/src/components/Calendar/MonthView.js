@@ -41,11 +41,13 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
+    const eventTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return (
       <div 
         key={event.id}
         className={`
+          flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
           border border-${eventColor}-500
@@ -58,8 +60,11 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           onEventClick(event);
         }}
       >
-        <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1`}></span>
-        <span className="truncate">{event.title}</span>
+        <div className="flex items-center overflow-hidden">
+          <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>
+          <span className="truncate">{event.title}</span>
+        </div>
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
       </div>
     );
   };
