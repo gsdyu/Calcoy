@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
+import DayEventPopover from '@/components/Modals/DayEventPopover';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
+  const [openPopover, setOpenPopover] = useState(null);
 
   const isToday = (date) => {
     const today = new Date();
@@ -155,11 +157,27 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: 'calc(100% - 24px)' }}>
             {displayedEvents.map(event => renderEventCompact(event))}
             {additionalEventsCount > 0 && (
-              <div className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium`}>
+              <button
+                className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setOpenPopover(date);
+                }}
+              >
                 {`+${additionalEventsCount} more`}
-              </div>
+              </button>
             )}
           </div>
+          {openPopover && isSameDay(openPopover, date) && (
+            <DayEventPopover
+              date={date}
+              events={dayEvents}
+              isOpen={true}
+              onOpenChange={(open) => {
+                if (!open) setOpenPopover(null);
+              }}
+            />
+          )}
         </div>
       );
     }
