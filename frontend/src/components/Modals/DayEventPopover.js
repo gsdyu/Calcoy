@@ -4,7 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { X } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
 
-const DayEventPopover = ({ date, events, isOpen, onOpenChange }) => {
+const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick }) => {
   const { darkMode } = useTheme();
 
   return (
@@ -35,7 +35,11 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange }) => {
               key={index} 
               className={`mb-1 py-1 px-2 rounded-full text-xs ${
                 darkMode ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
-              }`}
+              } cursor-pointer hover:opacity-80`}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEventClick(event);
+              }}
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium truncate mr-1">{event.title || '(No title)'}</span>

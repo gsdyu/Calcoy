@@ -176,6 +176,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
               onOpenChange={(open) => {
                 if (!open) setOpenPopover(null);
               }}
+              onEventClick={onEventClick}
             />
           )}
         </div>
