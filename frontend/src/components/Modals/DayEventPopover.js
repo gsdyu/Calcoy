@@ -18,11 +18,20 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
       <PopoverTrigger asChild>
         <div className="w-full h-full absolute top-0 left-0 cursor-pointer" />
       </PopoverTrigger>
-      <PopoverContent className={`w-48 p-0 ${
-        darkMode 
-          ? 'bg-gray-800 text-white' 
-          : 'bg-white text-black'
-      } rounded-[25px] overflow-hidden`}>
+      <PopoverContent 
+        className={`w-48 p-0 ${
+          darkMode 
+            ? 'bg-gray-800 text-white' 
+            : 'bg-white text-black'
+        } rounded-[25px] overflow-hidden`}
+        style={{
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          transform: 'translate(-50%, -50%)',
+          marginTop: '-80px'
+        }}
+      >
         <div className={`relative flex justify-center items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
           <div 
             className="text-center cursor-pointer group"
