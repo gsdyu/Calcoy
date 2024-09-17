@@ -46,6 +46,7 @@ pool.query(`
 
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
+require('./routes/ai')(app, pool);
 
 app.get('/', async (req, res) => {
 	res.send({"status":"ready"});
