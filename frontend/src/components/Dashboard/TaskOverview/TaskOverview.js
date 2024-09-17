@@ -11,6 +11,7 @@ import WeeklyOverviewComponent from './WeeklyOverview';
 import MonthlyCalendarView from './MonthlyOverview';
 import YearlyOverviewComponent from './YearlyOverview';
 import { generateData, getWeekNumber } from './dateutils';
+import { useTheme } from '@/contexts/ThemeContext'; 
 
 const TaskOverviewComponent = () => {
   const [timeFrame, setTimeFrame] = useState('week');
@@ -19,6 +20,7 @@ const TaskOverviewComponent = () => {
   const [weeklyData, setWeeklyData] = useState([]);
   const [monthlyData, setMonthlyData] = useState([]);
   const [yearlyData, setYearlyData] = useState([]);
+  const { darkMode } = useTheme(); 
 
   useEffect(() => {
     const { week, year } = getWeekNumber(selectedDate);
@@ -96,31 +98,31 @@ const TaskOverviewComponent = () => {
   };
 
   return (
-    <Card className="w-full max-w-4xl mx-auto bg-white dark:bg-gray-800">
+    <Card className={`w-full max-w-4xl mx-auto ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
       <CardHeader>
         <div className="flex justify-between items-center flex-wrap gap-4">
-          <CardTitle className="text-2xl font-bold text-gray-800 dark:text-gray-200">
+          <CardTitle className={`text-2xl font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
             {timeFrame === 'week' ? 'Weekly' : timeFrame === 'month' ? 'Monthly' : 'Yearly'} Task Overview
           </CardTitle>
           <div className="flex space-x-2">
             <div className="h-10">
               <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className="w-[100px] bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-4 py-2">
+                <SelectTrigger className={`w-[100px] ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-sm px-4 py-2`}>
                   <SelectValue placeholder="Time Frame" />
                 </SelectTrigger>
-                <SelectContent className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600">
-                  <SelectItem value="week" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Weekly</SelectItem>
-                  <SelectItem value="month" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Monthly</SelectItem>
-                  <SelectItem value="year" className="text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700">Yearly</SelectItem>
+                <SelectContent className={darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}>
+                  <SelectItem value="week" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Weekly</SelectItem>
+                  <SelectItem value="month" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Monthly</SelectItem>
+                  <SelectItem value="year" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Yearly</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             
-            <div className="h-10 flex items-center bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm px-3 py-2">
+            <div className={`h-10 flex items-center ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-sm px-3 py-2`}>
               <Button variant="ghost" size="sm" onClick={handlePrev} className="h-full">
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm text-gray-800 dark:text-gray-200 mx-2">
+              <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} mx-2`}>
                 {timeFrame === 'week' && `Week ${currentWeek.week}, ${currentWeek.year}`}
                 {timeFrame === 'month' && selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 {timeFrame === 'year' && selectedDate.getFullYear()}
@@ -143,7 +145,7 @@ const TaskOverviewComponent = () => {
                     selected={selectedDate}
                     onSelect={handleDateSelect}
                     initialFocus
-                    className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md shadow-md p-3"
+                    className={`${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-md p-3`}
                   />
                 </PopoverContent>
               </Popover>
@@ -152,36 +154,36 @@ const TaskOverviewComponent = () => {
         </div>
       </CardHeader>
       <CardContent>
-        {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} />}
-        {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} />}
-        {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} />}
+        {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} darkMode={darkMode} />}
+        {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} darkMode={darkMode} />}
+        {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} darkMode={darkMode} />}
 
         <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className="bg-green-100 dark:bg-green-900 p-3 rounded-lg">
+          <div className={`${darkMode ? 'bg-green-900' : 'bg-green-100'} p-3 rounded-lg`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-green-800 dark:text-green-200 font-semibold text-sm">Completion Rate</h3>
-                <p className="text-2xl font-bold text-green-800 dark:text-green-200">{completionRate}%</p>
+                <h3 className={`${darkMode ? 'text-green-200' : 'text-green-800'} font-semibold text-sm`}>Completion Rate</h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-green-200' : 'text-green-800'}`}>{completionRate}%</p>
               </div>
-              <CheckCircle className="text-green-500 dark:text-green-400" size={20} />
+              <CheckCircle className={darkMode ? 'text-green-400' : 'text-green-500'} size={20} />
             </div>
           </div>
-          <div className="bg-blue-100 dark:bg-blue-900 p-3 rounded-lg">
+          <div className={`${darkMode ? 'bg-blue-900' : 'bg-blue-100'} p-3 rounded-lg`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-blue-800 dark:text-blue-200 font-semibold text-sm">Completed</h3>
-                <p className="text-2xl font-bold text-blue-800 dark:text-blue-200">{totalCompleted}</p>
+                <h3 className={`${darkMode ? 'text-blue-200' : 'text-blue-800'} font-semibold text-sm`}>Completed</h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-blue-200' : 'text-blue-800'}`}>{totalCompleted}</p>
               </div>
-              <CheckCircle className="text-blue-500 dark:text-blue-400" size={20} />
+              <CheckCircle className={darkMode ? 'text-blue-400' : 'text-blue-500'} size={20} />
             </div>
           </div>
-          <div className="bg-red-100 dark:bg-red-900 p-3 rounded-lg">
+          <div className={`${darkMode ? 'bg-red-900' : 'bg-red-100'} p-3 rounded-lg`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className="text-red-800 dark:text-red-200 font-semibold text-sm">Missed</h3>
-                <p className="text-2xl font-bold text-red-800 dark:text-red-200">{totalMissed}</p>
+                <h3 className={`${darkMode ? 'text-red-200' : 'text-red-800'} font-semibold text-sm`}>Missed</h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-red-200' : 'text-red-800'}`}>{totalMissed}</p>
               </div>
-              <AlertTriangle className="text-red-500 dark:text-red-400" size={20} />
+              <AlertTriangle className={darkMode ? 'text-red-400' : 'text-red-500'} size={20} />
             </div>
           </div>
         </div>

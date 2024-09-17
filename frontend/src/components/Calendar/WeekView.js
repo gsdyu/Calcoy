@@ -72,12 +72,12 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
       {/* Week header */}
-      <div className="text-center py-2 border-b border-gray-700">
+      <div className={`text-center py-2 border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <h2 className="text-lg font-semibold">{formatWeekHeader()}</h2>
       </div>
       
       {/* Header row with days */}
-      <div className="flex border-b border-gray-700">
+      <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="w-16 flex-shrink-0"></div>
         {weekDays.map((day, index) => {
           const isWeekendDay = isWeekend(day);
@@ -111,7 +111,7 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''}`}>
         {hours.map((hour) => (
-          <div key={hour} className="flex border-b border-gray-700 min-h-[60px]">
+          <div key={hour} className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[60px]`}>
             <div className="w-16 flex-shrink-0 text-right pr-2 pt-1 text-xs">
               {formatHour(hour)}
             </div>
@@ -121,7 +121,7 @@ const WeekView = ({ weekStart, selectedDate, events, onDateClick, onDateDoubleCl
               return (
                 <div
                   key={`${hour}-${dayIndex}`}
-                  className={`flex-1 border-l border-gray-700 relative 
+                  className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative 
                     ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                     ${isSelected ? darkMode ? 'bg-blue-900 bg-opacity-20' : 'bg-blue-100 bg-opacity-20' : ''}
                   `}
