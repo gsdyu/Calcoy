@@ -12,7 +12,11 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange }) => {
       <PopoverTrigger asChild>
         <div className="w-full h-full absolute top-0 left-0 cursor-pointer" />
       </PopoverTrigger>
-      <PopoverContent className={`w-48 p-0 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} border-0 shadow-lg rounded-lg overflow-hidden`}>
+      <PopoverContent className={`w-48 p-0 ${
+        darkMode 
+          ? 'bg-gray-800 text-white' 
+          : 'bg-white text-black'
+      } rounded-[25px] overflow-hidden`}>
         <div className={`flex justify-between items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
           <div className="text-left">
             <div className="text-sm font-semibold">{format(date, 'EEE')}</div>
