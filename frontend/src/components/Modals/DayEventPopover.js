@@ -1,7 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X, Calendar } from "lucide-react";
+import { X } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
 
 const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onViewChange, onDateSelect }) => {
@@ -25,24 +25,22 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
       } rounded-[25px] overflow-hidden`}>
         <div className={`relative flex justify-center items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
           <div 
-            className="text-center cursor-pointer hover:opacity-80 transition-opacity duration-200"
+            className="text-center cursor-pointer group"
             onClick={handleDateClick}
           >
             <div className="text-sm font-semibold">{format(date, 'EEE')}</div>
-            <div className="text-xl font-bold">{format(date, 'd')}</div>
+            <div className="relative">
+              <div className={`absolute inset-0 rounded-full ${darkMode ? 'group-hover:bg-gray-600' : 'group-hover:bg-gray-300'} transition-colors duration-200`}></div>
+              <div className="relative z-10 text-xl font-bold w-8 h-8 flex items-center justify-center">
+                {format(date, 'd')}
+              </div>
+            </div>
           </div>
           <button 
             onClick={() => onOpenChange(false)} 
             className={`absolute right-2 top-2 hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
           >
             <X className="h-4 w-4" />
-          </button>
-          <button 
-            onClick={handleDateClick}
-            className={`absolute left-2 top-2 hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
-            title="Go to Day View"
-          >
-            <Calendar className="h-4 w-4" />
           </button>
         </div>
         <div className="max-h-48 overflow-y-auto p-1">
