@@ -33,14 +33,14 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange }) => {
           {events.map((event, index) => (
             <div 
               key={index} 
-              className={`mb-1 p-1 rounded-md text-xs ${
+              className={`mb-1 py-1 px-2 rounded-full text-xs ${
                 darkMode ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
               }`}
             >
               <div className="flex justify-between items-center">
                 <span className="font-medium truncate mr-1">{event.title || '(No title)'}</span>
-                <span className="whitespace-nowrap">
-                  {format(new Date(event.start_time), 'h:mm a')} - {format(new Date(event.end_time), 'h:mm a')}
+                <span className="whitespace-nowrap text-[10px]">
+                  {format(new Date(event.start_time), 'h:mm a')}
                 </span>
               </div>
             </div>
