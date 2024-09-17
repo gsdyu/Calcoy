@@ -222,6 +222,7 @@ const CalendarApp = () => {
               onDateDoubleClick={handleAddEvent}
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
+              onViewChange={handleViewChange}
             />
           )}
           {view === 'Week' && (

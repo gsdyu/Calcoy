@@ -1,11 +1,17 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X } from "lucide-react";
+import { X, Calendar } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
 
-const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick }) => {
+const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onViewChange, onDateSelect }) => {
   const { darkMode } = useTheme();
+
+  const handleDateClick = () => {
+    onDateSelect(date);
+    onViewChange('Day');
+    onOpenChange(false);
+  };
 
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -18,7 +24,10 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick }) =
           : 'bg-white text-black'
       } rounded-[25px] overflow-hidden`}>
         <div className={`relative flex justify-center items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-          <div className="text-center">
+          <div 
+            className="text-center cursor-pointer hover:opacity-80 transition-opacity duration-200"
+            onClick={handleDateClick}
+          >
             <div className="text-sm font-semibold">{format(date, 'EEE')}</div>
             <div className="text-xl font-bold">{format(date, 'd')}</div>
           </div>
@@ -27,6 +36,13 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick }) =
             className={`absolute right-2 top-2 hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
           >
             <X className="h-4 w-4" />
+          </button>
+          <button 
+            onClick={handleDateClick}
+            className={`absolute left-2 top-2 hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
+            title="Go to Day View"
+          >
+            <Calendar className="h-4 w-4" />
           </button>
         </div>
         <div className="max-h-48 overflow-y-auto p-1">

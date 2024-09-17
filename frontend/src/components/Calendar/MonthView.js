@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
 
@@ -177,6 +177,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
                 if (!open) setOpenPopover(null);
               }}
               onEventClick={onEventClick}
+              onViewChange={onViewChange}
+              onDateSelect={onDateClick}
             />
           )}
         </div>
