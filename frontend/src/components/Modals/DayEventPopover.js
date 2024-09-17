@@ -17,14 +17,14 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange }) => {
           ? 'bg-gray-800 text-white' 
           : 'bg-white text-black'
       } rounded-[25px] overflow-hidden`}>
-        <div className={`flex justify-between items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-          <div className="text-left">
+        <div className={`relative flex justify-center items-center p-2 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
+          <div className="text-center">
             <div className="text-sm font-semibold">{format(date, 'EEE')}</div>
             <div className="text-xl font-bold">{format(date, 'd')}</div>
           </div>
           <button 
             onClick={() => onOpenChange(false)} 
-            className={`hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
+            className={`absolute right-2 top-2 hover:bg-opacity-20 ${darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-300'} p-1 rounded`}
           >
             <X className="h-4 w-4" />
           </button>
