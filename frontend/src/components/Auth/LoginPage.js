@@ -1,4 +1,5 @@
 'use client';
+ 
 
 import React, { useState } from 'react';
 import Link from 'next/link';
@@ -145,16 +146,12 @@ const LoginPage = () => {
         </div>
         
         <div className="mt-6 space-y-4">
-          <button onClick={() => handleSocialLogin('apple')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <AppleIcon className="w-5 h-5 mr-2" />
-            Continue with Apple
-          </button>
           <button onClick={() => handleSocialLogin('google')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
             <GoogleIcon className="w-5 h-5 mr-2" />
             Continue with Google
           </button>
-          <button onClick={() => handleSocialLogin('microsoft')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <MicrosoftIcon className="w-5 h-5 mr-2" />
+          <button onClick={() => handleSocialLogin('azure-ad')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+          <MicrosoftIcon className="w-5 h-5 mr-2" />
             Continue with Microsoft
           </button>
         </div>

@@ -1,10 +1,20 @@
-require('dotenv').config();
+require('dotenv').config({ path: '.env' });  // Go one level up to the root
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+ const session = require('express-session');
 
+// Initialize express app
 const app = express();
 
+// Initialize PostgreSQL connection pool
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+});
+
+// Load passport configuration after defining the pool
+ 
 app.use(express.json());
 app.use(cors({
     origin: 'http://localhost:3000',
@@ -12,11 +22,21 @@ app.use(cors({
     credentials: true
 }));
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
-});
+app.use(session({
+  secret: 'some_secret_key',
+  resave: false,
+  saveUninitialized: true
+}));
 
+ 
+
+ 
+
+// Routes for authentication and events
+require('./routes/auth')(app, pool);
+require('./routes/events')(app, pool);
+
+// Create tables if they don't exist
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -51,5 +71,6 @@ app.get('/', async (req, res) => {
 	res.send({"status":"ready"});
 })
 
+// Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
