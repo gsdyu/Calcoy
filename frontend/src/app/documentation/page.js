@@ -1,4 +1,4 @@
-import DocumentationPage from '@/components/Auth/DocumentationPage';
+import DocumentationPage from '@/components/Info/DocumentationPage';
 
 export default function Documentation() {
   return <DocumentationPage/>;
