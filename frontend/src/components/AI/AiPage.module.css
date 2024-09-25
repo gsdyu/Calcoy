@@ -1,3 +1,50 @@
-.inputText {
-    color:black;
-}
+
+.pageContainer {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100vh;
+    box-sizing: border-box;
+  }
+  
+  .headerContainer {
+    width: 100%;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+  
+  .header {
+    font-size: 24px;
+    font-weight: 900;
+  }
+
+  .subheader {
+    font-size: 18px;
+  }
+  
+  .inputContainer {
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    width: 100%;
+    margin-top: auto;
+    margin-bottom: 10px;
+  }
+  
+
+  .inputText {
+    color: black;
+    width: 90%;
+    max-width: 800px;
+    padding: 15px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 25px;
+    outline: none;
+    resize: none;
+    overflow: hidden;
+    min-height: 40px;
+    line-height: 1.5;
+    box-shadow: none;
+  }
+  
