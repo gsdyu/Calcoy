@@ -12,6 +12,7 @@
     "debug": "~2.6.9",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "groq-sdk": "^0.7.0",
     "http-errors": "~1.6.3",
     "jade": "^0.29.0",
     "jsonwebtoken": "^9.0.2",

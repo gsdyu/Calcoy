@@ -1,4 +1,4 @@
-//const { authenticateToken } = require('../authMiddleware');
+const { authenticateToken } = require('../authMiddleware');
 
 module.exports = (app, pool) => {
 
