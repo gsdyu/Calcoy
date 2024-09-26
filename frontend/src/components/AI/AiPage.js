@@ -1,43 +1,94 @@
 'use client';
 
+import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
-import { useState } from 'react';
+import { MoveUp } from 'lucide-react';
 
-function TextInput() {
-  const [inputValue, setInputValue] = useState('');
+const AiPage = () => {
+  const [messages, setMessages] = useState([]);
+  const [input, setInput] = useState('');
+  const textareaRef = useRef(null);
+  const [response, setResponse] = useState('');
 
-  const handleInputChange = (event) => {
-    const { value } = event.target;
-    setInputValue(value);
-    event.target.style.height = 'auto';
-    event.target.style.height = `${event.target.scrollHeight}px`;
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+  };
+
+  const handleSendMessage = async (e) => {
+    e.preventDefault();
+    if (!input) return;
+
+    const userMessage = { sender: 'user', text: input };
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
+
+    // groq api
+    try {
+      const response = await fetch('/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ message: input }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+
+      const botMessage = { sender: 'bot', text: data.message };
+      setMessages((prevMessages) => [...prevMessages, botMessage]);
+    } catch (error) {
+      console.error('Error fetching response:', error);
+      const errorMessage = { sender: 'bot', text: 'error' };
+      setMessages((prevMessages) => [...prevMessages, errorMessage])
+    }
+
+    setInput('');
+    textareaRef.current.style.height = 'auto';
+  };
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  }, [input]);
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSendMessage(e);
+    }
   };
 
   return (
-    <div className={styles.inputContainer}>
-      <textarea
-        value={inputValue}
-        onChange={handleInputChange}
-        placeholder="Ask Timewise AI"
-        className={styles.inputText}
-        rows={1}
-      />
-    </div>
-  );
-}
-
-const AiPage = () => {
-  
-  return (
-    <div className={styles.pageContainer}>
-      <div className={styles.headerContainer}>
-        <h1 className={styles.header}>Timewise AI</h1>
-        <h2 className={styles.subheader}>How can I help you?</h2>
+    <>
+      <div className={styles.container}>
+        <h1 className={styles.aiheader}>Timewise AI</h1>
+        <div className={styles.chatWindow}>
+          {messages.map((msg, index) => (
+            <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.user : styles.bot}`}>
+              {msg.text}
+            </div>
+          ))}
+        </div>
+        <form onSubmit={handleSendMessage} className={styles.inputContainer}>
+          <textarea 
+            ref={textareaRef}
+            value={input} 
+            onChange={handleInputChange} 
+            onKeyDown={handleKeyPress}
+            placeholder="Ask Timewise AI" 
+            className={styles.textarea} 
+            rows={1}
+          />
+          <button type="submit" className={`${styles.button} ${input.trim() ? styles.buttonActive : ''}`}><MoveUp className={styles.sendicon}/></button>
+        </form>
       </div>
-
-      <TextInput />
-    </div>
+    </>
   );
-}
+};
 
 export default AiPage;
