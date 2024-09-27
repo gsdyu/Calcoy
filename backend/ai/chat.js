@@ -45,11 +45,10 @@ function clearChat(priorSystem){
 	history = [];
 	return 1;
 }
-
-// conversation with frakenstein assistant
-initChat();
 inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
-
+inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
+inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
+module.exports = { inputChat, initChat };
 
 
 

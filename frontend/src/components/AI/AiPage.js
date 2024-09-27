@@ -8,7 +8,6 @@ const AiPage = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const textareaRef = useRef(null);
-  const [response, setResponse] = useState('');
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -23,7 +22,7 @@ const AiPage = () => {
 
     // groq api
     try {
-      const response = await fetch('/ai', {
+      const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +40,7 @@ const AiPage = () => {
       setMessages((prevMessages) => [...prevMessages, botMessage]);
     } catch (error) {
       console.error('Error fetching response:', error);
-      const errorMessage = { sender: 'bot', text: 'error' };
+      const errorMessage = { sender: 'bot', text: 'There was an error' };
       setMessages((prevMessages) => [...prevMessages, errorMessage])
     }
 
