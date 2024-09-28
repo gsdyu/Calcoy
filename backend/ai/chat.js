@@ -31,7 +31,7 @@ async function inputChat(input) {
 		max_tokens: max_tokens,
 	});
 	var message = completions.choices[0].message.content; 
-	history.push(message);
+	history.push({role: "assistant", content: message});
 	return message;
 }
 
@@ -45,10 +45,11 @@ function clearChat(priorSystem){
 	history = [];
 	return 1;
 }
+initChat();
 inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
-module.exports = { inputChat, initChat };
+module.exports = { inputChat, initChat, clearChat };
 
 
 
