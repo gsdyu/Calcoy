@@ -59,6 +59,9 @@ const validateForm = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         const formErrors = validateForm();
+        if (response.ok) {
+            router.push('/calendar');  
+        }
 
         if (Object.keys(formErrors).length === 0) {
             try {
@@ -69,7 +72,7 @@ const validateForm = () => {
                 });
 
                 if (response.ok) {
-                    router.push('/auth/login');
+                    router.push('/calendar');   
                 } else {
                     const data = await response.json();
                     setErrors({ ...formErrors, server: data.error });

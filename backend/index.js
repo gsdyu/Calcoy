@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool);
+require('./config/passport')(pool);  // You only pass `pool` here, not `app`
 
 app.use(express.json());
 app.use(cors({
@@ -24,12 +24,14 @@ app.use(cors({
     credentials: true
 }));
 
+// Set up session management
 app.use(session({
-  secret: 'some_secret_key',
+  secret: process.env.SESSION_SECRET || 'some_secret_key',
   resave: false,
   saveUninitialized: true
 }));
 
+// Initialize Passport middleware
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -39,8 +41,8 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 // Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
   (req, res) => {
-    // Successful authentication, redirect to the frontend.
-    res.redirect('http://localhost:3000');
+    // Successful authentication, redirect to the frontend (calendar page).
+    res.redirect('http://localhost:3000/calendar');
   }
 );
 
@@ -48,17 +50,20 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
 
-// Create tables if they don't exist
+// Create or alter users table to add 2FA columns
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT NOT NULL
+    password TEXT NOT NULL,
+    two_factor_code VARCHAR(6),  -- 2FA code column
+    two_factor_expires TIMESTAMPTZ  -- 2FA expiration column
   );
 `).then(() => console.log("Users table is ready"))
   .catch(err => console.error('Error creating users table:', err));
 
+// Create events table if it doesn't exist
 pool.query(`
   CREATE TABLE IF NOT EXISTS events (
     id SERIAL PRIMARY KEY,
