@@ -24,21 +24,8 @@ const LoginPage = () => {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
-  // Handle social login
-  const handleSocialLogin = (provider) => {
-    signIn(provider, { redirect: false })
-      .then((result) => {
-        if (!result.error) {
-          router.push('/calendar');
-        } else {
-          setError('Social login failed');
-        }
-      })
-      .catch((error) => {
-        console.error('Social login error:', error);
-        setError('An unexpected error occurred');
-      });
-  };
+ 
+ 
 
   // Handle email/password login with 2FA flow
   const handleSubmit = async (e) => {
@@ -192,10 +179,10 @@ const LoginPage = () => {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
         <div className="mt-6 space-y-4">
-          <button onClick={() => handleSocialLogin('google')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-            <GoogleIcon className="w-5 h-5 mr-2" />
-            Continue with Google
-          </button>
+        <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+                        <GoogleIcon className="w-5 h-5 mr-2" />
+                        Sign in with Google
+                    </a>
           <button onClick={() => handleSocialLogin('microsoft')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
             <MicrosoftIcon className="w-5 h-5 mr-2" />
             Continue with Microsoft
