@@ -12,26 +12,26 @@ module.exports = (pool) => {
       },
       async (accessToken, refreshToken, profile, done) => {
         const email = profile.emails[0].value;
-        const username = profile.displayName;
 
         try {
           // Check if user already exists
-          let user = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          let user = userResult.rows[0];
 
-          if (user.rows.length === 0) {
-            // Create new user if not found
-            const newUser = await pool.query(
-              'INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *',
-              [username, email]
+          if (!user) {
+            // Create a new user without a password and without a username
+            const newUserResult = await pool.query(
+              'INSERT INTO users (email) VALUES ($1) RETURNING *',
+              [email]
             );
-            user = newUser;
+            user = newUserResult.rows[0];
           }
 
           // Proceed with user data
-          done(null, user.rows[0]);
+          return done(null, user);
         } catch (error) {
           console.error('Google signup error:', error);
-          done(error, null);
+          return done(error, null);
         }
       }
     )
@@ -45,8 +45,8 @@ module.exports = (pool) => {
   // Deserialize user from session
   passport.deserializeUser(async (id, done) => {
     try {
-      const user = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
-      done(null, user.rows[0]);
+      const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+      done(null, userResult.rows[0]);
     } catch (error) {
       done(error, null);
     }

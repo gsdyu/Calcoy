@@ -51,40 +51,44 @@ const validateForm = () => {
     return errors;
 };
     
+const handleSocialLogin = (provider) => {
+    if (provider === 'google') {
+      window.location.href = 'http://localhost:5000/auth/google';
+    } else if (provider === 'microsoft') {
+      window.location.href = 'http://localhost:5000/auth/azure'; // Redirect to Azure login
+    }
+  };
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
-        const formErrors = validateForm();
-        if (response.ok) {
-            router.push('/calendar');  
-        }
-
-        if (Object.keys(formErrors).length === 0) {
+        const formErrors = validateForm();  // Validation function
+        
+        if (Object.keys(formErrors).length === 0) {  // Proceed if no validation errors
             try {
                 const response = await fetch('http://localhost:5000/auth/signup', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(formData)
+                    body: JSON.stringify(formData)  // Send username, email, password
                 });
-
+    
                 if (response.ok) {
-                    router.push('/calendar');   
+                    router.push('/calendar');  // Redirect after successful signup
                 } else {
                     const data = await response.json();
-                    setErrors({ ...formErrors, server: data.error });
+                    setErrors({ ...formErrors, server: data.error });  // Display server errors
                 }
             } catch (error) {
                 console.error('Signup error:', error);
                 setErrors({ ...formErrors, server: 'An unexpected error occurred' });
             }
         } else {
-            setErrors(formErrors);
+            setErrors(formErrors);  // Display validation errors
         }
     };
+    
 
     const togglePasswordVisibility = () => {
         setShowPassword(!showPassword);
@@ -199,14 +203,11 @@ const validateForm = () => {
                         <GoogleIcon className="w-5 h-5 mr-2" />
                         Sign up with Google
                     </a>
-                    <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-                        <MicrosoftIcon className="w-5 h-5 mr-2" />
-                        Sign up with Microsoft
-                    </button>
-                    <button className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-                        <AppleIcon className="w-5 h-5 mr-2" />
-                        Sign up with Apple
-                    </button>
+                    <button onClick={() => handleSocialLogin('microsoft')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+            <MicrosoftIcon className="w-5 h-5 mr-2" />
+            Continue with Microsoft
+          </button>
+    
                 </div>
                 <p className="mt-6 text-center text-sm text-gray-600">
                     Already have an account? <Link href="/auth/login" className="text-blue-600 hover:underline">Log in</Link>

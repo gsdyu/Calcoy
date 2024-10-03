@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GoogleIcon, MicrosoftIcon, AppleIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
+import { GoogleIcon, MicrosoftIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -24,8 +24,14 @@ const LoginPage = () => {
     setFormData({ ...formData, [e.target.name]: value });
   };
 
- 
- 
+  // Handle social logins like Google and Microsoft (Azure)
+  const handleSocialLogin = (provider) => {
+    if (provider === 'google') {
+      window.location.href = 'http://localhost:5000/auth/google';
+    } else if (provider === 'microsoft') {
+      window.location.href = 'http://localhost:5000/auth/azure'; // Redirect to Azure login
+    }
+  };
 
   // Handle email/password login with 2FA flow
   const handleSubmit = async (e) => {
@@ -45,7 +51,7 @@ const LoginPage = () => {
       if (response.ok && data.message === '2FA_REQUIRED') {
         setIsModalOpen(true); // Show 2FA modal if 2FA is required
       } else if (response.ok) {
-        localStorage.setItem('token', data.token);   
+        localStorage.setItem('token', data.token);
         router.push('/calendar');
       } else {
         setError(data.message || 'Invalid email or password');
@@ -179,10 +185,10 @@ const LoginPage = () => {
           <div className="flex-grow border-t border-gray-300"></div>
         </div>
         <div className="mt-6 space-y-4">
-        <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
-                        <GoogleIcon className="w-5 h-5 mr-2" />
-                        Sign in with Google
-                    </a>
+          <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+            <GoogleIcon className="w-5 h-5 mr-2" />
+            Continue with Google
+          </a>
           <button onClick={() => handleSocialLogin('microsoft')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
             <MicrosoftIcon className="w-5 h-5 mr-2" />
             Continue with Microsoft
