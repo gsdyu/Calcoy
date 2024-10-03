@@ -4,7 +4,7 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const passport = require('passport');
 const session = require('express-session');
-
+const jwt = require('jsonwebtoken'); 
 // Initialize express app
 const app = express();
 
@@ -15,7 +15,7 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool);  // You only pass `pool` here, not `app`
+require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
@@ -40,9 +40,34 @@ app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'em
 
 // Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
-  (req, res) => {
-    // Successful authentication, redirect to the frontend (calendar page).
-    res.redirect('http://localhost:3000/calendar');
+  async (req, res) => {
+    const email = req.user.email;
+    try {
+      let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      let user = userResult.rows[0];
+
+      // Create JWT token
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+      // Store the token in the session or cookies
+      req.session.token = token;
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+
+      // Redirect to the username page if the user has no username set
+      if (!user.username) {
+        req.session.tempUser = { email }; // Save email in session for username setup
+        return res.redirect('http://localhost:3000/username');
+      }
+
+      // Otherwise, redirect to the calendar page
+      res.redirect('http://localhost:3000/calendar');
+    } catch (error) {
+      console.error('Google login error:', error);
+      res.status(500).send('Internal server error');
+    }
   }
 );
 
@@ -54,11 +79,11 @@ require('./routes/events')(app, pool);
 pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(32) UNIQUE NOT NULL,
+    username VARCHAR(32) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    two_factor_code VARCHAR(6),  -- 2FA code column
-    two_factor_expires TIMESTAMPTZ  -- 2FA expiration column
+    password TEXT,  -- Set password to allow NULL for OAuth users
+    two_factor_code VARCHAR(6),
+    two_factor_expires TIMESTAMPTZ
   );
 `).then(() => console.log("Users table is ready"))
   .catch(err => console.error('Error creating users table:', err));

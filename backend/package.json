@@ -6,9 +6,13 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "@azure/identity": "^4.4.1",
+    "@azure/msal-browser": "^3.24.0",
+    "@azure/msal-node": "^2.14.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
+    "crypto": "^1.0.1",
     "debug": "~2.6.9",
     "dotenv": "^16.4.5",
     "express": "~4.16.1",
@@ -22,6 +26,7 @@
     "next-auth": "^4.24.7",
     "nodemailer": "^6.9.15",
     "passport": "^0.7.0",
+    "passport-azure-ad": "^4.3.5",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.12.0"
   },
