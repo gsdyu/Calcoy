@@ -4,7 +4,6 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon, MicrosoftIcon, AppleIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
-import { signIn, signOut, useSession } from 'next-auth/react';
 const SignUpPage = () => {
     const [formData, setFormData] = useState({
     username: '',
