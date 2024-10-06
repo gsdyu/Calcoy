@@ -1,57 +1,208 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer'); // To send 2FA code via email
+const nodemailer = require('nodemailer'); 
+const msal = require('@azure/msal-node');
+const session = require('express-session');
 
 module.exports = (app, pool) => {
+  // Configure session middleware
+  app.use(
+    session({
+      secret: 'your-session-secret', // Replace with a strong secret
+      resave: false,
+      saveUninitialized: true,
+    })
+  );
 
-    // Configure nodemailer for sending 2FA code via email
-    const transporter = nodemailer.createTransport({
-        service: 'gmail', // You can replace this with any email service provider you're using
-        auth: {
-            user: process.env.EMAIL_USER,
-            pass: process.env.EMAIL_PASS, // Use EMAIL_PASS here instead of EMAIL_PASSWORD
-        },
-    });
+  // MSAL configuration for Microsoft OAuth
+  const msalConfig = {
+    auth: {
+      clientId: process.env.MICROSOFT_ID,
+      authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}`,
+      clientSecret: process.env.MICROSOFT_SECRET,
+    },
+    system: {
+      loggerOptions: {
+        loggerCallback(loglevel, message, containsPii) {
+         },
+        piiLoggingEnabled: false,
+        logLevel: msal.LogLevel.Info,
+      },
+    },
+  };
+  const transporter = nodemailer.createTransport({
+    service: 'gmail', 
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,  
+    },
+});
 
-    // Signup route
-    app.post('/auth/signup', async (req, res) => {
-        const { username, email, password } = req.body;
+  const pca = new msal.ConfidentialClientApplication(msalConfig);
 
-        // Check if password contains spaces
-        if (/\s/.test(password)) {
-            return res.status(400).json({ error: 'Password should not contain spaces' });
-        }
+  // Azure AD Authentication route
+  app.get('/auth/azure', (req, res) => {
+    const cryptoProvider = new msal.CryptoProvider();
+
+    cryptoProvider
+      .generatePkceCodes()
+      .then(({ verifier, challenge }) => {
+        req.session.codeVerifier = verifier;
+
+        const authCodeUrlParameters = {
+          scopes: ['openid', 'profile', 'email'],
+          redirectUri: 'http://localhost:5000/auth/azure/callback',
+          codeChallenge: challenge,
+          codeChallengeMethod: 'S256',
+        };
+
+        pca
+          .getAuthCodeUrl(authCodeUrlParameters)
+          .then((response) => {
+            res.redirect(response);
+          })
+          .catch((error) => {
+            console.error('AuthCodeUrl Error:', error);
+            res.status(500).send('Error generating auth code URL');
+          });
+      })
+      .catch((error) => {
+        console.error('PKCE Code Generation Error:', error);
+        res.status(500).send('Error generating PKCE codes');
+      });
+  });
+
+  // Azure AD Authentication callback route
+  app.get('/auth/azure/callback', (req, res) => {
+    const tokenRequest = {
+      code: req.query.code,
+      scopes: ['openid', 'profile', 'email'],
+      redirectUri: 'http://localhost:5000/auth/azure/callback',
+      codeVerifier: req.session.codeVerifier,
+    };
+
+    pca
+      .acquireTokenByCode(tokenRequest)
+      .then(async (response) => {
+        const idTokenClaims = response.idTokenClaims;
+        const email = idTokenClaims.preferred_username || idTokenClaims.email;
 
         try {
-            const hashedPassword = await bcrypt.hash(password, 10);
+          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          let user = userResult.rows[0];
 
-            const result = await pool.query(
-                'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *',
-                [username, email, hashedPassword]
+          // If user does not exist, create the user without a username
+          if (!user) {
+            const newUserResult = await pool.query(
+              'INSERT INTO users (email) VALUES ($1) RETURNING *',
+              [email]
             );
+            user = newUserResult.rows[0];
+          }
 
-            console.log('User created successfully');
-            res.status(201).json({ message: 'User created', user: result.rows[0] });
+          // Create JWT token for your application
+          const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+          // Store the token in the session or cookies
+          req.session.token = token;
+          res.cookie('auth_token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+          });
+
+          // Redirect to the username page if the user is new and has no username set
+          if (!user.username) {
+            req.session.tempUser = { email }; // Save email in session for username setup
+            return res.redirect('http://localhost:3000/username');
+          }
+
+          // Otherwise, redirect to the calendar page
+          res.redirect('http://localhost:3000/calendar');
         } catch (error) {
-            if (error.code === '23505') { // Unique constraint violation
-                if (error.constraint === 'users_email_key') {
-                    console.error('Duplicate email:', email);
-                    return res.status(400).json({ error: 'Email already exists' });
-                }
-                if (error.constraint === 'users_username_key') {  
-                    console.error('Duplicate username:', username);
-                    return res.status(400).json({ error: 'Username already taken' });
-                }
-            }
-            console.error('Signup error:', error);
-            res.status(500).json({ error: 'Internal server error' });
+          console.error('Azure login error:', error);
+          res.status(500).send('Internal server error');
         }
-    });
+      })
+      .catch((error) => {
+        console.error('Token Acquisition Error:', error);
+        res.status(500).send('Authentication failed');
+      });
+  });
 
+  // Route to handle setting the username for first-time login users
+// Route to handle setting the username for first-time login users
+app.post('/auth/set-username', async (req, res) => {
+    const { username } = req.body;
+    const { email } = req.session.tempUser;  // Get email stored in session
+  
+    try {
+      const result = await pool.query(
+        'UPDATE users SET username = $1 WHERE email = $2 RETURNING *',
+        [username, email]
+      );
+  
+      // Clear the tempUser session
+      req.session.tempUser = null;
+  
+      // Send the updated user data
+      res.json({ user: result.rows[0] });
+    } catch (error) {
+      if (error.code === '23505' && error.constraint === 'users_username_key') {
+        // Handle unique constraint violation (duplicate username)
+        return res.status(400).json({ error: 'Username already taken' });
+      }
+      console.error('Error setting username:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+
+
+  // Signup route
+  const bcrypt = require('bcryptjs'); // For password hashing
+  const jwt = require('jsonwebtoken');
+  
+ // Signup route
+ app.post('/auth/signup', async (req, res) => {
+    const { username, email, password } = req.body;
+
+    if (!username || !email || !password) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+
+    try {
+      // Check if the user already exists
+      const existingUser = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+
+      if (existingUser.rows.length > 0) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+
+      // Hash the password
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Insert the new user into the database
+      const newUser = await pool.query(
+        'INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING *',
+        [username, email, hashedPassword]
+      );
+
+      // Create a JWT token
+      const token = jwt.sign({ userId: newUser.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+      // Send the response
+      res.status(201).json({ message: 'User created successfully', user: newUser.rows[0], token });
+    } catch (error) {
+      console.error('Signup error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
     // Login route (Step 1)
     app.post('/auth/login', async (req, res) => {
         const { email, password } = req.body;
+
         try {
+            // Check if the user exists
             const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
             const user = result.rows[0];
 
