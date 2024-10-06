@@ -13,11 +13,7 @@ var max_tokens = 100;
 var temperature = 1;
 var stream = false;
 
-<<<<<<< HEAD
-async function initChat(system = {role: "system", content: "You are a calendar assistant that help manage and decide the user's schedule"}) {
-=======
 async function initChat(system = {role: "system", content: "You are an assistant"}) {
->>>>>>> toan
 	history.push(system);
 	var check = client.chat.completions.create({
 		messages: history,
