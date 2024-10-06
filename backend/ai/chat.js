@@ -1,5 +1,6 @@
 const Groq = require("groq-sdk")
-require ('dotenv').config({path:'../.env'})
+// if running wiht index.js, you do not need to import .env.local here; does in index
+//require ('dotenv').config({path:'../../.env.local'})
 
 //const groq = new Groq({apiKey: process.env.GROQ_API_KEY});
 
@@ -12,7 +13,7 @@ var max_tokens = 100;
 var temperature = 1;
 var stream = false;
 
-async function initChat(system = {role: "system", content: "You are an assistant and also Frankenstein's monster."}) {
+async function initChat(system = {role: "system", content: "You are a calendar assistant that help manage and decide the user's schedule"}) {
 	history.push(system);
 	var check = client.chat.completions.create({
 		messages: history,
@@ -46,9 +47,9 @@ function clearChat(priorSystem){
 	return 1;
 }
 initChat();
-inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
-inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
-inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
+//inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
+//inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
+//inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
 module.exports = { inputChat, initChat, clearChat };
 
 
