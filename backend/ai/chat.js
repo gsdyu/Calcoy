@@ -13,7 +13,11 @@ var max_tokens = 100;
 var temperature = 1;
 var stream = false;
 
+<<<<<<< HEAD
 async function initChat(system = {role: "system", content: "You are a calendar assistant that help manage and decide the user's schedule"}) {
+=======
+async function initChat(system = {role: "system", content: "You are an assistant"}) {
+>>>>>>> toan
 	history.push(system);
 	var check = client.chat.completions.create({
 		messages: history,
@@ -50,6 +54,7 @@ initChat();
 //inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
+
 module.exports = { inputChat, initChat, clearChat };
 
 

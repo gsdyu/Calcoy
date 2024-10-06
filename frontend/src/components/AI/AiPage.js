@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
 import { MoveUp } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 
 const AiPage = () => {
   const [messages, setMessages] = useState([]);
@@ -65,7 +66,8 @@ const AiPage = () => {
   return (
     <>
       <div className={styles.container}>
-        <h1 className={styles.aiheader}>Timewise AI</h1>
+        <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
+        <h2 className={styles.aisubheader}>How can I help you?</h2>
         <div className={styles.chatWindow}>
           {messages.map((msg, index) => (
             <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.user : styles.bot}`}>

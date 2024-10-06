@@ -1,39 +1,54 @@
-.aiheader {
-    font-size: 20px;
-    font-weight: bold;
-}
+  .aiheader {
+      font-size: 18px;
+      font-weight: bold;
+      color: rgb(102, 144, 207);;
+      display: inline-flex;
+      align-items: center;
+  }
+
+  .ailogo {
+    margin-left: 8px;
+  }
+
+  .aisubheader {
+    font-size: 25px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
 
 
-.container {
+  .container {
+    padding-top: 200px;
     max-width: 1000px;
     margin: 0 auto;
     padding: 40px;
     display: flex;
     flex-direction: column;
     height: 100vh;
+
   }
   
   .chatWindow {
-    display: flex; /* Enable flexbox */
-    flex-direction: column; /* Stack messages vertically */
-    flex: 1; /* Take up available space */
-    padding: 10px; /* Add some padding inside the chat window */
-    overflow-y: auto; /* Allow scrolling if the content overflows */
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    padding: 10px;
+    overflow-y: auto;
   }
   
   .message {
-    padding: 10px 15px; /* Padding inside the message box */
-    border-radius: 10px; /* Rounded corners */
-    margin: 5px 0; /* Space between messages */
-    word-wrap: break-word; /* Wrap long words to the next line */
-    display: inline-block; /* Make the background cover only the text */
-    max-width: 75%; /* Prevent messages from being too wide */
+    padding: 10px 15px;
+    border-radius: 10px;
+    margin: 5px 0;
+    word-wrap: break-word;
+    display: inline-block;
+    max-width: 75%;
   }
   
   .user {
     text-align: right;
     background-color: rgb(67, 85, 112);
-    align-self: flex-end; /* Align user messages to the right */
+    align-self: flex-end;
   }
   
   .bot {
@@ -89,4 +104,23 @@
   
   .sendicon {
     color: #11235e;
+  }
+
+  /* scrollbar stuff */
+  .chatWindow::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  .chatWindow::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  
+  .chatWindow::-webkit-scrollbar-thumb {
+    background: rgba(67, 85, 112, 0.6);
+    border-radius: 10px;
+  }
+  
+  .chatWindow::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 93, 121, 0.8);
   }
