@@ -73,7 +73,10 @@ const handleSocialLogin = (provider) => {
                     body: JSON.stringify(formData)  // Send username, email, password
                 });
     
+				const data = await response.json();
+
                 if (response.ok) {
+					localStorage.setItem('token', data.token);
                     router.push('/calendar');  // Redirect after successful signup
                 } else {
                     const data = await response.json();
