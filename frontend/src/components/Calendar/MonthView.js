@@ -9,21 +9,31 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
+  const [eventsPerDay, setEventsPerDay] = useState(2);
   const dayRefs = useRef({});
 
   useEffect(() => {
-    const calculateCellHeight = () => {
+    const calculateDimensions = () => {
       if (containerRef.current) {
         const containerHeight = containerRef.current.clientHeight;
         const weeksInMonth = getWeeksInMonth(currentDate);
-        const calculatedHeight = Math.floor(containerHeight / weeksInMonth);
-        setCellHeight(calculatedHeight);
+        const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
+        setCellHeight(calculatedCellHeight);
+
+        // Calculate how many events can fit, always showing one less than max
+        const eventHeight = 24; // Adjust this based on your event component height
+        const dateHeight = 24; // Height of the date number display
+        const moreIndicatorHeight = 20; // Height of the "+x more" indicator
+        const padding = 8; // Total vertical padding in the cell
+        const availableHeight = calculatedCellHeight - dateHeight - padding - moreIndicatorHeight;
+        const calculatedEventsPerDay = Math.floor(availableHeight / eventHeight);
+        setEventsPerDay(Math.max(1, calculatedEventsPerDay - 1)); // Always show one less than max
       }
     };
 
-    calculateCellHeight();
-    window.addEventListener('resize', calculateCellHeight);
-    return () => window.removeEventListener('resize', calculateCellHeight);
+    calculateDimensions();
+    window.addEventListener('resize', calculateDimensions);
+    return () => window.removeEventListener('resize', calculateDimensions);
   }, [currentDate]);
 
   const isToday = (date) => {
@@ -120,8 +130,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, 2);
-      const additionalEventsCount = Math.max(0, dayEvents.length - 2);
+      const displayedEvents = dayEvents.slice(0, eventsPerDay);
+      const additionalEventsCount = dayEvents.length - eventsPerDay;
 
       days.push(
         <div
@@ -148,9 +158,9 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           >
             {dayNumber}
           </span>
-          <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: 'calc(100% - 24px)' }}>
+          <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: `${cellHeight - 24 - 8}px` }}>
             {displayedEvents.map(event => renderEventCompact(event))}
-            {additionalEventsCount > 0 && (
+            {dayEvents.length > eventsPerDay && (
               <button
                 className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
                 onClick={(e) => {
