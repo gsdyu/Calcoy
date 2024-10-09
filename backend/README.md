@@ -4,9 +4,8 @@
   npm install
 ```
 ## env file
-- by default, the access to the env file (for both frontend and backend) is assigned in timewise directory (with the backend and frontend folder). this means that there is only one env file.
-- by default, env name is .env.local
-- technically the env file should be seperated to be in both frontend and backend; frontent and backend will have their own associated env file
+- by default, env name is .env
+- .env file should be in root directory of backend; timewise/backend/.
 - env file location might be different for everyone; just make sure the program access the env location relative to where you have your own env
 
 ## have a running local Postgre server.
