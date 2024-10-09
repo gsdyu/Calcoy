@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
+import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventDrop }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const dayRefs = useRef({});
@@ -49,16 +51,29 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return 'compactView';
   };
 
-  const renderEventCompact = (event) => {
+  const renderEventCompact = useCallback((event, date) => {
     const eventColor = event.color || 'blue';
     const eventTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
+    const draggableRef = useRef(null);
+
+    React.useEffect(() => {
+      if (draggableRef.current) {
+        const cleanup = draggable({
+          element: draggableRef.current,
+          data: { eventId: event.id, originalDate: date },
+        });
+        return cleanup;
+      }
+    }, [event.id, date]);
+
     return (
       <div 
+        ref={draggableRef}
         key={event.id}
         className={`
           flex justify-between items-center
-          text-xs mb-1 truncate cursor-pointer
+          text-xs mb-1 truncate cursor-move
           rounded-full py-1 px-2
           border border-${eventColor}-500
           bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
@@ -77,7 +92,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
       </div>
     );
-  };
+  }, [darkMode, onEventClick]);
 
   const renderCalendar = () => {
     const viewType = getViewType(currentDate);
@@ -129,10 +144,37 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           break;
       }
 
+      const dayRef = useRef(null);
+
+      React.useEffect(() => {
+        if (dayRef.current) {
+          const cleanup = monitorForElements({
+            element: dayRef.current,
+            onDragEnter: () => {
+              dayRef.current.classList.add('bg-blue-100');
+            },
+            onDragLeave: () => {
+              dayRef.current.classList.remove('bg-blue-100');
+            },
+            onDrop: (event) => {
+              dayRef.current.classList.remove('bg-blue-100');
+              const { eventId, originalDate } = event.data;
+              if (!isSameDay(date, originalDate)) {
+                onEventDrop(eventId, date);
+              }
+            },
+          });
+          return cleanup;
+        }
+      }, [date]);
+
       days.push(
         <div
           key={i}
-          ref={(el) => dayRefs.current[`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`] = el}
+          ref={(el) => {
+            dayRefs.current[`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`] = el;
+            dayRef.current = el;
+          }}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden
@@ -157,7 +199,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
             {dayNumber}
           </span>
           <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: 'calc(100% - 24px)' }}>
-            {displayedEvents.map(event => renderEventCompact(event))}
+            {displayedEvents.map(event => renderEventCompact(event, date))}
             {additionalEventsCount > 0 && (
               <button
                 className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
