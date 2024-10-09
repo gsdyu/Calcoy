@@ -20,14 +20,14 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
         setCellHeight(calculatedCellHeight);
 
-        // Calculate how many events can fit, always showing one less than max
-        const eventHeight = 24; // Adjust this based on your event component height
-        const dateHeight = 24; // Height of the date number display
-        const moreIndicatorHeight = 20; // Height of the "+x more" indicator
-        const padding = 8; // Total vertical padding in the cell
+
+        const eventHeight = 24; 
+        const dateHeight = 24; 
+        const moreIndicatorHeight = 20; 
+        const padding = 8; 
         const availableHeight = calculatedCellHeight - dateHeight - padding - moreIndicatorHeight;
         const calculatedEventsPerDay = Math.floor(availableHeight / eventHeight);
-        setEventsPerDay(Math.max(1, calculatedEventsPerDay - 1)); // Always show one less than max
+        setEventsPerDay(Math.max(1, calculatedEventsPerDay - 1)); 
       }
     };
 
