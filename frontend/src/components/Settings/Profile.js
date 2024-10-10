@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { User, Mail, Phone, Lock, Bell, Shield, Edit2, Check } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { User, Lock, Bell, Shield, Edit2, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const DefaultProfileIcon = () => (
@@ -10,28 +10,105 @@ const DefaultProfileIcon = () => (
 
 const Profile = () => {
   const { darkMode } = useTheme();
-  const [displayName, setDisplayName] = useState("John Doe");
+  const [displayName, setDisplayName] = useState("");
+  const [email, setEmail] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(''); // Add error state
+
+  useEffect(() => {
+    // Fetch user data from backend
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No token found. Please login.');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const response = await fetch('http://localhost:5000/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        setDisplayName(data.username);
+        setEmail(data.email);
+        setProfileImage(data.profile_image);
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setError('Error fetching profile. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleNameEdit = () => {
     setIsEditingName(true);
   };
 
-  const handleNameSave = () => {
+  const handleNameSave = async () => {
     setIsEditingName(false);
-    // Save the new name to backend later
+
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://localhost:5000/api/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ username: displayName }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update username');
+      }
+
+      alert('Username updated successfully!');
+    } catch (error) {
+      console.error('Error updating username:', error);
+      alert('Error updating username.');
+    }
   };
 
-  const handleImageChange = (event) => {
+  const handleImageChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      const formData = new FormData();
+      formData.append('profile_image', file);
+
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch('http://localhost:5000/api/profile-picture', {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        });
+        const data = await response.json();
+        setProfileImage(data.profile_image);
+        alert('Profile picture updated successfully!');
+      } catch (error) {
+        console.error('Error uploading profile picture:', error);
+        alert('Error updating profile picture.');
+      }
     }
   };
 
@@ -48,14 +125,22 @@ const Profile = () => {
     </div>
   );
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="text-red-500">{error}</div>; // Display error message if any
+  }
+
   return (
     <div className={`flex-1 p-8 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
-      
+
       <div className="flex items-center mb-8">
         <div className="relative w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden mr-6">
           {profileImage ? (
-            <img src={profileImage} alt="Profile" className="w-full h-full object-cover" />
+            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover" />
           ) : (
             <DefaultProfileIcon />
           )}
@@ -94,7 +179,7 @@ const Profile = () => {
               </button>
             </h2>
           )}
-          <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>johndoe@example.com</p>
+          <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
         </div>
       </div>
 
