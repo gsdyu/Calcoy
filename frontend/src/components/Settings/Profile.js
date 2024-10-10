@@ -60,8 +60,6 @@ const Profile = () => {
 
   const handleNameSave = async () => {
     setIsEditingName(false);
-	if (displayName.length>32)
-    console.log(displayName.length)	
 
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -82,7 +80,6 @@ const Profile = () => {
       });
 
       if (!response.ok) {
-		//console.log(response)
 		if (response.status == 409) throw new Error(`Username ${displayName} is already taken`);
         throw new Error('An error occurred on the server. Try again later.');
       }
