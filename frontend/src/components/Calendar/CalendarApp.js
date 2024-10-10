@@ -174,7 +174,6 @@ const CalendarApp = () => {
       });
 
       if (response.ok) {
-        // Remove the event from the local state
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
@@ -184,7 +183,60 @@ const CalendarApp = () => {
       }
     } catch (error) {
       console.error('Error deleting event:', error);
-      // You might want to show an error message to the user here
+    }
+  };
+
+  const handleEventUpdate = async (eventId, newDate) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const eventToUpdate = events.find(event => event.id === eventId);
+      if (!eventToUpdate) return;
+
+      const startTime = new Date(eventToUpdate.start_time);
+      const endTime = new Date(eventToUpdate.end_time);
+      const duration = endTime - startTime;
+
+      const newStartTime = new Date(newDate);
+      newStartTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds());
+      const newEndTime = new Date(newStartTime.getTime() + duration);
+
+      const updatedEvent = {
+        ...eventToUpdate,
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString(),
+      };
+
+      const response = await fetch(`http://localhost:5000/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedEvent),
+      });
+
+      if (response.ok) {
+        const savedEvent = await response.json();
+        const formattedEvent = {
+          ...savedEvent.event,
+          date: newStartTime.toLocaleDateString(),
+          startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        };
+
+        setEvents(prevEvents => 
+          prevEvents.map(event => 
+            event.id === eventId ? formattedEvent : event
+          )
+        );
+        console.log('Event updated successfully:', formattedEvent);
+      } else {
+        throw new Error('Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
     }
   };
 
@@ -223,6 +275,7 @@ const CalendarApp = () => {
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
               onViewChange={handleViewChange}
+              onEventUpdate={handleEventUpdate}
             />
           )}
           {view === 'Week' && (

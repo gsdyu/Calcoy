@@ -3,14 +3,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
   const dayRefs = useRef({});
+  const eventRefs = useRef({});
 
   useEffect(() => {
     const calculateDimensions = () => {
@@ -19,7 +22,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         const weeksInMonth = getWeeksInMonth(currentDate);
         const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
         setCellHeight(calculatedCellHeight);
-
 
         const eventHeight = 24; 
         const dateHeight = 24; 
@@ -35,6 +37,72 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     window.addEventListener('resize', calculateDimensions);
     return () => window.removeEventListener('resize', calculateDimensions);
   }, [currentDate]);
+
+  useEffect(() => {
+    Object.entries(dayRefs.current).forEach(([dateKey, ref]) => {
+      if (ref) {
+        return dropTargetForElements({
+          element: ref,
+          getData: () => ({
+            type: 'day',
+            date: dateKey,
+          }),
+          onDrop: ({ source }) => {
+            if (source.data.type === 'event') {
+              const date = new Date(dateKey);
+              onEventUpdate(source.data.eventId, date);
+              // Simple visual feedback for the drop
+              ref.style.transition = 'background-color 0.3s';
+              ref.style.backgroundColor = darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)';
+              setTimeout(() => {
+                ref.style.backgroundColor = '';
+              }, 300);
+            }
+          },
+        });
+      }
+    });
+  }, [darkMode, onEventUpdate]);
+
+  useEffect(() => {
+    Object.entries(eventRefs.current).forEach(([eventId, ref]) => {
+      if (ref) {
+        return combine(
+          draggable({
+            element: ref,
+            getInitialData: () => ({ type: 'event', eventId }),
+          }),
+          dropTargetForElements({
+            element: ref,
+            getData: () => ({
+              type: 'event',
+              eventId,
+            }),
+            onDragEnter: () => {
+              ref.style.opacity = '0.5';
+            },
+            onDragLeave: () => {
+              ref.style.opacity = '1';
+            },
+            onDrop: ({ source }) => {
+              ref.style.opacity = '1';
+              const droppedEventId = source.data.eventId;
+              const targetEvent = events.find(e => e.id === eventId);
+              if (targetEvent) {
+                onEventUpdate(droppedEventId, new Date(targetEvent.start_time));
+              }
+              // Simple visual feedback for the drop
+              ref.style.transition = 'transform 0.3s';
+              ref.style.transform = 'scale(1.05)';
+              setTimeout(() => {
+                ref.style.transform = 'scale(1)';
+              }, 300);
+            },
+          })
+        );
+      }
+    });
+  }, [events, onEventUpdate]);
 
   const isToday = (date) => {
     const today = new Date();
@@ -75,6 +143,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
     return (
       <div 
+        ref={(el) => eventRefs.current[event.id] = el}
         key={event.id}
         className={`
           flex justify-between items-center
@@ -133,10 +202,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const displayedEvents = dayEvents.slice(0, eventsPerDay);
       const additionalEventsCount = dayEvents.length - eventsPerDay;
 
+      const dateKey = `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+
       days.push(
         <div
           key={i}
-          ref={(el) => dayRefs.current[`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`] = el}
+          ref={(el) => dayRefs.current[dateKey] = el}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}

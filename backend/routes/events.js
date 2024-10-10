@@ -44,6 +44,49 @@ module.exports = (app, pool) => {
     }
   });
 
+  // Update event route
+  app.put('/events/:eventId', authenticateToken, async (req, res) => {
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone } = req.body;
+    const userId = req.user.userId;
+    const eventId = req.params.eventId;
+
+    // Convert start_time and end_time to Date objects
+    const startDate = new Date(start_time);
+    const endDate = new Date(end_time);
+
+    // Check if end time is after start time
+    if (endDate <= startDate) {
+      return res.status(400).json({ error: 'End time must be after start time' });
+    }
+
+    try {
+      // First, check if the event belongs to the authenticated user
+      const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Event not found or you do not have permission to update this event' });
+      }
+
+      // If the event exists and belongs to the user, update it
+      const updateResult = await pool.query(
+        'UPDATE events SET title = $1, description = $2, start_time = $3, end_time = $4, location = $5, frequency = $6, calendar = $7, time_zone = $8 WHERE id = $9 RETURNING *',
+        [title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, eventId]
+      );
+      
+      if (updateResult.rowCount > 0) {
+        res.json({ message: 'Event updated successfully', event: updateResult.rows[0] });
+      } else {
+        res.status(500).json({ error: 'Failed to update the event' });
+      }
+    } catch (error) {
+      if (error.code === '23505') { // Unique constraint violation
+        return res.status(400).json({ error: 'Event time overlaps with an existing event' });
+      }
+      console.error('Update event error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
   // Delete event route
   app.delete('/events/:eventId', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
