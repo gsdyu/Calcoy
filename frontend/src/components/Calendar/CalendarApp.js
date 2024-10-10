@@ -208,6 +208,18 @@ const CalendarApp = () => {
         end_time: newEndTime.toISOString(),
       };
 
+      // Optimistic update
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === eventId ? {
+            ...updatedEvent,
+            date: newStartTime.toLocaleDateString(),
+            startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          } : event
+        )
+      );
+
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'PUT',
         headers: {
@@ -219,24 +231,14 @@ const CalendarApp = () => {
 
       if (response.ok) {
         const savedEvent = await response.json();
-        const formattedEvent = {
-          ...savedEvent.event,
-          date: newStartTime.toLocaleDateString(),
-          startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-
-        setEvents(prevEvents => 
-          prevEvents.map(event => 
-            event.id === eventId ? formattedEvent : event
-          )
-        );
-        console.log('Event updated successfully:', formattedEvent);
+        console.log('Event updated successfully:', savedEvent);
       } else {
         throw new Error('Failed to update event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
+      // Rollback the optimistic update if there's an error
+      fetchEvents();
     }
   };
 
