@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer'); 
 const msal = require('@azure/msal-node');
 const session = require('express-session');
+const passport = require('passport');
 
 module.exports = (app, pool) => {
   // Configure session middleware
@@ -39,6 +40,46 @@ module.exports = (app, pool) => {
 });
 
   const pca = new msal.ConfidentialClientApplication(msalConfig);
+
+// Initialize Passport middleware
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Google Auth Route
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+
+// Google Auth Callback Route
+app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
+  async (req, res) => {
+    const email = req.user.email;
+    try {
+      let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+      let user = userResult.rows[0];
+
+      // Create JWT token
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+      // Store the token in the session or cookies
+      req.session.token = token;
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+      });
+
+      // Redirect to the username page if the user has no username set
+      if (!user.username) {
+        req.session.tempUser = { email }; // Save email in session for username setup
+        return res.redirect('http://localhost:3000/username');
+      }
+
+      // Otherwise, redirect to the calendar page
+      res.redirect('http://localhost:3000/calendar');
+    } catch (error) {
+      console.error('Google login error:', error);
+      res.status(500).send('Internal server error');
+    }
+  }
+);
 
   // Azure AD Authentication route
   app.get('/auth/azure', (req, res) => {

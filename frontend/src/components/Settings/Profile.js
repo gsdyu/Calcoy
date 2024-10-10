@@ -60,12 +60,19 @@ const Profile = () => {
 
   const handleNameSave = async () => {
     setIsEditingName(false);
+	if (displayName.length>32)
+    console.log(displayName.length)	
 
     const token = localStorage.getItem('token');
     if (!token) return;
+	
 
     try {
-      const response = await fetch('http://localhost:5000/api/profile', {
+	  // Checks that desired username fits within the schema range
+	  if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
+	  if (displayName.length==0) throw new Error('Username cannot be empty');
+
+      const response = await fetch('http://localhost:5000/profile/name', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -75,19 +82,22 @@ const Profile = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to update username');
+		//console.log(response)
+		if (response.status == 409) throw new Error(`Username ${displayName} is already taken`);
+        throw new Error('An error occurred on the server. Try again later.');
       }
-
       alert('Username updated successfully!');
     } catch (error) {
-      console.error('Error updating username:', error);
-      alert('Error updating username.');
+	  const err_msg = `Error updating username: ${error.message}`
+      console.error(err_msg);
+		alert(err_msg);
     }
   };
 
   const handleImageChange = async (event) => {
     const file = event.target.files[0];
     if (file) {
+	  //FormData uses encoding type "multipart/form-data"
       const formData = new FormData();
       formData.append('profile_image', file);
 
@@ -95,12 +105,13 @@ const Profile = () => {
       if (!token) return;
 
       try {
-        const response = await fetch('http://localhost:5000/api/profile-picture', {
+        const response = await fetch('http://localhost:5000/profile/picture', {
           method: 'PUT',
           headers: {
             'Authorization': `Bearer ${token}`,
           },
           body: formData,
+
         });
         const data = await response.json();
         setProfileImage(data.profile_image);

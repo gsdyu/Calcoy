@@ -24,6 +24,7 @@ const upload = multer({ storage });
 
 module.exports = (app, pool) => {
   // Route to fetch user profile
+
   app.get('/profile', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
 
@@ -47,21 +48,34 @@ module.exports = (app, pool) => {
   });
 
   // Route to update the username
-  app.put('/api/profile', authenticateToken, async (req, res) => {
+
+  app.put('/profile/name', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const { username } = req.body;
-
+	
     try {
+	  //Check that username is not taken
+	  const result = await pool.query('SELECT username FROM users WHERE username = $1 AND id = $2', [username, userId])
+	  if (result.rows.username) {
+	    const error_unique = `Username ${username} already taken.`
+		console.error(error_unique)
+		res.status(409).json({error: error_unique})
+		return;
+	  }
+	  //Update username
       await pool.query('UPDATE users SET username = $1 WHERE id = $2', [username, userId]);
-      res.json({ message: 'Username updated successfully' });
+      return res.json({ message: 'Username updated successfully' });
     } catch (error) {
+	  
       console.error('Error updating username:', error);
-      res.status(500).json({ error: 'Internal server error' });
+	  console.error(error.code)
+		if (error.code == 23505) {return res.status(409).json({error:`Username ${username} already taken.`})}
+      return res.status(500).json({ error: 'Internal server error' });
     }
   });
 
   // Route to upload profile picture
-  app.put('/api/profile-picture', authenticateToken, upload.single('profile_image'), async (req, res) => {
+  app.put('/profile/picture', authenticateToken, upload.single('profile_image'), async (req, res) => {
     const userId = req.user.userId;
     const profileImagePath = req.file.path;
 
