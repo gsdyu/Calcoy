@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
+  const [dragOverColumn, setDragOverColumn] = useState(null);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -85,24 +86,26 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
   };
 
-  const onDragOver = (e) => {
+  const onDragOver = (e, dayIndex) => {
     e.preventDefault();
+    setDragOverColumn(dayIndex);
   };
 
-  const onDrop = (e, date, hour) => {
+  const onDragLeave = () => {
+    setDragOverColumn(null);
+  };
+
+  const onDrop = (e, date) => {
     e.preventDefault();
     const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
     const newDate = new Date(date);
-    newDate.setHours(hour);
+    const droppedEvent = events.find(event => event.id === eventId);
+    if (droppedEvent) {
+      const originalDate = new Date(droppedEvent.start_time);
+      newDate.setHours(originalDate.getHours(), originalDate.getMinutes());
+    }
     onEventUpdate(eventId, newDate);
-
-    // Visual feedback
-    const dropTarget = e.currentTarget;
-    dropTarget.style.transition = 'background-color 0.3s';
-    dropTarget.style.backgroundColor = darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)';
-    setTimeout(() => {
-      dropTarget.style.backgroundColor = '';
-    }, 300);
+    setDragOverColumn(null);
   };
 
   return (
@@ -148,6 +151,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               key={`all-day-${dayIndex}`}
               className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
               `}
               onClick={() => handleDateClick(day)}
               onDoubleClick={() => {
@@ -155,8 +159,9 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 clickedDate.setHours(0, 0, 0, 0);
                 onDateDoubleClick(clickedDate, true);
               }}
-              onDragOver={onDragOver}
-              onDrop={(e) => onDrop(e, day, 0)}
+              onDragOver={(e) => onDragOver(e, dayIndex)}
+              onDragLeave={onDragLeave}
+              onDrop={(e) => onDrop(e, day)}
             >
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
@@ -198,39 +203,41 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
           ))}
         </div>
         <div className="absolute top-0 left-16 right-0 h-full">
-          {hours.map((hour, index) => (
-            <div 
-              key={hour} 
-              className={`absolute w-full ${index < hours.length - 1 ? `border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}` : ''}`}
-              style={{ top: `${hour * 60}px`, height: '60px' }}
-            >
-              {weekDays.map((day, dayIndex) => {
-                const isWeekendDay = isWeekend(day);
-                const isSelected = isSameDay(day, selectedDate);
-                return (
+          {weekDays.map((day, dayIndex) => {
+            const isWeekendDay = isWeekend(day);
+            const isSelected = isSameDay(day, selectedDate);
+            return (
+              <div
+                key={`day-column-${dayIndex}`}
+                className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
+                  ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                  ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
+                  transition-colors duration-200
+                `}
+                style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
+                onDragOver={(e) => onDragOver(e, dayIndex)}
+                onDragLeave={onDragLeave}
+                onDrop={(e) => onDrop(e, day)}
+              >
+                {isSelected && (
+                  <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
+                )}
+                {hours.map((hour) => (
                   <div
-                    key={`${hour}-${dayIndex}`}
-                    className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
-                      ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
-                    `}
-                    style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
+                    key={`${dayIndex}-${hour}`}
+                    className={`absolute w-full ${hour < 23 ? `border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}` : ''}`}
+                    style={{ top: `${hour * 60}px`, height: '60px' }}
                     onClick={() => handleDateClick(day)}
                     onDoubleClick={() => {
                       const clickedDate = new Date(day);
                       clickedDate.setHours(hour);
                       onDateDoubleClick(clickedDate, false);
                     }}
-                    onDragOver={onDragOver}
-                    onDrop={(e) => onDrop(e, day, hour)}
-                  >
-                    {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
+                  ></div>
+                ))}
+              </div>
+            );
+          })}
         </div>
         {/* Render events */}
         <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
