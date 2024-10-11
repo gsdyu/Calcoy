@@ -1,11 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
+  const [dragOverColumn, setDragOverColumn] = useState(null);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -85,8 +86,13 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
   };
 
-  const onDragOver = (e) => {
+  const onDragOver = (e, dayIndex) => {
     e.preventDefault();
+    setDragOverColumn(dayIndex);
+  };
+
+  const onDragLeave = () => {
+    setDragOverColumn(null);
   };
 
   const onDrop = (e, date, hour) => {
@@ -95,14 +101,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     const newDate = new Date(date);
     newDate.setHours(hour);
     onEventUpdate(eventId, newDate);
-
-    // Visual feedback
-    const dropTarget = e.currentTarget;
-    dropTarget.style.transition = 'background-color 0.3s';
-    dropTarget.style.backgroundColor = darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)';
-    setTimeout(() => {
-      dropTarget.style.backgroundColor = '';
-    }, 300);
+    setDragOverColumn(null);
   };
 
   return (
@@ -148,6 +147,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               key={`all-day-${dayIndex}`}
               className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
               `}
               onClick={() => handleDateClick(day)}
               onDoubleClick={() => {
@@ -155,7 +155,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 clickedDate.setHours(0, 0, 0, 0);
                 onDateDoubleClick(clickedDate, true);
               }}
-              onDragOver={onDragOver}
+              onDragOver={(e) => onDragOver(e, dayIndex)}
+              onDragLeave={onDragLeave}
               onDrop={(e) => onDrop(e, day, 0)}
             >
               {isSelected && (
@@ -212,6 +213,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     key={`${hour}-${dayIndex}`}
                     className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
                       ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                      ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
                     `}
                     style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
                     onClick={() => handleDateClick(day)}
@@ -220,7 +222,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                       clickedDate.setHours(hour);
                       onDateDoubleClick(clickedDate, false);
                     }}
-                    onDragOver={onDragOver}
+                    onDragOver={(e) => onDragOver(e, dayIndex)}
+                    onDragLeave={onDragLeave}
                     onDrop={(e) => onDrop(e, day, hour)}
                   >
                     {isSelected && (
