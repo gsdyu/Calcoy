@@ -27,7 +27,7 @@ const CalendarApp = () => {
   const [shiftDirection, setShiftDirection] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
-  const [notification, setNotification] = useState({ message: '', action: '' });
+  const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
 
   useEffect(() => {
     const today = new Date();
@@ -38,6 +38,11 @@ const CalendarApp = () => {
 
     fetchEvents();
   }, [displayName]);
+
+  const showNotification = (message, action = '') => {
+    setNotification({ message, action, isVisible: true });
+    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
+  };
 
   const fetchEvents = async () => {
     const token = localStorage.getItem('token');
@@ -67,7 +72,7 @@ const CalendarApp = () => {
       }
     } catch (error) {
       console.error('Error fetching events:', error);
-      setNotification({ message: 'Failed to fetch events', action: '' });
+      showNotification('Failed to fetch events');
     }
   };
 
@@ -121,6 +126,7 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
   
+    showNotification('Saving...');
     try {
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
@@ -156,13 +162,13 @@ const CalendarApp = () => {
         console.log('Event saved successfully:', formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);
-        setNotification({ message: 'Event saved successfully', action: '' });
+        showNotification('Event saved successfully', 'Undo');
       } else {
         throw new Error('Failed to save event');
       }
     } catch (error) {
       console.error('Error saving event:', error);
-      setNotification({ message: 'Failed to save event', action: '' });
+      showNotification('Failed to save event');
     }
   };
 
@@ -170,6 +176,7 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    showNotification('Deleting...');
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
@@ -183,13 +190,13 @@ const CalendarApp = () => {
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
         console.log('Event deleted successfully');
-        setNotification({ message: 'Event deleted successfully', action: '' });
+        showNotification('Event deleted successfully', 'Undo');
       } else {
         throw new Error('Failed to delete event');
       }
     } catch (error) {
       console.error('Error deleting event:', error);
-      setNotification({ message: 'Failed to delete event', action: '' });
+      showNotification('Failed to delete event');
     }
   };
 
@@ -197,6 +204,7 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    showNotification('Updating...');
     try {
       const eventToUpdate = events.find(event => event.id === eventId);
       if (!eventToUpdate) return;
@@ -227,8 +235,6 @@ const CalendarApp = () => {
         )
       );
 
-      setNotification({ message: 'Event updated', action: 'Undo' });
-
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'PUT',
         headers: {
@@ -241,19 +247,20 @@ const CalendarApp = () => {
       if (response.ok) {
         const savedEvent = await response.json();
         console.log('Event updated successfully:', savedEvent);
+        showNotification('Event updated', 'Undo');
       } else {
         throw new Error('Failed to update event');
       }
     } catch (error) {
       console.error('Error updating event:', error);
-      setNotification({ message: 'Failed to update event', action: '' });
+      showNotification('Failed to update event');
       fetchEvents();
     }
   };
 
   const handleUndoAction = () => {
     fetchEvents(); // For now, just refetch all events
-    setNotification({ message: '', action: '' });
+    setNotification(prev => ({ ...prev, isVisible: false }));
   };
 
   const toggleSidebar = () => {
@@ -357,6 +364,7 @@ const CalendarApp = () => {
       <NotificationSnackbar
         message={notification.message}
         action={notification.action}
+        isVisible={notification.isVisible}
         onActionClick={handleUndoAction}
       />
     </div>
