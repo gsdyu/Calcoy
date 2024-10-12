@@ -28,6 +28,7 @@ const CalendarApp = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
+  const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
 
   useEffect(() => {
     const today = new Date();
@@ -209,6 +210,9 @@ const CalendarApp = () => {
       const eventToUpdate = events.find(event => event.id === eventId);
       if (!eventToUpdate) return;
 
+      // Store the current state of the event before updating
+      setLastUpdatedEvent({ ...eventToUpdate });
+
       const startTime = new Date(eventToUpdate.start_time);
       const endTime = new Date(eventToUpdate.end_time);
       const duration = endTime - startTime;
@@ -258,8 +262,40 @@ const CalendarApp = () => {
     }
   };
 
-  const handleUndoAction = () => {
-    fetchEvents(); // For now, just refetch all events
+  const handleUndoAction = async () => {
+    if (lastUpdatedEvent) {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`http://localhost:5000/events/${lastUpdatedEvent.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(lastUpdatedEvent),
+        });
+
+        if (response.ok) {
+          setEvents(prevEvents =>
+            prevEvents.map(event =>
+              event.id === lastUpdatedEvent.id ? lastUpdatedEvent : event
+            )
+          );
+          showNotification('Event reverted successfully');
+        } else {
+          throw new Error('Failed to undo event update');
+        }
+      } catch (error) {
+        console.error('Error undoing event update:', error);
+        showNotification('Failed to undo event update');
+      }
+
+      setLastUpdatedEvent(null);
+    } else {
+      showNotification('Nothing to undo');
+    }
     setNotification(prev => ({ ...prev, isVisible: false }));
   };
 
