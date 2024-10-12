@@ -81,7 +81,7 @@ const AiPage = () => {
             value={input} 
             onChange={handleInputChange} 
             onKeyDown={handleKeyPress}
-            placeholder="Ask Timewise AI" 
+            placeholder="Ask Timewise AI..." 
             className={styles.textarea} 
             rows={1}
           />
