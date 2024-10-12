@@ -1,7 +1,7 @@
   .aiheader {
       font-size: 18px;
       font-weight: bold;
-      color: rgb(102, 144, 207);;
+      color: rgb(102, 144, 207);
       display: inline-flex;
       align-items: center;
   }
@@ -47,6 +47,12 @@
   
   .user {
     text-align: right;
+    background-color: rgb(136, 165, 209);
+    align-self: flex-end;
+  }
+
+  .userDark {
+    text-align: right;
     background-color: rgb(67, 85, 112);
     align-self: flex-end;
   }
@@ -55,8 +61,33 @@
     text-align: left;
     align-self: flex-start;
   }
+
+  .botDark {
+    text-align: left;
+    align-self: flex-start;
+  }
+
+  .textarea::placeholder {
+    color: #6e6e6e;
+  }
   
+  .textareaDark::placeholder {
+    color: #b8b8b8;
+  }
+
   .inputContainer {
+    color: rgb(26, 26, 26);
+    display: flex;
+    justify-content: center;
+    position: sticky;
+    bottom: 0;
+    background-color: rgb(203, 208, 216);
+    border-radius: 35px;
+    border: 2px solid rgb(185, 187, 189);
+    padding: 5px;
+  }
+
+  .inputContainerDark {
     color: rgb(255, 255, 255);
     display: flex;
     justify-content: center;
@@ -69,6 +100,20 @@
   }
   
   .textarea {
+    background-color: rgb(203, 208, 216);
+    width: 90%;
+    flex: 1;
+    padding: 15px;
+    resize: none;
+    overflow: hidden;
+    min-height: 40px;
+    border-radius: 35px;
+    font-size: 14px;
+    line-height: 1.5;
+    font-size: 16px;
+  }
+
+  .textareaDark {
     background-color: rgb(67, 85, 112);
     width: 90%;
     flex: 1;
@@ -99,6 +144,11 @@
   }
 
   .buttonActive {
+    background-color: rgb(97, 144, 214);
+    color: rgb(255, 255, 255);
+  }
+  
+  .buttonActiveDark {
     background-color: #dadada;
     color: rgb(255, 255, 255);
   }

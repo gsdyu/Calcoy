@@ -3,9 +3,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
 import { MoveUp } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const AiPage = () => {
+  const { darkMode } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const textareaRef = useRef(null);
@@ -70,22 +73,29 @@ const AiPage = () => {
         <h2 className={styles.aisubheader}>How can I help you?</h2>
         <div className={styles.chatWindow}>
           {messages.map((msg, index) => (
-            <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.user : styles.bot}`}>
+            <div 
+              key={index} 
+              className={`${styles.message} ${msg.sender === 'user' ? (darkMode ? styles.userDark : styles.user) : (darkMode ? styles.botDark : styles.bot)}`}
+            >
               {msg.text}
             </div>
           ))}
         </div>
-        <form onSubmit={handleSendMessage} className={styles.inputContainer}>
+        <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
           <textarea 
             ref={textareaRef}
             value={input} 
             onChange={handleInputChange} 
             onKeyDown={handleKeyPress}
             placeholder="Ask Timewise AI..." 
-            className={styles.textarea} 
+            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`} 
             rows={1}
           />
-          <button type="submit" className={`${styles.button} ${input.trim() ? styles.buttonActive : ''}`}><MoveUp className={styles.sendicon}/></button>
+          <button 
+            type="submit" 
+            className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}>
+            <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
+          </button>
         </form>
       </div>
     </>
