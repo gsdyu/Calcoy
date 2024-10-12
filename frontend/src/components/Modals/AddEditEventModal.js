@@ -58,7 +58,11 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose} >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onMouseDown={(e) => {
+      if (e.target === e.currentTarget) {
+        onClose();
+      }
+    }}>
       <div className={`${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-black'} p-7 rounded-xl w-[550px]`} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-2xl font-medium">{selected === 'event' ? 'Create Event' : 'Create Task'}</h3>
@@ -76,7 +80,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             onClick={() => setSelected('event')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'event' 
-                ? 'text-gray-700' 
+                ? 'text-gray-800 font-semibold' 
                 : 'text-gray-700'
             }`}
           >
@@ -86,7 +90,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             onClick={() => setSelected('task')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'task' 
-                ? 'text-gray-700' 
+                ? 'text-gray-800 font-semibold' 
                 : 'text-gray-700'
             }`}
           >
@@ -170,7 +174,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[7px]">
-              {selected === 'event' ? 'Create Event' : 'Create Task'}
+              Add
             </button>
           </div>
         </form>
