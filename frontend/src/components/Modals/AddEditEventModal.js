@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   const { darkMode } = useTheme();
+  const [isVisible, setIsVisible] = useState(false);
   const [selected, setSelected] = useState('event');
   const [newEvent, setNewEvent] = useState({
     title: '',
@@ -19,6 +20,8 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   });
 
   useEffect(() => {
+    setIsVisible(true);
+
     if (initialDate) {
       setNewEvent(prev => ({
         ...prev,
@@ -26,6 +29,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
         startTime: initialDate.toTimeString().slice(0, 5)
       }));
     }
+    return () => setIsVisible(false);
   }, [initialDate]);
 
   const handleChange = (e) => {
@@ -54,19 +58,27 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
     };
     console.log('Event being saved:', event);
     onSave(event);
-    onClose();
+    handleClose();
+  };
+
+  const handleClose = () => {
+    setIsVisible(false);
+    setTimeout(onClose, 300);
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onMouseDown={(e) => {
-      if (e.target === e.currentTarget) {
-        onClose();
-      }
-    }}>
-      <div className={`${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-black'} p-7 rounded-xl w-[550px]`} onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      onMouseDown={(e) => {
+        if (e.target === e.currentTarget) {
+          handleClose();
+        }
+      }}
+    >
+      <div className={`${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-black'} p-7 rounded-xl w-[550px] transition-transform duration-300 transform ${isVisible ? 'scale-100' : 'scale-95'}`} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-2xl font-medium">{selected === 'event' ? 'Create Event' : 'Create Task'}</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-200">
+          <button onClick={handleClose} className="text-gray-400 hover:text-gray-200">
             <X size={25} />
           </button>
         </div>
