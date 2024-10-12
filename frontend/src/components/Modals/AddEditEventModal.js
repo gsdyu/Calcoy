@@ -170,7 +170,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[7px]">
-              Create Event
+              {selected === 'event' ? 'Create Event' : 'Create Task'}
             </button>
           </div>
         </form>
