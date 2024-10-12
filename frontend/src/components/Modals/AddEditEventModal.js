@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   const { darkMode } = useTheme();
+  const [selected, setSelected] = useState('event');
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -60,12 +61,38 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onClick={onClose} >
       <div className={`${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-black'} p-7 rounded-xl w-[550px]`} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-2xl font-medium">Create/Edit Event</h3>
+          <h3 className="text-2xl font-medium">{selected === 'event' ? 'Create Event' : 'Create Task'}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-200">
             <X size={25} />
           </button>
         </div>
-        <div className='bg'></div>
+        <div className="relative bg-gray-400 rounded-[7px] flex items-center w-1/2 mb-4 border-4 border-gray-400">
+          <div
+            className={`absolute h-full w-1/2 bg-white rounded-[7px] transition-transform duration-200 ease-in-out ${
+              selected === 'event' ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          />
+          <button
+            onClick={() => setSelected('event')}
+            className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
+              selected === 'event' 
+                ? 'text-gray-700' 
+                : 'text-gray-700'
+            }`}
+          >
+            Event
+          </button>
+          <button
+            onClick={() => setSelected('task')}
+            className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
+              selected === 'task' 
+                ? 'text-gray-700' 
+                : 'text-gray-700'
+            }`}
+          >
+            Task
+          </button>
+        </div>
         <form onSubmit={handleSubmit}>
         <label className={`${darkMode ? ' text-gray-400' : 'text-black'} block font-medium pb-1`}>Event name</label>
           <input
@@ -143,7 +170,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
               Cancel
             </button>
             <button type="submit" className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[7px]">
-              Save
+              Create Event
             </button>
           </div>
         </form>
