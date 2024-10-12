@@ -82,9 +82,9 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             <X size={25} />
           </button>
         </div>
-        <div className="relative bg-gray-400 rounded-[7px] flex items-center w-1/2 mb-4 border-4 border-gray-400">
+        <div className={`relative ${darkMode ? 'bg-gray-400 border-gray-400' : 'bg-gray-200 border-gray-200'} rounded-[7px] flex items-center w-1/2 mb-4 border-4`}>
           <div
-            className={`absolute h-full w-1/2 bg-white rounded-[7px] transition-transform duration-200 ease-in-out ${
+            className={`absolute h-full w-1/2 ${darkMode ? 'bg-white' : 'bg-blue-300'} rounded-[7px] transition-transform duration-200 ease-in-out ${
               selected === 'event' ? 'translate-x-0' : 'translate-x-full'
             }`}
           />
@@ -92,7 +92,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             onClick={() => setSelected('event')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'event' 
-                ? 'text-gray-800 font-semibold' 
+                ? `${darkMode ? 'text-gray-800' : 'text-white'} font-semibold` 
                 : 'text-gray-700'
             }`}
           >
@@ -102,7 +102,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             onClick={() => setSelected('task')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'task' 
-                ? 'text-gray-800 font-semibold' 
+                ? `${darkMode ? 'text-gray-800' : 'text-white'} font-semibold` 
                 : 'text-gray-700'
             }`}
           >
