@@ -10,6 +10,7 @@ import DayView from '@/components/Calendar/DayView';
 import AddEditEventModal from '@/components/Modals/AddEditEventModal';
 import EventDetailsModal from '@/components/Modals/EventDetailsModal';
 import ProfileModal from '@/components/Modals/ProfileModal';
+import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -26,6 +27,7 @@ const CalendarApp = () => {
   const [shiftDirection, setShiftDirection] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
+  const [notification, setNotification] = useState({ message: '', action: '' });
 
   useEffect(() => {
     const today = new Date();
@@ -65,6 +67,7 @@ const CalendarApp = () => {
       }
     } catch (error) {
       console.error('Error fetching events:', error);
+      setNotification({ message: 'Failed to fetch events', action: '' });
     }
   };
 
@@ -153,11 +156,13 @@ const CalendarApp = () => {
         console.log('Event saved successfully:', formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);
+        setNotification({ message: 'Event saved successfully', action: '' });
       } else {
         throw new Error('Failed to save event');
       }
     } catch (error) {
       console.error('Error saving event:', error);
+      setNotification({ message: 'Failed to save event', action: '' });
     }
   };
 
@@ -178,11 +183,13 @@ const CalendarApp = () => {
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
         console.log('Event deleted successfully');
+        setNotification({ message: 'Event deleted successfully', action: '' });
       } else {
         throw new Error('Failed to delete event');
       }
     } catch (error) {
       console.error('Error deleting event:', error);
+      setNotification({ message: 'Failed to delete event', action: '' });
     }
   };
 
@@ -220,6 +227,8 @@ const CalendarApp = () => {
         )
       );
 
+      setNotification({ message: 'Event updated', action: 'Undo' });
+
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'PUT',
         headers: {
@@ -237,9 +246,14 @@ const CalendarApp = () => {
       }
     } catch (error) {
       console.error('Error updating event:', error);
-      // Rollback the optimistic update if there's an error
+      setNotification({ message: 'Failed to update event', action: '' });
       fetchEvents();
     }
+  };
+
+  const handleUndoAction = () => {
+    fetchEvents(); // For now, just refetch all events
+    setNotification({ message: '', action: '' });
   };
 
   const toggleSidebar = () => {
@@ -340,6 +354,11 @@ const CalendarApp = () => {
         />
       )}
       {isProfileOpen && <ProfileModal onClose={handleProfileClose} />}
+      <NotificationSnackbar
+        message={notification.message}
+        action={notification.action}
+        onActionClick={handleUndoAction}
+      />
     </div>
   );
 };
