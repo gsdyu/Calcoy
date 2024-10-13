@@ -1,12 +1,20 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
   const [dragOverColumn, setDragOverColumn] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -46,6 +54,12 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       right: '20px',
       zIndex: 30,
     };
+  };
+
+  const getCurrentTimePosition = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    return (hours + minutes / 60) * 60;
   };
 
   const scrollbarStyles = darkMode ? `
@@ -235,6 +249,21 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             </div>
           ))}
         </div>
+        {/* Current time indicator */}
+        {weekDays.map((day, dayIndex) => (
+          isToday(day) && (
+            <div
+              key={`time-indicator-${dayIndex}`}
+              className="absolute left-16 right-0 z-50"
+              style={{ top: `${getCurrentTimePosition()}px` }}
+            >
+              <div className="relative w-full">
+                <div className="absolute left-0 right-0 border-t border-red-500"></div>
+                <div className="absolute left-0 w-3 h-3 bg-red-500 rounded-full transform -translate-x-1.5 -translate-y-1.5"></div>
+              </div>
+            </div>
+          )
+        ))}
         {/* Render events */}
         <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
           {weekDays.map((day, dayIndex) => (
