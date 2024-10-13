@@ -256,9 +256,9 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                       handleEventClick(event, e);
                     }}
                   >
-                    <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
+                    <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
                       <div className="font-bold">{event.title}</div>
-                      <div className="text-xs opacity-75">
+                      <div className="text-xs">
                         {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                         {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
