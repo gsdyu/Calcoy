@@ -22,6 +22,12 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   useEffect(() => {
     setIsVisible(true);
 
+    return () => {
+      setIsVisible(false);
+    };
+  }, []);
+
+  useEffect(() => {
     if (initialDate) {
       setNewEvent(prev => ({
         ...prev,
@@ -29,7 +35,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
         startTime: initialDate.toTimeString().slice(0, 5)
       }));
     }
-    return () => setIsVisible(false);
   }, [initialDate]);
 
   const handleChange = (e) => {
