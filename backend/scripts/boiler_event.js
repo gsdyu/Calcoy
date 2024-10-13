@@ -14,7 +14,7 @@ const pool = new Pool({
 const file = JSON.parse(fs.readFileSync(path.join(__dirname,'boiler_event.json'),'utf8'));
 const events = file.events;
 try {
-	for (let i = 0; i < file.events.length-1; i++) {
+	for (let i = 0; i < file.events.length; i++) {
 		/**query is an postgre upsert. if an event that already exist is added, 
 		 * postgre will ignore
 		 * the constraint used here for ON CONFLICT is arbitrary

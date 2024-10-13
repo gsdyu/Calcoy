@@ -69,7 +69,7 @@ pool.query(`
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
       embedding vector(128),
-      CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time),
+      CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
   `).then(() => console.log("Events table is ready"))

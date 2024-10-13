@@ -24,10 +24,9 @@ async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
 	return response;
 }
 
-
-/* below uncommented will use up token. this a test to check function
+  /**
 createEmbeddings(["hello", "there"])
-	.then(response=>console.log(response))
+	.then(response=>console.log(JSON.stringify(response[0])))
 	.catch(error=>console.error(error));
- **/
+  */
 module.exports = { createEmbeddings };
