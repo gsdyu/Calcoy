@@ -16,23 +16,28 @@ const AiPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!input) return;
+    if (!input) console.error();
 
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-
+    const token = localStorage.getItem('token');
+    if (!token) {
+      //handle error, i didnt read yet how to handle here
+      console.error('not login')
+    };
     // groq api
     try {
       const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ message: input }),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
       }
 
       const data = await response.json();
