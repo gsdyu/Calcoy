@@ -1,4 +1,4 @@
-# README to run backend express server:
+# README to run backend express server (note: need to update readme for vectors):
 ## install necessary packages
 ```
   npm install
@@ -12,6 +12,14 @@
 1. download and configure Postgre (maybe from the website)
 2. create a db (this backend currently does not set up a database for you)
 3. change the env variable (.env) DATABASE_URL to your correspoding database name. (if you look at the URL in .env it should be intuitive on what to change)
+
+## Postgre Server, adding pgvector.
+- install pgvector for postgre from their github
+
+		https://github.com/pgvector/pgvector
+
+- remember to recreate your tables to add the embedding column to events: alter or recreate table
+- work in progress...
 
 ## set up your .env variable:
 - have an "DATABASE_URL" environment variable. (DATABASE_URL=postgres://postgres:test@localhost:5432/mydatabase8)
