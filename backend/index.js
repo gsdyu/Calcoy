@@ -38,9 +38,12 @@ require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
 require('./routes/profile')(app, pool);
 
+pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
+	.then(() => {console.log("Vector extension ready")})
+	.catch(err => {console.error('Error creating vector extension: ', err)});
+
 // Create or alter users table to add 2FA columns
 pool.query(`  
-  CREATE EXTENSION IF NOT EXISTS vector;
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE NOT NULL,

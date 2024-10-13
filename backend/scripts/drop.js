@@ -23,6 +23,8 @@ const pool = new Pool({
 pool.query(`
 	DROP TABLE events;
 	DROP TABLE users;
-`).catch((err) => console.error("Error dropping tables:", err));
+`)
+	.then(() => console.log("Drop successful."))
+	.catch((err) => console.error("Error dropping tables:", err));
 
 console.log("Dropping...")
