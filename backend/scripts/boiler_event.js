@@ -2,6 +2,7 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname,"../.env")});
 const fs = require('fs');
 const {Pool} = require('pg');
+const {createEmbeddings} = require('../ai/embeddings')
 
 console.log(path.join(__dirname,"../.env"))
 const pool = new Pool({
@@ -10,7 +11,7 @@ const pool = new Pool({
 });
 
 
-const file = JSON.parse(fs.readFileSync(path.join(__dirname,'boiler.json'),'utf8'));
+const file = JSON.parse(fs.readFileSync(path.join(__dirname,'boiler_event.json'),'utf8'));
 const events = file.events;
 try {
 	for (let i = 0; i < file.events.length-1; i++) {

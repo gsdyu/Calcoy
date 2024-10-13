@@ -15,14 +15,19 @@ async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
 		dimensions: 128,
 		late_chunking: false,
 		embedding_type: "float",
-		input: "hello there"
+		input: input
 	};
-  console.log(data, url, headers);
-	axios.post(url, data, {headers})
-		.then(response=>response.data.data[0].embedding)
-		.then(data=>console.log(data))
+	const response = await axios.post(url, data, {headers})
+		.then(response=>response.data.data.map(item => item.embedding))
+		.then(data=>data)
 		.catch(error=>console.error(error));
+	return response;
 }
 
-createEmbeddings("hello");
+
+/* below uncommented will use up token. this a test to check function
+createEmbeddings(["hello", "there"])
+	.then(response=>console.log(response))
+	.catch(error=>console.error(error));
+ **/
 module.exports = { createEmbeddings };
