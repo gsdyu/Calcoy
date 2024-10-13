@@ -95,7 +95,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
           />
           <button
             onClick={() => setSelected('event')}
-            className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
+            className={`w-1/2 px-4 py-1 z-10 rounded-[7px] flex justify-center items-center transition-colors duration-200 ${
               selected === 'event' 
                 ? `${darkMode ? 'text-gray-800' : 'text-white'} font-semibold` 
                 : 'text-gray-700'
@@ -105,7 +105,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
           </button>
           <button
             onClick={() => setSelected('task')}
-            className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
+            className={`w-1/2 px-4 py-1 z-10 rounded-[7px] flex justify-center items-center transition-colors duration-200 ${
               selected === 'task' 
                 ? `${darkMode ? 'text-gray-800' : 'text-white'} font-semibold` 
                 : 'text-gray-700'
