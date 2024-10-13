@@ -13,6 +13,10 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     onOpenChange(false);
   };
 
+  const onDragStart = (e, eventId) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
     const eventTime = format(new Date(event.start_time), 'h:mm a');
@@ -20,6 +24,8 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     return (
       <div 
         key={event.id}
+        draggable
+        onDragStart={(e) => onDragStart(e, event.id)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
