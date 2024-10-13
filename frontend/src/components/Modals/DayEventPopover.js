@@ -13,6 +13,36 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     onOpenChange(false);
   };
 
+  const renderEventCompact = (event) => {
+    const eventColor = event.color || 'blue';
+    const eventTime = format(new Date(event.start_time), 'h:mm a');
+
+    return (
+      <div 
+        key={event.id}
+        className={`
+          flex justify-between items-center
+          text-xs mb-1 truncate cursor-pointer
+          rounded-full py-1 px-2
+          border border-${eventColor}-500
+          bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+          ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          hover:bg-opacity-30 transition-colors duration-200
+        `}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEventClick(event);
+        }}
+      >
+        <div className="flex items-center overflow-hidden">
+          <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>
+          <span className="truncate">{event.title}</span>
+        </div>
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
+      </div>
+    );
+  };
+
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
       <PopoverTrigger asChild>
@@ -52,26 +82,8 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="max-h-48 overflow-y-auto p-1">
-          {events.map((event, index) => (
-            <div 
-              key={index} 
-              className={`mb-1 py-1 px-2 rounded-full text-xs ${
-                darkMode ? 'bg-blue-600 text-white' : 'bg-blue-100 text-blue-800'
-              } cursor-pointer hover:opacity-80`}
-              onClick={(e) => {
-                e.stopPropagation();
-                onEventClick(event);
-              }}
-            >
-              <div className="flex justify-between items-center">
-                <span className="font-medium truncate mr-1">{event.title || '(No title)'}</span>
-                <span className="whitespace-nowrap text-[10px]">
-                  {format(new Date(event.start_time), 'h:mm a')}
-                </span>
-              </div>
-            </div>
-          ))}
+        <div className="max-h-48 overflow-y-auto p-2 space-y-1">
+          {events.map((event) => renderEventCompact(event))}
         </div>
       </PopoverContent>
     </Popover>
