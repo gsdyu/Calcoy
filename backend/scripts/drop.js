@@ -1,8 +1,9 @@
 // run to drop all tables
 
-require('dotenv').config({ path: '../../.env.local'});
+require('dotenv').config({ path: '../.env'});
 const input = require("readline-sync");
 const { Pool } = require('pg');
+console.log(process.env.DATABASE_URL)
 
 const userInput = input.question("\nProceeding to drop all tables. Enter 1 to confirm the drop, otherwise to cancel.\n> ");
 
