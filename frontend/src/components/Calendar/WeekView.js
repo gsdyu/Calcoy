@@ -42,7 +42,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     return {
       top: `${top}px`,
       height: `${height}px`,
-      left: '0',
+      left:  '0px',
       right: '20px',
       zIndex: 30,
     };
@@ -249,7 +249,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     key={event.id}
                     draggable
                     onDragStart={(e) => onDragStart(e, event.id)}
-                    className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+                    className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
                     style={getEventStyle(event)}
                     onClick={(e) => {
                       e.stopPropagation();
