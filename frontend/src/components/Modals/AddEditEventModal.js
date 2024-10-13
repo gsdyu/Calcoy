@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Divide, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -9,10 +9,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   const { darkMode } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [selected, setSelected] = useState('event');
-  const eventButtonRef = useRef(null);
-  const taskButtonRef = useRef(null);
-  const [sliderWidth, setSliderWidth] = useState(0);
-  const [sliderLeft, setSliderLeft] = useState(0);
   const [newEvent, setNewEvent] = useState({
     title: '',
     date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
@@ -22,12 +18,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
     location: '',
     calendar: 'Personal'
   });
-
-  useEffect(() => {
-    const selectedButton = selected === 'event' ? eventButtonRef.current : taskButtonRef.current;
-    setSliderWidth(selectedButton.offsetWidth);
-    setSliderLeft(selectedButton.offsetLeft);
-  }, [selected]);
 
   useEffect(() => {
     setIsVisible(true);
@@ -99,11 +89,11 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
         </div>
         <div className={`relative ${darkMode ? 'bg-gray-400 border-gray-400' : 'bg-gray-200 border-gray-200'} rounded-[7px] flex items-center w-1/2 mb-4 border-4`}>
           <div
-            className={`absolute h-full ${darkMode ? 'bg-white' : 'bg-blue-300'} rounded-[7px] transition-all duration-200 ease-in-out`}
-            style={{ width: sliderWidth, left: sliderLeft }}
+            className={`absolute h-full w-1/2 ${darkMode ? 'bg-white' : 'bg-blue-300'} rounded-[7px] transition-transform duration-200 ease-in-out ${
+              selected === 'event' ? 'translate-x-0' : 'translate-x-full'
+            }`}
           />
           <button
-            ref={eventButtonRef}
             onClick={() => setSelected('event')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'event' 
@@ -114,7 +104,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
             Event
           </button>
           <button
-            ref={taskButtonRef}
             onClick={() => setSelected('task')}
             className={`flex-grow px-4 py-1 z-10 rounded-[7px] transition-colors duration-200 ${
               selected === 'task' 
