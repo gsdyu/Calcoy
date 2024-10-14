@@ -1,12 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 
 const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
 
   const getEventStyle = (event) => {
     const startDate = new Date(event.start_time);
@@ -26,6 +34,12 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       right: '60px',
       zIndex: 10, // Ensure events are above the grid
     };
+  };
+
+  const getCurrentTimePosition = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    return (hours + minutes / 60) * 60;
   };
 
   const filteredEvents = events.filter(event => {
@@ -156,6 +170,18 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 </div>
               </div>
             ))}
+            {/* Current time indicator */}
+            {isToday(currentDate) && (
+              <div
+                className="absolute left-0 right-0 z-50"
+                style={{ top: `${getCurrentTimePosition()}px` }}
+              >
+                <div className="relative w-full">
+                  <div className="absolute left-0 right-0 border-t border-red-500"></div>
+                  <div className="absolute left-0 w-3 h-3 bg-red-500 rounded-full transform -translate-x-1.5 -translate-y-1.5"></div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

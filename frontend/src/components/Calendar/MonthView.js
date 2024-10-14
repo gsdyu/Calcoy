@@ -1,13 +1,60 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
-  const dayRefs = useRef({});
+  const containerRef = useRef(null);
+  const [cellHeight, setCellHeight] = useState(0);
+  const [eventsPerDay, setEventsPerDay] = useState(2);
+
+  useEffect(() => {
+    const calculateDimensions = () => {
+      if (containerRef.current) {
+        const containerHeight = containerRef.current.clientHeight;
+        const weeksInMonth = getWeeksInMonth(currentDate);
+        const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
+        setCellHeight(calculatedCellHeight);
+
+        const eventHeight = 24; 
+        const dateHeight = 24; 
+        const moreIndicatorHeight = 20; 
+        const padding = 8; 
+        const availableHeight = calculatedCellHeight - dateHeight - padding - moreIndicatorHeight;
+        const calculatedEventsPerDay = Math.floor(availableHeight / eventHeight);
+        setEventsPerDay(Math.max(1, calculatedEventsPerDay - 1)); 
+      }
+    };
+
+    calculateDimensions();
+    window.addEventListener('resize', calculateDimensions);
+    return () => window.removeEventListener('resize', calculateDimensions);
+  }, [currentDate]);
+
+  const onDragStart = (e, eventId) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
+  };
+
+  const onDragOver = (e) => {
+    e.preventDefault();
+  };
+
+  const onDrop = (e, date) => {
+    e.preventDefault();
+    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
+    onEventUpdate(eventId, date);
+
+    // Visual feedback
+    const dropTarget = e.currentTarget;
+    dropTarget.style.transition = 'background-color 0.3s';
+    dropTarget.style.backgroundColor = darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)';
+    setTimeout(() => {
+      dropTarget.style.backgroundColor = '';
+    }, 300);
+  };
 
   const isToday = (date) => {
     const today = new Date();
@@ -42,13 +89,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
-  const getViewType = (date) => {
-    const weeksInMonth = getWeeksInMonth(date);
-    if (weeksInMonth === 4) return 'largeView';
-    if (weeksInMonth === 5) return 'normalView';
-    return 'compactView';
-  };
-
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
     const eventTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -56,6 +96,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return (
       <div 
         key={event.id}
+        draggable
+        onDragStart={(e) => onDragStart(e, event.id)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
@@ -80,8 +122,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderCalendar = () => {
-    const viewType = getViewType(currentDate);
-    const weeksInMonth = getWeeksInMonth(currentDate);
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
@@ -90,7 +130,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     let dayCounter = 1;
     let nextMonthCounter = 1;
 
-    for (let i = 0; i < weeksInMonth * 7; i++) {
+    for (let i = 0; i < getWeeksInMonth(currentDate) * 7; i++) {
       let dayNumber;
       let isCurrentMonth = true;
 
@@ -112,35 +152,20 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      let displayedEvents, additionalEventsCount;
-
-      switch (viewType) {
-        case 'largeView':
-          displayedEvents = dayEvents.slice(0, 4);
-          additionalEventsCount = Math.max(0, dayEvents.length - 4);
-          break;
-        case 'normalView':
-          displayedEvents = dayEvents.slice(0, 3);
-          additionalEventsCount = Math.max(0, dayEvents.length - 3);
-          break;
-        case 'compactView':
-          displayedEvents = dayEvents.slice(0, 2);
-          additionalEventsCount = Math.max(0, dayEvents.length - 2);
-          break;
-      }
+      const displayedEvents = dayEvents.slice(0, eventsPerDay);
+      const additionalEventsCount = dayEvents.length - eventsPerDay;
 
       days.push(
         <div
           key={i}
-          ref={(el) => dayRefs.current[`${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`] = el}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
-          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden
-          ${viewType === 'largeView' ? 'h-[11.25*(1080/window.innerHeight)rem]' : 
-            viewType === 'normalView' ? 'h-36*(1080/window.innerHeight)' : 
-            viewType === 'compactView' ? 'h-[7.5(1080/window.innerHeight)rem]' : ''}`}
+          } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
+          style={{ height: `${cellHeight}px` }}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
+          onDragOver={onDragOver}
+          onDrop={(e) => onDrop(e, date)}
         >
           <span
             className={`inline-flex items-center justify-center w-6 h-6 text-sm 
@@ -156,9 +181,9 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           >
             {dayNumber}
           </span>
-          <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: 'calc(100% - 24px)' }}>
+          <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: `${cellHeight - 24 - 8}px` }}>
             {displayedEvents.map(event => renderEventCompact(event))}
-            {additionalEventsCount > 0 && (
+            {dayEvents.length > eventsPerDay && (
               <button
                 className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
                 onClick={(e) => {
@@ -191,7 +216,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   return (
-    <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+    <div ref={containerRef} className={`h-full flex flex-col ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
       <div className={`grid grid-cols-7 border-b border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
           <div key={day} className={`py-1 text-center text-xs font-medium ${darkMode ? 'text-gray-400 border-r border-gray-700' : 'text-gray-600 border-r border-gray-200'}`}>
@@ -199,7 +224,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           </div>
         ))}
       </div>
-      <div className={`flex-1 grid grid-cols-7 grid-rows-${getWeeksInMonth(currentDate)} border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`flex-1 grid grid-cols-7 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         {renderCalendar()}
       </div>
     </div>

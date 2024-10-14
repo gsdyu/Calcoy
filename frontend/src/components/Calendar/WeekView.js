@@ -1,11 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 
-const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection }) => {
+const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
+  const [dragOverColumn, setDragOverColumn] = useState(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -41,12 +50,17 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     return {
       top: `${top}px`,
       height: `${height}px`,
-      left: '0',
+      left:  '0px',
       right: '20px',
-      zIndex: 30, // Increased z-index to be above highlight
+      zIndex: 30,
     };
   };
 
+  const getCurrentTimePosition = () => {
+    const hours = currentTime.getHours();
+    const minutes = currentTime.getMinutes();
+    return (hours + minutes / 60) * 60;
+  };
 
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
@@ -74,13 +88,34 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   };
 
   const handleDateClick = (day) => {
-    // Ensure we're passing a new Date object to avoid mutating the original
     onDateClick(new Date(day));
   };
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     onEventClick(event);
+  };
+
+  const onDragStart = (e, eventId) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
+  };
+
+  const onDragOver = (e, dayIndex) => {
+    e.preventDefault();
+    setDragOverColumn(dayIndex);
+  };
+
+  const onDragLeave = () => {
+    setDragOverColumn(null);
+  };
+
+  const onDrop = (e, date, hour) => {
+    e.preventDefault();
+    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const newDate = new Date(date);
+    newDate.setHours(hour);
+    onEventUpdate(eventId, newDate);
+    setDragOverColumn(null);
   };
 
   return (
@@ -126,6 +161,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               key={`all-day-${dayIndex}`}
               className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
               `}
               onClick={() => handleDateClick(day)}
               onDoubleClick={() => {
@@ -133,6 +169,9 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 clickedDate.setHours(0, 0, 0, 0);
                 onDateDoubleClick(clickedDate, true);
               }}
+              onDragOver={(e) => onDragOver(e, dayIndex)}
+              onDragLeave={onDragLeave}
+              onDrop={(e) => onDrop(e, day, 0)}
             >
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
@@ -142,6 +181,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 .map(event => (
                   <div
                     key={event.id}
+                    draggable
+                    onDragStart={(e) => onDragStart(e, event.id)}
                     className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 z-20"
                     onClick={(e) => handleEventClick(event, e)}
                   >
@@ -186,6 +227,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     key={`${hour}-${dayIndex}`}
                     className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
                       ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
+                      ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
                     `}
                     style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
                     onClick={() => handleDateClick(day)}
@@ -194,6 +236,9 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                       clickedDate.setHours(hour);
                       onDateDoubleClick(clickedDate, false);
                     }}
+                    onDragOver={(e) => onDragOver(e, dayIndex)}
+                    onDragLeave={onDragLeave}
+                    onDrop={(e) => onDrop(e, day, hour)}
                   >
                     {isSelected && (
                       <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
@@ -204,6 +249,21 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             </div>
           ))}
         </div>
+        {/* Current time indicator */}
+        {weekDays.map((day, dayIndex) => (
+          isToday(day) && (
+            <div
+              key={`time-indicator-${dayIndex}`}
+              className="absolute left-16 right-0 z-50"
+              style={{ top: `${getCurrentTimePosition()}px` }}
+            >
+              <div className="relative w-full">
+                <div className="absolute left-0 right-0 border-t border-red-500"></div>
+                <div className="absolute left-0 w-3 h-3 bg-red-500 rounded-full transform -translate-x-1.5 -translate-y-1.5"></div>
+              </div>
+            </div>
+          )
+        ))}
         {/* Render events */}
         <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
           {weekDays.map((day, dayIndex) => (
@@ -216,16 +276,18 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 .map(event => (
                   <div
                     key={event.id}
-                    className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+                    draggable
+                    onDragStart={(e) => onDragStart(e, event.id)}
+                    className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
                     style={getEventStyle(event)}
                     onClick={(e) => {
                       e.stopPropagation();
                       handleEventClick(event, e);
                     }}
                   >
-                    <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
+                    <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
                       <div className="font-bold">{event.title}</div>
-                      <div className="text-xs opacity-75">
+                      <div className="text-xs">
                         {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                         {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>

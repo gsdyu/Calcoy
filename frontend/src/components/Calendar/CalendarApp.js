@@ -10,6 +10,7 @@ import DayView from '@/components/Calendar/DayView';
 import AddEditEventModal from '@/components/Modals/AddEditEventModal';
 import EventDetailsModal from '@/components/Modals/EventDetailsModal';
 import ProfileModal from '@/components/Modals/ProfileModal';
+import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -26,6 +27,8 @@ const CalendarApp = () => {
   const [shiftDirection, setShiftDirection] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
+  const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
+  const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
 
   useEffect(() => {
     const today = new Date();
@@ -36,6 +39,11 @@ const CalendarApp = () => {
 
     fetchEvents();
   }, [displayName]);
+
+  const showNotification = (message, action = '') => {
+    setNotification({ message, action, isVisible: true });
+    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
+  };
 
   const fetchEvents = async () => {
     const token = localStorage.getItem('token');
@@ -65,6 +73,7 @@ const CalendarApp = () => {
       }
     } catch (error) {
       console.error('Error fetching events:', error);
+      showNotification('Failed to fetch events');
     }
   };
 
@@ -118,6 +127,7 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
   
+    showNotification('Saving...');
     try {
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
@@ -153,11 +163,13 @@ const CalendarApp = () => {
         console.log('Event saved successfully:', formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);
+        showNotification('Event saved successfully', 'Undo');
       } else {
         throw new Error('Failed to save event');
       }
     } catch (error) {
       console.error('Error saving event:', error);
+      showNotification('Failed to save event');
     }
   };
 
@@ -165,6 +177,7 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
+    showNotification('Deleting...');
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
@@ -174,18 +187,116 @@ const CalendarApp = () => {
       });
 
       if (response.ok) {
-        // Remove the event from the local state
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
         console.log('Event deleted successfully');
+        showNotification('Event deleted successfully', 'Undo');
       } else {
         throw new Error('Failed to delete event');
       }
     } catch (error) {
       console.error('Error deleting event:', error);
-      // You might want to show an error message to the user here
+      showNotification('Failed to delete event');
     }
+  };
+
+  const handleEventUpdate = async (eventId, newDate) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    showNotification('Updating...');
+    try {
+      const eventToUpdate = events.find(event => event.id === eventId);
+      if (!eventToUpdate) return;
+
+      // Store the current state of the event before updating
+      setLastUpdatedEvent({ ...eventToUpdate });
+
+      const startTime = new Date(eventToUpdate.start_time);
+      const endTime = new Date(eventToUpdate.end_time);
+      const duration = endTime - startTime;
+
+      const newStartTime = new Date(newDate);
+      newStartTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds());
+      const newEndTime = new Date(newStartTime.getTime() + duration);
+
+      const updatedEvent = {
+        ...eventToUpdate,
+        start_time: newStartTime.toISOString(),
+        end_time: newEndTime.toISOString(),
+      };
+
+      // Optimistic update
+      setEvents(prevEvents => 
+        prevEvents.map(event => 
+          event.id === eventId ? {
+            ...updatedEvent,
+            date: newStartTime.toLocaleDateString(),
+            startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          } : event
+        )
+      );
+
+      const response = await fetch(`http://localhost:5000/events/${eventId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedEvent),
+      });
+
+      if (response.ok) {
+        const savedEvent = await response.json();
+        console.log('Event updated successfully:', savedEvent);
+        showNotification('Event updated', 'Undo');
+      } else {
+        throw new Error('Failed to update event');
+      }
+    } catch (error) {
+      console.error('Error updating event:', error);
+      showNotification('Failed to update event');
+      fetchEvents();
+    }
+  };
+
+  const handleUndoAction = async () => {
+    if (lastUpdatedEvent) {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const response = await fetch(`http://localhost:5000/events/${lastUpdatedEvent.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(lastUpdatedEvent),
+        });
+
+        if (response.ok) {
+          setEvents(prevEvents =>
+            prevEvents.map(event =>
+              event.id === lastUpdatedEvent.id ? lastUpdatedEvent : event
+            )
+          );
+          showNotification('Event reverted successfully');
+        } else {
+          throw new Error('Failed to undo event update');
+        }
+      } catch (error) {
+        console.error('Error undoing event update:', error);
+        showNotification('Failed to undo event update');
+      }
+
+      setLastUpdatedEvent(null);
+    } else {
+      showNotification('Nothing to undo');
+    }
+    setNotification(prev => ({ ...prev, isVisible: false }));
   };
 
   const toggleSidebar = () => {
@@ -223,6 +334,7 @@ const CalendarApp = () => {
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
               onViewChange={handleViewChange}
+              onEventUpdate={handleEventUpdate}
             />
           )}
           {view === 'Week' && (
@@ -234,6 +346,7 @@ const CalendarApp = () => {
               onDateDoubleClick={handleAddEvent}
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
+              onEventUpdate={handleEventUpdate}
             />
           )}
           {view === 'Day' && (
@@ -284,6 +397,12 @@ const CalendarApp = () => {
         />
       )}
       {isProfileOpen && <ProfileModal onClose={handleProfileClose} />}
+      <NotificationSnackbar
+        message={notification.message}
+        action={notification.action}
+        isVisible={notification.isVisible}
+        onActionClick={handleUndoAction}
+      />
     </div>
   );
 };
