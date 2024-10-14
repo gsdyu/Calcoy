@@ -9,6 +9,7 @@ const AiPage = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const textareaRef = useRef(null);
+  const chatWindowRef = useRef(null);
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -61,6 +62,14 @@ const AiPage = () => {
     }
   }, [input]);
 
+
+  useEffect(() => {
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -73,7 +82,7 @@ const AiPage = () => {
       <div className={styles.container}>
         <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
         <h2 className={styles.aisubheader}>How can I help you?</h2>
-        <div className={styles.chatWindow}>
+        <div ref={chatWindowRef} className={styles.chatWindow}>
           {messages.map((msg, index) => (
             <div key={index} className={`${styles.message} ${msg.sender === 'user' ? styles.user : styles.bot}`}>
               {msg.text}
@@ -90,7 +99,13 @@ const AiPage = () => {
             className={styles.textarea} 
             rows={1}
           />
-          <button type="submit" className={`${styles.button} ${input.trim() ? styles.buttonActive : ''}`}><MoveUp className={styles.sendicon}/></button>
+          <button 
+            type="submit" 
+            className={`${styles.button} ${input.trim() ? styles.buttonActive : ''}`} 
+            disabled={!input.trim()}
+          >
+            <MoveUp className={styles.sendicon}/>
+          </button>
         </form>
       </div>
     </>
