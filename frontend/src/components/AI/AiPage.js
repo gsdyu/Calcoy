@@ -1,5 +1,5 @@
 'use client';
-
+ 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
 import { MoveUp } from 'lucide-react';
@@ -12,6 +12,7 @@ const AiPage = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const textareaRef = useRef(null);
+  const chatWindowRef = useRef(null);
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -19,23 +20,28 @@ const AiPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!input) return;
+    if (!input) console.error();
 
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-
+    const token = localStorage.getItem('token');
+    if (!token) {
+      //handle error, i didnt read yet how to handle here
+      console.error('not login')
+    };
     // groq api
     try {
       const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
         },
         body: JSON.stringify({ message: input }),
       });
 
       if (!response.ok) {
-        throw new Error('Network response was not ok');
+        throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
       }
 
       const data = await response.json();
@@ -59,6 +65,14 @@ const AiPage = () => {
     }
   }, [input]);
 
+
+  useEffect(() => {
+    if (chatWindowRef.current) {
+      chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
+    }
+  }, [messages]);
+
+
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -71,7 +85,7 @@ const AiPage = () => {
       <div className={styles.container}>
         <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
         <h2 className={styles.aisubheader}>How can I help you?</h2>
-        <div className={styles.chatWindow}>
+        <div ref={chatWindowRef} className={styles.chatWindow}>
           {messages.map((msg, index) => (
             <div 
               key={index} 
@@ -93,6 +107,7 @@ const AiPage = () => {
           />
           <button 
             type="submit" 
+            disabled={!input.trim()}
             className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}>
             <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
           </button>

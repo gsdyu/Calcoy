@@ -1,4 +1,5 @@
 const { authenticateToken } = require('../authMiddleware');
+const { createEmbeddings } = require('../ai/embeddings');
 
 module.exports = (app, pool) => {
 
@@ -17,10 +18,19 @@ module.exports = (app, pool) => {
     }
 
     try {
+      const embed = await createEmbeddings(JSON.stringify(req.body));
       const result = await pool.query(
         'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
         [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
-      );
+      )
+        .then(result => {
+        pool.query(`
+          UPDATE events
+          SET embedding = '${JSON.stringify(embed[0])}'
+          WHERE user_id='${userId}' AND location='${location}' AND start_time='${startDate.toISOString()}' AND end_time='${endDate.toISOString()}'
+          `);
+          return result;
+        })
       res.status(201).json({ message: 'Event created', event: result.rows[0] });
     } catch (error) {
       if (error.code === '23505') { // Unique constraint violation
