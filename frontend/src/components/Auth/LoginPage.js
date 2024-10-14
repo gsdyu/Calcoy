@@ -163,8 +163,8 @@ const LoginPage = () => {
               <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">Remember me</label>
             </div>
             <div className="text-sm">
-              <a href="#" className="font-medium text-blue-600 hover:underline">Forgot password?</a>
-            </div>
+            <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">  Forgot password?</Link>              
+         </div>
           </div>
           {/* Submit Button */}
           <button

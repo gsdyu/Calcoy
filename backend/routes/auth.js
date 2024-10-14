@@ -278,7 +278,80 @@ app.post('/auth/set-username', async (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
         }
     });
-
+    app.post('/auth/forgot-password', async (req, res) => {
+        const { email } = req.body;
+    
+        try {
+          // Check if the user exists
+          const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          const user = result.rows[0];
+    
+          if (!user) {
+            return res.status(400).json({ error: 'No account with that email exists.' });
+          }
+    
+          // Generate a 6-digit code
+          const resetCode = Math.floor(100000 + Math.random() * 900000);
+    
+          // Set expiration time for the reset code (10 minutes)
+          const resetCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+    
+          // Save the reset code and expiration in the database
+          await pool.query(
+            'UPDATE users SET two_factor_code = $1, two_factor_expires = $2 WHERE email = $3',
+            [resetCode, resetCodeExpires, email]
+          );
+    
+          // Send the code to the user's email
+          await transporter.sendMail({
+            from: process.env.EMAIL_USER,
+            to: email,
+            subject: 'Your Password Reset Code',
+            text: `Your password reset code is: ${resetCode}. It will expire in 10 minutes.`,
+          });
+    
+          res.status(200).json({ message: 'Reset code sent to your email.' });
+        } catch (error) {
+          console.error('Forgot password error:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+    
+      // Route to verify the code and reset the password
+      app.post('/auth/reset-password', async (req, res) => {
+        const { email, resetCode, newPassword, confirmPassword } = req.body;
+    
+        try {
+          if (newPassword !== confirmPassword) {
+            return res.status(400).json({ error: 'Passwords do not match.' });
+          }
+    
+          // Fetch user by email
+          const result = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+          const user = result.rows[0];
+    
+          const now = new Date();
+          // Check if the code is valid and not expired
+          if (user && user.two_factor_code === resetCode && user.two_factor_expires > now) {
+            // Hash the new password
+            const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+            // Update the user's password and clear the reset code
+            await pool.query(
+              'UPDATE users SET password = $1, two_factor_code = NULL, two_factor_expires = NULL WHERE email = $2',
+              [hashedPassword, email]
+            );
+    
+            res.status(200).json({ message: 'Password has been updated successfully.' });
+          } else {
+            return res.status(401).json({ error: 'Invalid or expired reset code.' });
+          }
+        } catch (error) {
+          console.error('Reset password error:', error);
+          res.status(500).json({ error: 'Internal server error' });
+        }
+      });
+    
     // Verify 2FA code route (Step 2)
     app.post('/auth/verify-2fa', async (req, res) => {
         const { email, twoFactorCode } = req.body;
