@@ -23,9 +23,6 @@ module.exports = (app, pool) => {
       );
       res.status(201).json({ message: 'Event created', event: result.rows[0] });
     } catch (error) {
-      if (error.code === '23505') { // Unique constraint violation
-        return res.status(400).json({ error: 'Event time overlaps with an existing event' });
-      }
       console.error('Create event error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
@@ -79,9 +76,6 @@ module.exports = (app, pool) => {
         res.status(500).json({ error: 'Failed to update the event' });
       }
     } catch (error) {
-      if (error.code === '23505') { // Unique constraint violation
-        return res.status(400).json({ error: 'Event time overlaps with an existing event' });
-      }
       console.error('Update event error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
