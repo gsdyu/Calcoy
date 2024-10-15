@@ -27,6 +27,18 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
 
   useEffect(() => {
     setIsVisible(true);
+    
+    // Set default times when the modal opens
+    const { startTime, endTime } = getDefaultTimeRange();
+    setNewEvent(prev => ({
+      ...prev,
+      startTime,
+      endTime
+    }));
+    setNewTask(prev => ({
+      ...prev,
+      time: startTime
+    }));
 
     return () => {
       setIsVisible(false);
@@ -35,18 +47,35 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
 
   useEffect(() => {
     if (initialDate) {
+      const { startTime, endTime } = getDefaultTimeRange(initialDate);
       setNewEvent(prev => ({
         ...prev,
         date: initialDate.toISOString().split('T')[0],
-        startTime: initialDate.toTimeString().slice(0, 5)
+        startTime,
+        endTime
       }));
       setNewTask(prev => ({
         ...prev,
         date: initialDate.toISOString().split('T')[0],
-        time: initialDate.toTimeString().slice(0, 5)
+        time: startTime
       }));
     }
   }, [initialDate]);
+
+  const getDefaultTimeRange = (date = new Date()) => {
+    const roundedDate = new Date(date);
+    roundedDate.setMinutes(Math.ceil(roundedDate.getMinutes() / 30) * 30);
+    roundedDate.setSeconds(0);
+    roundedDate.setMilliseconds(0);
+
+    const endDate = new Date(roundedDate);
+    endDate.setHours(endDate.getHours() + 1);
+
+    return {
+      startTime: roundedDate.toTimeString().slice(0, 5),
+      endTime: endDate.toTimeString().slice(0, 5)
+    };
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
