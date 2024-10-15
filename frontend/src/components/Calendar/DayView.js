@@ -173,7 +173,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
-                className="absolute left-0 right-0 z-50"
+                className="absolute left-0 right-0 z-10"
                 style={{ top: `${getCurrentTimePosition()}px` }}
               >
                 <div className="relative w-full">
