@@ -254,7 +254,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
           isToday(day) && (
             <div
               key={`time-indicator-${dayIndex}`}
-              className="absolute left-16 right-0 z-50"
+              className="absolute left-16 right-0 z-40"
               style={{ top: `${getCurrentTimePosition()}px` }}
             >
               <div className="relative w-full">
