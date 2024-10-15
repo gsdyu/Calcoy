@@ -154,16 +154,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {timedEvents.map(event => (
               <div
                 key={event.id}
-                className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
+                className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
                 style={getEventStyle(event)}
                 onClick={(e) => {
                   e.stopPropagation();
                   handleEventClick(event, e);
                 }}
               >
-                <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto">
+                <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
                   <div className="font-bold">{event.title}</div>
-                  <div className="text-xs opacity-75">
+                  <div className="text-xs">
                     {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
                     {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
