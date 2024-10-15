@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Divide, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-
 
 const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
   const { darkMode } = useTheme();
@@ -70,7 +69,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
       }
 
       const event = {
-        title: newEvent.title,
+        title: newEvent.title.trim() || "(No title)",
         location: newEvent.location,
         start_time: startDateTime.toISOString(),
         end_time: endDateTime.toISOString(),
@@ -82,10 +81,10 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
       onSave(event);
     } else {
       const task = {
-        title: newTask.title,
+        title: newTask.title.trim() || "(No title)",
         date: newTask.date,
         time: newTask.time,
-        frequency: newEvent.frequency,
+        frequency: newTask.frequency,
       };
       console.log('Task being saved:', task);
       onSave(task);
@@ -152,7 +151,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
                   value={newEvent.title}
                   onChange={handleChange}
                   className={`w-full p-3 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-100'} rounded-[7px]`}
-                  required
                 />
                 <label className={`${darkMode ? ' text-gray-400' : 'text-black'} block font-medium pb-1`}>Date</label>
                 <input
@@ -226,7 +224,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate }) => {
                   value={newTask.title}
                   onChange={handleChange}
                   className={`w-full p-3 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-100'} rounded-[7px]`}
-                  required
                 />
                 <label className={`${darkMode ? ' text-gray-400' : 'text-black'} block font-medium pb-1`}>Date</label>
                 <input
