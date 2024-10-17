@@ -2,17 +2,39 @@ import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 const Profile = ({ isCollapsed, darkMode }) => {
   const [userName, setUserName] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const [error, setError] = useState('');
+  const router = useRouter();
 
   // Function to get initials from the user's name
   const getInitials = (name) => {
     if (!name) return ''; // Return an empty string if the name is undefined or empty
     const initials = name.split(' ').map(part => part[0]).join('');
     return initials.toUpperCase();
+  };
+
+  const toggleLogout = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/logout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json'},
+        credentials: 'include',
+      })
+      const data = await response.json();
+
+      if (response.ok) {
+        router.push('/')
+      } else {
+        setError(data.message || "Error occurred while logging out");
+      }
+    } catch (error) {
+      console.error(`Error occurred while logging out: ${error}`);
+      setError('An unexpected error occurred');
+    }
   };
 
   useEffect(() => {
@@ -81,6 +103,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
             className={`rounded-full p-1 ${
               darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
             }`}
+            onClick={toggleLogout}
           >
             <LogOut className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-gray-500'}`} />
           </Button>

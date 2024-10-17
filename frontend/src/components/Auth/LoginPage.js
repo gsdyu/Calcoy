@@ -51,7 +51,6 @@ const LoginPage = () => {
       if (response.ok && data.message === '2FA_REQUIRED') {
         setIsModalOpen(true); // Show 2FA modal if 2FA is required
       } else if (response.ok) {
-        localStorage.setItem('token', data.token);
         router.push('/calendar');
       } else {
         setError(data.message || 'Invalid email or password');
@@ -82,7 +81,6 @@ const LoginPage = () => {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('token', data.token);
         setIsModalOpen(false);
         router.push('/calendar');
       } else {
