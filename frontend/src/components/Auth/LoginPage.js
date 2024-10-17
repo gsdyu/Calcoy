@@ -72,6 +72,7 @@ const LoginPage = () => {
       const response = await fetch('http://localhost:5000/auth/verify-2fa', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({
           email: formData.email,
           twoFactorCode: formData.twoFactorCode,

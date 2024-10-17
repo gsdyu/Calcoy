@@ -241,7 +241,7 @@ app.post('/auth/set-username', async (req, res) => {
         secure: process.env.node_env === 'production',
         path:'/',
       });
-      res.status(201).json({ message: 'User created successfully', user: newUser.rows[0], token });
+      res.status(201).json({ message: 'User created successfully', user: newUser.rows[0]});
     } catch (error) {
       console.error('Signup error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -396,6 +396,8 @@ app.post('/auth/set-username', async (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
         }
     });
+
+
    app.post('/logout', (req, res) => {
      res.clearCookie("auth_token", {path: '/'});
      return res.status(200).json({message: "Log out successful"});
