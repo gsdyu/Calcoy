@@ -30,9 +30,6 @@ const Profile = () => {
 
       try {
         const response = await fetch('http://localhost:5000/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
           credentials: 'include',
         });
 
@@ -75,7 +72,6 @@ const Profile = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify({ username: displayName }),
@@ -106,9 +102,6 @@ const Profile = () => {
       try {
         const response = await fetch('http://localhost:5000/profile/picture', {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
           credentials: 'include',
           body: formData,
 

@@ -38,7 +38,6 @@ async function inputChat(input, user_Id) {
 
 	const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-  
   if (history.length === 2) {
     history.push({role: "user", content: `'${user.username}': `+input});
   } else {

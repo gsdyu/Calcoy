@@ -51,7 +51,6 @@ const CalendarApp = () => {
   
     try {
       const response = await fetch('http://localhost:5000/events', {
-        headers: { Authorization: `Bearer ${token}` },
         credentials: 'include',
       });
       if (response.ok) {
@@ -137,7 +136,6 @@ const CalendarApp = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
         body: JSON.stringify(event),
@@ -184,7 +182,6 @@ const CalendarApp = () => {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${token}`,
         },
         credentials: 'include',
       });
@@ -246,7 +243,6 @@ const CalendarApp = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
         credentials: 'include', 
         body: JSON.stringify(updatedEvent),
@@ -276,7 +272,6 @@ const CalendarApp = () => {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
           credentials: 'include',
           body: JSON.stringify(lastUpdatedEvent),
