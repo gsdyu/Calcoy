@@ -31,9 +31,9 @@ async function initChat(content = "You are an assistant. You may be provided wit
 	return 1;
 }
 
-async function inputChat(input) {
+async function inputChat(input, user_Id) {
 
-	const result = await pool.query('SELECT * FROM users WHERE email = $1', ['ttoantran603@gmail.com']);
+	const result = await pool.query('SELECT * FROM users WHERE id = $1', [user_Id]);
 	const user = result.rows[0];
 
 	const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
