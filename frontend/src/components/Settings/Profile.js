@@ -33,6 +33,7 @@ const Profile = () => {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -76,6 +77,7 @@ const Profile = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ username: displayName }),
       });
 
@@ -107,6 +109,7 @@ const Profile = () => {
           headers: {
             'Authorization': `Bearer ${token}`,
           },
+          credentials: 'include',
           body: formData,
 
         });

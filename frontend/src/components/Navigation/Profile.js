@@ -30,7 +30,8 @@ const Profile = ({ isCollapsed, darkMode }) => {
           headers: {
             'Authorization': `Bearer ${token}`, // Pass token for authorization
             'Content-Type': 'application/json'
-          }
+          },
+          credentials: 'include',
         });
 
         if (!response.ok) {
