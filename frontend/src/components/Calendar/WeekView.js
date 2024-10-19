@@ -36,6 +36,16 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     return day === 0 || day === 6;
   };
 
+  const isAllDayEvent = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
+           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
+           startDate.getDate() === endDate.getDate() &&
+           startDate.getMonth() === endDate.getMonth() &&
+           startDate.getFullYear() === endDate.getFullYear();
+  };
+
   const getEventStyle = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -118,6 +128,27 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     setDragOverColumn(null);
   };
 
+  const renderAllDayEvent = (event, dayIndex) => {
+    const eventColor = event.color || 'blue';
+    return (
+      <div
+        key={event.id}
+        draggable
+        onDragStart={(e) => onDragStart(e, event.id)}
+        className={`
+          flex justify-between items-center
+          text-xs mb-1 truncate cursor-pointer
+          rounded-full py-1 px-2
+          bg-${eventColor}-500 text-white
+          hover:bg-opacity-80 transition-colors duration-200 z-30
+        `}
+        onClick={(e) => handleEventClick(event, e)}
+      >
+        <span className="truncate">{event.title}</span>
+      </div>
+    );
+  };
+
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
@@ -156,10 +187,12 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
           const isSelected = isSameDay(day, selectedDate);
+          const allDayEvents = events.filter(event => isAllDayEvent(event) && isSameDay(new Date(event.start_time), day));
+          
           return (
             <div
               key={`all-day-${dayIndex}`}
-              className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative
+              className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative p-1
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                 ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
               `}
@@ -176,20 +209,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
               )}
-              {events
-                .filter(event => event.allDay && isSameDay(new Date(event.start_time), day))
-                .map(event => (
-                  <div
-                    key={event.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, event.id)}
-                    className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 z-20"
-                    onClick={(e) => handleEventClick(event, e)}
-                  >
-                    {event.title}
-                  </div>
-                ))
-              }
+              {allDayEvents.map(event => renderAllDayEvent(event, dayIndex))}
             </div>
           );
         })}
@@ -271,7 +291,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               {events
                 .filter(event => {
                   const eventDate = new Date(event.start_time);
-                  return !event.allDay && isSameDay(eventDate, day);
+                  return !isAllDayEvent(event) && isSameDay(eventDate, day);
                 })
                 .map(event => (
                   <div
