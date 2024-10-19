@@ -140,9 +140,13 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
           bg-${eventColor}-500 text-white
-          hover:bg-opacity-80 transition-colors duration-200 z-30
+          hover:bg-opacity-80 transition-colors duration-200 z-40
         `}
-        onClick={(e) => handleEventClick(event, e)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleEventClick(event, e);
+        }}
+        style={{ position: 'relative', zIndex: 40 }}
       >
         <span className="truncate">{event.title}</span>
       </div>
