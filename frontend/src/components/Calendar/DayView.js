@@ -16,6 +16,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return () => clearInterval(timer);
   }, []);
 
+  const isAllDayEvent = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
+           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
+           startDate.getDate() === endDate.getDate() &&
+           startDate.getMonth() === endDate.getMonth() &&
+           startDate.getFullYear() === endDate.getFullYear();
+  };
+
   const getEventStyle = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -31,7 +41,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       top: `${top}px`,
       height: `${height}px`,
       left: '0',
-      right: '60px',
+      right: '20px',
       zIndex: 10, // Ensure events are above the grid
     };
   };
@@ -47,8 +57,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return eventDate.toDateString() === currentDate.toDateString();
   });
 
-  const allDayEvents = filteredEvents.filter(event => event.allDay);
-  const timedEvents = filteredEvents.filter(event => !event.allDay);
+  const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
+  const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
@@ -78,6 +88,27 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     }
   ` : '';
 
+  const renderAllDayEvent = (event) => {
+    const eventColor = event.color || 'blue';
+    return (
+      <div
+        key={event.id}
+        className={`
+          flex justify-between items-center
+          text-xs mb-1 truncate cursor-pointer
+          rounded-full py-1 px-2
+          bg-${eventColor}-500 text-white
+          hover:bg-opacity-80 transition-colors duration-200 z-40
+          mr-5
+        `}
+        onClick={(e) => handleEventClick(event, e)}
+        style={{ position: 'relative', zIndex: 40 }}
+      >
+        <span className="truncate">{event.title}</span>
+      </div>
+    );
+  };
+
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
@@ -97,20 +128,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
         </div>
         <div className={`w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
         <div 
-          className="flex-grow relative"
+          className="flex-grow relative p-1"
           onDoubleClick={(e) => handleDateDoubleClick(new Date(currentDate), true, e)}
         >
-          {allDayEvents.map(event => (
-            <div
-              key={event.id}
-              className="absolute left-0 right-0 bg-blue-500 text-white text-xs p-1 m-1 overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200"
-              onClick={(e) => handleEventClick(event, e)}
-            >
-              <div className="w-full h-full flex items-center">
-                {event.title}
-              </div>
-            </div>
-          ))}
+          {allDayEvents.map(event => renderAllDayEvent(event))}
         </div>
       </div>
 
@@ -156,10 +177,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 key={event.id}
                 className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
                 style={getEventStyle(event)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleEventClick(event, e);
-                }}
+                onClick={(e) => handleEventClick(event, e)}
               >
                 <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
                   <div className="font-bold">{event.title}</div>
@@ -173,7 +191,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
-                className="absolute left-0 right-0 z-10"
+                className="absolute left-0 right-0 z-20"
                 style={{ top: `${getCurrentTimePosition()}px` }}
               >
                 <div className="relative w-full">
