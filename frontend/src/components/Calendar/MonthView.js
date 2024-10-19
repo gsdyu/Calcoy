@@ -89,9 +89,18 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
+  const isAllDayEvent = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
+           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
+           isSameDay(startDate, endDate);
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
-    const eventTime = event.allDay ? null : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const isAllDay = isAllDayEvent(event);
+    const eventTime = isAllDay ? null : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return (
       <div 
@@ -102,11 +111,11 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          ${event.allDay 
+          ${isAllDay 
             ? `bg-${eventColor}-500 text-white` 
             : `border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700`
           }
-          ${darkMode && !event.allDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          ${darkMode && !isAllDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
         `}
         onClick={(e) => {
@@ -115,10 +124,10 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <div className="flex items-center overflow-hidden">
-          {!event.allDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
+          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
           <span className="truncate">{event.title}</span>
         </div>
-        {!event.allDay && <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>}
+        {!isAllDay && eventTime && <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>}
       </div>
     );
   };
@@ -154,11 +163,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const allDayEvents = dayEvents.filter(event => event.allDay);
-      const regularEvents = dayEvents.filter(event => !event.allDay);
-      const displayedAllDayEvents = allDayEvents.slice(0, 1);
-      const displayedRegularEvents = regularEvents.slice(0, eventsPerDay - displayedAllDayEvents.length);
-      const additionalEventsCount = dayEvents.length - displayedAllDayEvents.length - displayedRegularEvents.length;
+      const displayedEvents = dayEvents.slice(0, eventsPerDay);
+      const additionalEventsCount = Math.max(0, dayEvents.length - eventsPerDay);
 
       days.push(
         <div
@@ -187,8 +193,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
             {dayNumber}
           </span>
           <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: `${cellHeight - 24 - 8}px` }}>
-            {displayedAllDayEvents.map(event => renderEventCompact(event))}
-            {displayedRegularEvents.map(event => renderEventCompact(event))}
+            {displayedEvents.map(event => renderEventCompact(event))}
             {additionalEventsCount > 0 && (
               <button
                 className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
