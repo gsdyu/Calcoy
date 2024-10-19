@@ -141,6 +141,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
           rounded-full py-1 px-2
           bg-${eventColor}-500 text-white
           hover:bg-opacity-80 transition-colors duration-200 z-40
+          mr-5
         `}
         onClick={(e) => {
           e.stopPropagation();
