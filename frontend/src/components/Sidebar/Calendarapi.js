@@ -13,25 +13,15 @@ const Calendarapi = () => {
   const [loading, setLoading] = useState(true);
   const [showDetails, setShowDetails] = useState(false); // State to toggle dropdown
   const [popupVisible, setPopupVisible] = useState({}); // State for popup visibility
-  const [visibleItems, setVisibleItems] = useState({
-    email: true,
-    familyBirthday: true,
-    birthdays: true,
-    holidays: true,
-  }); // State to track visibility of each item
-  const [itemColors, setItemColors] = useState({
-    email: 'bg-blue-500',
-    familyBirthday: 'bg-orange-500',
-    birthdays: 'bg-green-500',
-    holidays: 'bg-red-500',
-  }); // State to track colors of each item
+  const [visibleItems, setVisibleItems] = useState({});
+  const [itemColors, setItemColors] = useState({});
 
   const familyBirthday = 'Family';
   const birthdays = 'Birthdays';
   const holidays = 'Holidays in United States';
 
   useEffect(() => {
-    const fetchemail = async () => {
+    const fetchProfile = async () => {
       const token = localStorage.getItem('token');
       if (!token) {
         setError('No token found. Please login.');
@@ -51,6 +41,8 @@ const Calendarapi = () => {
 
         const data = await response.json();
         setEmail(data.email);
+        setItemColors(data.preferences.colors || {});
+        setVisibleItems(data.preferences.visibility || {});
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');
@@ -59,14 +51,13 @@ const Calendarapi = () => {
       }
     };
 
-    fetchemail(); // Fetch email when component mounts
+    fetchProfile(); // Fetch profile when component mounts
   }, []);
 
   const toggleVisibility = (item) => {
-    setVisibleItems((prevState) => ({
-      ...prevState,
-      [item]: !prevState[item],
-    }));
+    const updatedVisibility = { ...visibleItems, [item]: !visibleItems[item] };
+    setVisibleItems(updatedVisibility);
+    savePreferences({ visibility: updatedVisibility, colors: itemColors });
   };
 
   const togglePopup = (item, e) => {
@@ -77,23 +68,38 @@ const Calendarapi = () => {
       ...prevState,
       [item]: !prevState[item], // Toggle the popup for the clicked item
     }));
-    
   };
-  
 
   const changeColor = (item, color) => {
-    setItemColors((prevState) => ({
-      ...prevState,
-      [item]: color, // Update the color of the item
-    }));
+    const updatedColors = { ...itemColors, [item]: color };
+    setItemColors(updatedColors);
+    savePreferences({ visibility: visibleItems, colors: updatedColors });
     togglePopup(item); // Close the color picker after selection
+  };
+
+  const savePreferences = async (preferences) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/profile/preferences', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ preferences }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+    }
   };
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
- 
   return (
     <div className={`p-4 border-t ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
       {/* Email section with dropdown icon */}
@@ -104,7 +110,6 @@ const Calendarapi = () => {
         <p className={`text-sm ${darkMode ? 'text-gray-400 ' : 'text-gray-600 '}`}>
           {email}
         </p>
-        {/* Toggle icon based on dropdown state */}
         {showDetails ? (
           <FiChevronUp className={`text-sm ${darkMode ? 'text-gray-400 ' : 'text-gray-600'}`} />
         ) : (
@@ -112,7 +117,6 @@ const Calendarapi = () => {
         )}
       </div>
 
-      {/* Dropdown details */}
       {showDetails && (
         <div className="mt-2">
           {/* Email */}
@@ -124,9 +128,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('email', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${itemColors.email}`}
-              ></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.email || 'bg-blue-500'}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
             </div>
             {visibleItems.email ? <FiEye /> : <FiEyeOff />}
@@ -141,9 +143,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('familyBirthday', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${itemColors.familyBirthday}`}
-              ></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.familyBirthday || 'bg-orange-500'}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{familyBirthday}</p>
             </div>
             {visibleItems.familyBirthday ? <FiEye /> : <FiEyeOff />}
@@ -158,9 +158,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('birthdays', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${itemColors.birthdays}`}
-              ></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.birthdays || 'bg-green-500'}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{birthdays}</p>
             </div>
             {visibleItems.birthdays ? <FiEye /> : <FiEyeOff />}
@@ -175,9 +173,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('holidays', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div
-                className={`w-3 h-3 rounded-full mr-2 ${itemColors.holidays}`}
-              ></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.holidays || 'bg-red-500'}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{holidays}</p>
             </div>
             {visibleItems.holidays ? <FiEye /> : <FiEyeOff />}
@@ -197,6 +193,7 @@ const Calendarapi = () => {
             <ColorPicker item="holidays" colors={colorOptions} onSelectColor={changeColor} />
           )}
         </div>
+        
       )}
     </div>
   );

@@ -48,6 +48,8 @@ pool.query(`
     two_factor_code VARCHAR(6),
     profile_image VARCHAR(255),
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
+	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
+
     two_factor_expires TIMESTAMPTZ
   );
 `).then(() => {
