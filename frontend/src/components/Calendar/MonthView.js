@@ -100,7 +100,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
     const isAllDay = isAllDayEvent(event);
-    const eventTime = isAllDay ? null : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return (
       <div 
@@ -127,7 +127,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
           <span className="truncate">{event.title}</span>
         </div>
-        {!isAllDay && eventTime && <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>}
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
       </div>
     );
   };
@@ -163,8 +163,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, eventsPerDay);
-      const additionalEventsCount = Math.max(0, dayEvents.length - eventsPerDay);
+      const allDayEvents = dayEvents.filter(isAllDayEvent);
+      const regularEvents = dayEvents.filter(event => !isAllDayEvent(event));
+      
+      const sortedEvents = [...allDayEvents, ...regularEvents];
+      const displayedEvents = sortedEvents.slice(0, eventsPerDay);
+      const additionalEventsCount = Math.max(0, sortedEvents.length - eventsPerDay);
 
       days.push(
         <div
@@ -209,7 +213,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           {openPopover && isSameDay(openPopover, date) && (
             <DayEventPopover
               date={date}
-              events={dayEvents}
+              events={sortedEvents}
               isOpen={true}
               onOpenChange={(open) => {
                 if (!open) setOpenPopover(null);
