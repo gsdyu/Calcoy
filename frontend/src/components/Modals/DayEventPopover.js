@@ -17,9 +17,20 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
   };
 
+  const isAllDayEvent = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
+           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
+           startDate.getDate() === endDate.getDate() &&
+           startDate.getMonth() === endDate.getMonth() &&
+           startDate.getFullYear() === endDate.getFullYear();
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
-    const eventTime = format(new Date(event.start_time), 'h:mm a');
+    const isAllDay = isAllDayEvent(event);
+    const eventTime = isAllDay ? 'All day' : format(new Date(event.start_time), 'h:mm a');
 
     return (
       <div 
@@ -30,9 +41,11 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          border border-${eventColor}-500
-          bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
-          ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          ${isAllDay 
+            ? `bg-${eventColor}-500 text-white`
+            : `border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700`
+          }
+          ${darkMode && !isAllDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
         `}
         onClick={(e) => {
@@ -41,13 +54,21 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
         }}
       >
         <div className="flex items-center overflow-hidden">
-          <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>
+          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
           <span className="truncate">{event.title}</span>
         </div>
         <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
       </div>
     );
   };
+
+  const sortedEvents = [...events].sort((a, b) => {
+    const aIsAllDay = isAllDayEvent(a);
+    const bIsAllDay = isAllDayEvent(b);
+    if (aIsAllDay && !bIsAllDay) return -1;
+    if (!aIsAllDay && bIsAllDay) return 1;
+    return new Date(a.start_time) - new Date(b.start_time);
+  });
 
   return (
     <Popover open={isOpen} onOpenChange={onOpenChange}>
@@ -89,7 +110,7 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
           </button>
         </div>
         <div className="max-h-48 overflow-y-auto p-2 space-y-1">
-          {events.map((event) => renderEventCompact(event))}
+          {sortedEvents.map((event) => renderEventCompact(event))}
         </div>
       </PopoverContent>
     </Popover>
