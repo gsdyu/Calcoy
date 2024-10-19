@@ -1,6 +1,6 @@
 // run to drop all tables
-
-require('dotenv').config({ path: '../../.env.local'});
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname,'../.env') });
 const input = require("readline-sync");
 const { Pool } = require('pg');
 
@@ -23,6 +23,8 @@ const pool = new Pool({
 pool.query(`
 	DROP TABLE events;
 	DROP TABLE users;
-`).catch((err) => console.error("Error dropping tables:", err));
+`)
+	.then(() => console.log("Drop successful."))
+	.catch((err) => console.error("Error dropping tables:", err));
 
 console.log("Dropping...")
