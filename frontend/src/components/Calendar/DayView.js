@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -109,6 +111,32 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     );
   };
 
+  const renderAllDayEvents = () => {
+    const maxVisibleEvents = 3;
+    const visibleCount = isAllDayExpanded 
+      ? allDayEvents.length 
+      : (allDayEvents.length <= maxVisibleEvents ? allDayEvents.length : 2);
+    const hiddenCount = allDayEvents.length - visibleCount;
+  
+    return (
+      <>
+        {allDayEvents.slice(0, visibleCount).map(renderAllDayEvent)}
+        {!isAllDayExpanded && allDayEvents.length > maxVisibleEvents && (
+          <div 
+            className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
+            onClick={() => setIsAllDayExpanded(true)}
+          >
+            +{hiddenCount} more
+          </div>
+        )}
+      </>
+    );
+  };
+
+  const toggleAllDayExpansion = () => {
+    setIsAllDayExpanded(!isAllDayExpanded);
+  };
+
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
@@ -131,8 +159,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           className="flex-grow relative p-1"
           onDoubleClick={(e) => handleDateDoubleClick(new Date(currentDate), true, e)}
         >
-          {allDayEvents.map(event => renderAllDayEvent(event))}
+          {renderAllDayEvents()}
         </div>
+        {allDayEvents.length > 3 && (
+          <button 
+            className="absolute right-2 top-1/2 transform -translate-y-1/2"
+            onClick={toggleAllDayExpansion}
+          >
+            {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        )}
       </div>
 
       {/* Time slots */}
