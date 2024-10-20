@@ -171,7 +171,13 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       <>
         {dayEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
         {!isAllDayExpanded && dayEvents.length > maxVisibleEvents && (
-          <div className="text-xs text-blue-500 hover:text-blue-600">
+          <div 
+            className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsAllDayExpanded(true);
+            }}
+          >
             +{hiddenCount} more
           </div>
         )}
@@ -213,14 +219,16 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
       {/* All-day events row */}
       <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px]`}>
-        <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-center">
+        <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-between py-1">
           <span>All-day</span>
-          <button 
-            className="mt-1 focus:outline-none"
-            onClick={toggleAllDayExpansion}
-          >
-            {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
+          {events.some(event => isAllDayEvent(event)) && (
+            <button 
+              className="text-blue-500 hover:text-blue-600 focus:outline-none"
+              onClick={toggleAllDayExpansion}
+            >
+              {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          )}
         </div>
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
