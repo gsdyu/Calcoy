@@ -151,8 +151,16 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
       {/* All-day events section */}
       <div className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px] relative flex`}>
-        <div className="w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">
-          All-day
+        <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-between py-1">
+          <span>All-day</span>
+          {allDayEvents.length > 3 && (
+            <button 
+              className="text-blue-500 hover:text-blue-600"
+              onClick={toggleAllDayExpansion}
+            >
+              {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+            </button>
+          )}
         </div>
         <div className={`w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`}></div>
         <div 
@@ -161,14 +169,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
         >
           {renderAllDayEvents()}
         </div>
-        {allDayEvents.length > 3 && (
-          <button 
-            className="absolute right-2 top-1/2 transform -translate-y-1/2"
-            onClick={toggleAllDayExpansion}
-          >
-            {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-          </button>
-        )}
       </div>
 
       {/* Time slots */}
