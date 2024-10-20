@@ -63,7 +63,6 @@ async function inputChat(input, user_Id) {
 	  return 'Error: End time must be after start time.';
 	}
   
-
 	const body = {
 	  title: eventDetails.title,
 	  description: eventDetails.description || '',
@@ -72,7 +71,7 @@ async function inputChat(input, user_Id) {
 	  location: eventDetails.location || '',
 	  frequency: eventDetails.frequency,
 	  calendar: eventDetails.calendar,
-	  time_zone: eventDetails.time_zone,
+	  time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	};
   
 	try {
@@ -128,7 +127,7 @@ const jsonFormat = {
 	"frequency": "<event frequency, default is Do not Repeat >",
 	"calendar": "<which calendar the event is for, default is Personal unless given>",
 	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-	"date": "<current date>"
+	"date": "<date scheduled>"
   };
 
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
