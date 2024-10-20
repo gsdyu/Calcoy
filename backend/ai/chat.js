@@ -87,15 +87,15 @@ async function inputChat(input, user_Id) {
   
 	  if (!response.ok) {
 		const errorData = await response.json();
-		console.error('Error creating event:', errorData);
+		console.error('There was an error creating the event:', errorData);
 		return `Error: ${errorData.error}`;
 	  }
   
 	  const result = await response.json();
-	  return `Event created: ${result.event.title}`;
+	  return `Your new event has been created: ${result.event.title}`;
 	} catch (error) {
 	  console.error('Fetch error:', error);
-	  return 'Error creating event.';
+	  return 'There was an error creating the event.';
 	}	
 }
 
@@ -118,10 +118,26 @@ function giveContext(context){
   return 1;
 }
 
+// Json format for AI inputChat
+const jsonFormat = {
+	"title": "",
+	"description": "",
+	"start_time": "<event start time>",
+	"end_time": "<event end time>",
+	"location": "<event location, just put N/A if none are given>",
+	"frequency": "<event frequency, default is Do not Repeat >",
+	"calendar": "<which calendar the event is for, default is Personal unless given>",
+	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+	"date": "<current date>"
+  };
+
+const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, 
-and their current and future events/responsibilities. When asked to create new events, provide just a event object in the same format you recieve from RAG without any other text. 
+and their current and future events/responsibilities. When asked to create new events, respond only with a JSON object in the following format with nothing else: ${JSON.stringify(jsonFormat, null, 2)}.
 You can respond normally when not specifically ask to create a new event. Being realistic is important, do whats best for the user, 
-but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: 
+but also whats possible. The current date is ${currentTime} and the timezone is ${currentTimezone}. Do not mention the following to the user: 
 You may be given related events from the user's calendar, where the event of the earliest index is most related. 
 Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. 
 Your token limit is 300; do not go above.`
