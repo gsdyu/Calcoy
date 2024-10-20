@@ -3,11 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -60,7 +62,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     return {
       top: `${top}px`,
       height: `${height}px`,
-      left:  '0px',
+      left: '0px',
       right: '20px',
       zIndex: 30,
     };
@@ -128,7 +130,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     setDragOverColumn(null);
   };
 
-  const renderAllDayEvent = (event, dayIndex) => {
+  const toggleAllDayExpansion = () => {
+    setIsAllDayExpanded(prev => !prev);
+  };
+
+  const renderAllDayEvent = (event) => {
     const eventColor = event.color || 'blue';
     return (
       <div
@@ -151,6 +157,25 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       >
         <span className="truncate">{event.title}</span>
       </div>
+    );
+  };
+
+  const renderAllDayEvents = (dayEvents) => {
+    const maxVisibleEvents = 3;
+    const visibleCount = isAllDayExpanded 
+      ? dayEvents.length 
+      : (dayEvents.length <= maxVisibleEvents ? dayEvents.length : 2);
+    const hiddenCount = dayEvents.length - visibleCount;
+  
+    return (
+      <>
+        {dayEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
+        {!isAllDayExpanded && dayEvents.length > maxVisibleEvents && (
+          <div className="text-xs text-blue-500 hover:text-blue-600">
+            +{hiddenCount} more
+          </div>
+        )}
+      </>
     );
   };
 
@@ -188,7 +213,15 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
       {/* All-day events row */}
       <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px]`}>
-        <div className="w-16 flex-shrink-0 text-xs pr-2 flex items-center justify-end">All-day</div>
+        <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-center">
+          <span>All-day</span>
+          <button 
+            className="mt-1 focus:outline-none"
+            onClick={toggleAllDayExpansion}
+          >
+            {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          </button>
+        </div>
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
           const isSelected = isSameDay(day, selectedDate);
@@ -214,7 +247,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
               )}
-              {allDayEvents.map(event => renderAllDayEvent(event, dayIndex))}
+              {renderAllDayEvents(allDayEvents)}
             </div>
           );
         })}
