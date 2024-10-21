@@ -11,6 +11,8 @@ const AiPage = () => {
   const { darkMode } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [eventDetails, setEventDetails] = useState(null);
+
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
 
@@ -21,14 +23,15 @@ const AiPage = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input) console.error();
-
+  
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     const token = localStorage.getItem('token');
     if (!token) {
       //handle error, i didnt read yet how to handle here
       console.error('not login')
-    };
+    }
+  
     // groq api
     try {
       const response = await fetch('http://localhost:5000/ai', {
@@ -39,23 +42,77 @@ const AiPage = () => {
         },
         body: JSON.stringify({ message: input }),
       });
+  
+      if (!response.ok) {
+        throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
+      }
+  
+      const data = await response.json();
+      console.log('Response from AI:', data);
+  
+      const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
+      let eventDetails = null;
+  
+      if (eventDetailsMatch && eventDetailsMatch[1]) {
+        eventDetails = JSON.parse(eventDetailsMatch[1]);
+  
+        setEventDetails(eventDetails);
+        
+        const botMessage = {
+          sender: 'bot',
+          text: `Do you want to create the following event?`,
+          eventDetails,
+        };
+  
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
+      } else {
+        const botMessage = { sender: 'bot', text: data.message };
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
+      }
+  
+    } catch (error) {
+      console.error('Error fetching response:', error);
+      const errorMessage = { sender: 'bot', text: 'There was an error' };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+    }
+  
+    setInput('');
+    textareaRef.current.style.height = 'auto';
+  };
+
+  const handleConfirm = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://localhost:5000/events', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(eventDetails),
+      });
 
       if (!response.ok) {
         throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
       }
 
-      const data = await response.json();
-
-      const botMessage = { sender: 'bot', text: data.message };
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
+      const result = await response.json();
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
+      ]);
+      setEventDetails(null);
     } catch (error) {
-      console.error('Error fetching response:', error);
-      const errorMessage = { sender: 'bot', text: 'There was an error' };
-      setMessages((prevMessages) => [...prevMessages, errorMessage])
+      console.error('Error creating event:', error);
+      setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Error creating event.' }]);
     }
+  };
 
-    setInput('');
-    textareaRef.current.style.height = 'auto';
+  const handleDeny = () => {
+    setEventDetails(null);
+    setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
   };
 
   useEffect(() => {
@@ -92,6 +149,20 @@ const AiPage = () => {
               className={`${styles.message} ${msg.sender === 'user' ? (darkMode ? styles.userDark : styles.user) : (darkMode ? styles.botDark : styles.bot)}`}
             >
               {msg.text}
+              {msg.eventDetails && (
+                <div className={styles.eventDetailsBox}> {/* Add a wrapper div for styling */}
+                  <p><strong>Title:</strong> {msg.eventDetails.title}</p>
+                  <p><strong>Date:</strong> {new Date(msg.eventDetails.start_time).toLocaleDateString()}</p>
+                  <p><strong>Start Time:</strong> {new Date(msg.eventDetails.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p><strong>End Time:</strong> {new Date(msg.eventDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
+                  <p><strong>Location:</strong> {msg.eventDetails.location}</p>
+                  <p><strong>Description:</strong> {msg.eventDetails.description}</p>
+                  <div>
+                    <button onClick={handleConfirm} className={styles.confirmButton}>Confirm</button>
+                    <button onClick={handleDeny} className={styles.denyButton}>Discard</button>
+                  </div>
+                </div>
+              )}
             </div>
           ))}
         </div>

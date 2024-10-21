@@ -44,9 +44,29 @@ module.exports = (app, pool) => {
                   //optional console.log to show groq llm response. the formatting of the 
                   //response here is currently more accurate syntax-wise than displayed on 
                   //frontend chatbot. Oct 13, 24
-                  console.log("Response from LLM:");
-                  console.log(response, "\n");
-                  res.send({ message: response })
+
+                  // if there is eventdetails returned from inputchat
+                  if (response.title && response.start_time && response.end_time) {
+                    const eventDetailsString = JSON.stringify({
+                      title: response.title,
+                      description: response.description || '',
+                      start_time: response.start_time,
+                      end_time: response.end_time,
+                      location: response.location || '',
+                      frequency: response.frequency || '',
+                      calendar: response.calendar || '',
+                      time_zone: response.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
+                    });
+
+                    return res.send({
+                      message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`,
+                    });
+                  } else {
+                    // If no event details, send a regular AI message
+                    console.log("Response from LLM:");
+                    console.log(response, "\n");
+                    return res.send({ message: response });
+                  }
                 })
                 .catch(error => {
                   console.error("An error occurred getting the chatbot request: ", error); 

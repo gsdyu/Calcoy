@@ -73,29 +73,8 @@ async function inputChat(input, user_Id) {
 	  calendar: eventDetails.calendar,
 	  time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	};
-  
-	try {
-	  const response = await fetch('http://localhost:5000/events', {
-		method: 'POST',
-		headers: {
-		  'Content-Type': 'application/json',
-		  'Authorization': `Bearer ${token}`,
-		},
-		body: JSON.stringify(body),
-	  });
-  
-	  if (!response.ok) {
-		const errorData = await response.json();
-		console.error('There was an error creating the event:', errorData);
-		return `Error: ${errorData.error}`;
-	  }
-  
-	  const result = await response.json();
-	  return `Your new event has been created: ${result.event.title}`;
-	} catch (error) {
-	  console.error('Fetch error:', error);
-	  return 'There was an error creating the event.';
-	}	
+
+	return body
 }
 
 function clearChat(priorSystem){

@@ -17,6 +17,52 @@
   }
 
 
+  /* event details box and buttons */
+  .eventDetailsBox {
+    border: 1px solid #8f8f8f;
+    padding: 20px;
+    padding-top: 0px;
+    border-radius: 8px;
+    background-color: rgb(67, 85, 112);
+    margin-top: 10px;
+  }
+  
+  .eventDetailsBox p {
+    margin: 5px 0;
+  }
+  
+  .confirmButton, .denyButton {
+    margin-top: 20px;
+    padding: 10px 15px;
+    margin-right: 8px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: background-color 0.3s, transform 0.2s;
+  }
+  
+  .confirmButton {
+    background-color: #3f6cbe;
+    color: white;
+  }
+  
+  .confirmButton:hover {
+    background-color: #275ab8;
+    transform: scale(1.05);
+  }
+  
+  .denyButton {
+    background-color: #748fc0;
+    color: white;
+  }
+  
+  .denyButton:hover {
+    background-color: #6479a3;
+    transform: scale(1.05);
+  }
+  
   .container {
     padding-top: 200px;
     max-width: 1000px;
