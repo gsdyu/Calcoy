@@ -185,6 +185,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     );
   };
 
+  const hasMoreThanThreeAllDayEvents = weekDays.some(day => {
+    const allDayEvents = events.filter(event => isAllDayEvent(event) && isSameDay(new Date(event.start_time), day));
+    return allDayEvents.length > 3;
+  });
+
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
@@ -221,7 +226,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px]`}>
         <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-between py-1">
           <span>All-day</span>
-          {events.some(event => isAllDayEvent(event)) && (
+          {hasMoreThanThreeAllDayEvents && (
             <button 
               className="text-blue-500 hover:text-blue-600 focus:outline-none"
               onClick={toggleAllDayExpansion}
