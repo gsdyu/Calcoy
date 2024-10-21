@@ -5,6 +5,8 @@ import styles from './AiPage.module.css';
 import { MoveUp } from 'lucide-react';
 import { ArrowUp } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
+import { CirclePlus } from 'lucide-react';
+import { CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const AiPage = () => {
@@ -151,15 +153,21 @@ const AiPage = () => {
               {msg.text}
               {msg.eventDetails && (
                 <div className={styles.eventDetailsBox}> {/* Add a wrapper div for styling */}
-                  <p><strong>Title:</strong> {msg.eventDetails.title}</p>
+                  <h1 className={styles.eventTitle}>{msg.eventDetails.title}</h1>
                   <p><strong>Date:</strong> {new Date(msg.eventDetails.start_time).toLocaleDateString()}</p>
                   <p><strong>Start Time:</strong> {new Date(msg.eventDetails.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   <p><strong>End Time:</strong> {new Date(msg.eventDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                   <p><strong>Location:</strong> {msg.eventDetails.location}</p>
                   <p><strong>Description:</strong> {msg.eventDetails.description}</p>
                   <div>
-                    <button onClick={handleConfirm} className={styles.confirmButton}>Confirm</button>
-                    <button onClick={handleDeny} className={styles.denyButton}>Discard</button>
+                  <div className={styles.buttonContainer}>
+                    <button onClick={handleConfirm} className={styles.confirmButton}>
+                      <CirclePlus /> Confirm
+                    </button>
+                    <button onClick={handleDeny} className={styles.denyButton}>
+                      <CircleX /> Discard
+                    </button>
+                  </div>
                   </div>
                 </div>
               )}
