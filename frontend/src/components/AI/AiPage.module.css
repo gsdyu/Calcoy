@@ -36,11 +36,10 @@
     border: 3px solid #2f65b6;
     width: 500px;
     padding: 20px;
-    padding-bottom: 130px;
     border-radius: 15px;
     background-color: rgb(63, 79, 105);
     margin-top: 10px;
-    position: relative;
+
   }
   
   .eventDetailsBox p {
@@ -55,21 +54,21 @@
   }
 
   .buttonSection {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
+    margin-left: -20px;
+    margin-right: -20px;
+    margin-bottom: -20px;
     background-color: rgb(86, 107, 139);
-    padding: 10px;
+    padding: 20px;
+    padding-top: 0px;
     display: flex;
     justify-content: center;
     border-radius: 0 0 15px 15px;
+    margin-top: 20px;
   }
-
+  
   .buttonContainer {
     display: flex;
     gap: 8px;
-    margin-top: 10px;
   }
   
   .confirmButton svg, .denyButton svg {
@@ -79,6 +78,7 @@
   .confirmButton, .denyButton {
     display: flex;
     align-items: center;
+    width: 200px;
     margin-top: 20px;
     padding: 10px 15px;
     margin-right: 8px;
