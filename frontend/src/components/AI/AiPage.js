@@ -13,7 +13,8 @@ const AiPage = () => {
   const { darkMode } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [eventDetails, setEventDetails] = useState(null);
+  const [eventDetails, setEventDetails] = useState([]);
+  const [handledEvents, setHandledEvents] = useState({});
 
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
@@ -53,17 +54,19 @@ const AiPage = () => {
       console.log('Response from AI:', data);
   
       const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
-      let eventDetails = null;
+      let newEventDetails = null;
   
       if (eventDetailsMatch && eventDetailsMatch[1]) {
-        eventDetails = JSON.parse(eventDetailsMatch[1]);
+        newEventDetails = JSON.parse(eventDetailsMatch[1]);
+        const newEventId = Date.now();
   
-        setEventDetails(eventDetails);
+        setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
+        setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
         
         const botMessage = {
           sender: 'bot',
           text: `Do you want to create the following event?`,
-          eventDetails,
+          eventDetails: { ...newEventDetails, id: newEventId },
         };
   
         setMessages((prevMessages) => [...prevMessages, botMessage]);
@@ -82,9 +85,11 @@ const AiPage = () => {
     textareaRef.current.style.height = 'auto';
   };
 
-  const handleConfirm = async () => {
+  const handleConfirm = async (eventId) => {
     const token = localStorage.getItem('token');
     if (!token) return;
+
+    const eventToConfirm = eventDetails.find(event => event.id === eventId);
 
     try {
       const response = await fetch('http://localhost:5000/events', {
@@ -93,7 +98,7 @@ const AiPage = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(eventDetails),
+        body: JSON.stringify(eventToConfirm),
       });
 
       if (!response.ok) {
@@ -105,15 +110,15 @@ const AiPage = () => {
         ...prevMessages,
         { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
       ]);
-      setEventDetails(null);
+      setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
       console.error('Error creating event:', error);
       setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Error creating event.' }]);
     }
   };
 
-  const handleDeny = () => {
-    setEventDetails(null);
+  const handleDeny = (eventId) => {
+    setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
   };
 
@@ -161,16 +166,18 @@ const AiPage = () => {
                 <p className={styles.eventDescription}>{msg.eventDetails.description}</p>
                 
                 {/* Buttons arranged at the bottom */}
-                <div className={styles.buttonSection}>
-                  <div className={styles.buttonContainer}>
-                    <button onClick={handleConfirm} className={styles.confirmButton}>
-                      <CirclePlus /> Confirm
-                    </button>
-                    <button onClick={handleDeny} className={styles.denyButton}>
-                      <CircleX /> Discard
-                    </button>
-                  </div>
-                </div>
+                {!handledEvents[msg.eventDetails.id] && (
+                    <div className={styles.buttonSection}>
+                      <div className={styles.buttonContainer}>
+                        <button onClick={() => handleConfirm(msg.eventDetails.id)} className={styles.confirmButton}>
+                          <CirclePlus /> Confirm
+                        </button>
+                        <button onClick={() => handleDeny(msg.eventDetails.id)} className={styles.denyButton}>
+                          <CircleX /> Discard
+                        </button>
+                      </div>
+                    </div>
+                  )}
               </div>
             )}
             </div>
