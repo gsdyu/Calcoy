@@ -21,10 +21,11 @@
   .eventDetailsBox {
     border: 2px solid #8f8f8f;
     padding: 20px;
-    padding-top: 0px;
+    padding-bottom: 130px;
     border-radius: 15px;
     background-color: rgb(63, 79, 105);
     margin-top: 10px;
+    position: relative;
   }
   
   .eventDetailsBox p {
@@ -36,6 +37,18 @@
     font-size: 22px;
     font-weight: 700;
     color: #ffffff;
+  }
+
+  .buttonSection {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: rgb(86, 107, 139);
+    padding: 10px 0;
+    display: flex;
+    justify-content: center;
+    border-radius: 0 0 15px 15px;
   }
 
   .buttonContainer {
@@ -63,22 +76,22 @@
   }
   
   .confirmButton {
-    background-color: #3f6cbe;
+    background-color: #325ba8;
     color: white;
   }
   
   .confirmButton:hover {
-    background-color: #275ab8;
+    background-color: #123c8a;
     transform: scale(1.05);
   }
   
   .denyButton {
-    background-color: #748fc0;
+    background-color: #525a6b;
     color: white;
   }
   
   .denyButton:hover {
-    background-color: #6479a3;
+    background-color: #414a5c;
     transform: scale(1.05);
   }
   

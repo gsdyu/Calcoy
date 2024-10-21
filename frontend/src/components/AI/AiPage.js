@@ -152,14 +152,16 @@ const AiPage = () => {
             >
               {msg.text}
               {msg.eventDetails && (
-                <div className={styles.eventDetailsBox}> {/* Add a wrapper div for styling */}
-                  <h1 className={styles.eventTitle}>{msg.eventDetails.title}</h1>
-                  <p><strong>Date:</strong> {new Date(msg.eventDetails.start_time).toLocaleDateString()}</p>
-                  <p><strong>Start Time:</strong> {new Date(msg.eventDetails.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <p><strong>End Time:</strong> {new Date(msg.eventDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
-                  <p><strong>Location:</strong> {msg.eventDetails.location}</p>
-                  <p><strong>Description:</strong> {msg.eventDetails.description}</p>
-                  <div>
+              <div className={styles.eventDetailsBox}>
+                <h1 className={styles.eventTitle}>{msg.eventDetails.title}</h1>
+                <p>{new Date(msg.eventDetails.start_time).toLocaleDateString()}</p>
+                <p className={styles.eventTime}>
+                  {new Date(msg.eventDetails.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(msg.eventDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </p>
+                <p className={styles.eventDescription}>{msg.eventDetails.description}</p>
+                
+                {/* Buttons arranged at the bottom */}
+                <div className={styles.buttonSection}>
                   <div className={styles.buttonContainer}>
                     <button onClick={handleConfirm} className={styles.confirmButton}>
                       <CirclePlus /> Confirm
@@ -168,9 +170,9 @@ const AiPage = () => {
                       <CircleX /> Discard
                     </button>
                   </div>
-                  </div>
                 </div>
-              )}
+              </div>
+            )}
             </div>
           ))}
         </div>
