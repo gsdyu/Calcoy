@@ -177,6 +177,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               e.stopPropagation();
               setIsAllDayExpanded(true);
             }}
+            style={{ position: 'relative', zIndex: 50 }}
           >
             +{hiddenCount} more
           </div>
