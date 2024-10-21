@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
+import Calendarapi from '@/components/Sidebar/Calendarapi';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -10,6 +11,10 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
+  const [itemColors, setItemColors] = useState({}); 
+  const [error, setError] = useState(''); 
+  const [loading, setLoading] = useState(true);
+  const [visibleItems, setVisibleItems] = useState({}); 
 
   useEffect(() => {
     const calculateDimensions = () => {
@@ -65,7 +70,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
   const isWeekend = (date) => {
     const day = date.getDay();
-    return day === 0 || day === 6; // 0 is Sunday, 6 is Saturday
+    return day === 0 || day === 6;
   };
 
   const isSameDay = (date1, date2) => {
@@ -89,6 +94,55 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
+  const [email, setEmail] = useState("");
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) {
+        setError('No token found. Please login.');
+        setLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch('http://localhost:5000/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+  
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+  
+        const data = await response.json();
+        setEmail(data.email);
+        setItemColors(data.preferences.colors || {
+          Personal: 'bg-blue-500',
+          Family: 'bg-orange-500',
+          Work: 'bg-purple-500',
+          Holidays: 'bg-red-500',
+        }); 
+        setVisibleItems(data.preferences.visibility || {});
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setError('Error fetching profile. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchProfile();
+  }, []);
+
+  // Function to dynamically change the color of items
+  const changeItemColor = (calendarType, color) => {
+    setItemColors((prevColors) => ({
+      ...prevColors,
+      [calendarType]: color,
+    }));
+  };
+
   const isAllDayEvent = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -98,24 +152,38 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderEventCompact = (event) => {
-    const eventColor = event.color || 'blue';
+    const calendarType = event.calendar || 'default';
+  
+    // Use optional chaining and provide fallback color
+    const eventColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
+    
     const isAllDay = isAllDayEvent(event);
     const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
+  
     return (
-      <div 
+      <div
         key={event.id}
         draggable
         onDragStart={(e) => onDragStart(e, event.id)}
-        className={`
-          flex justify-between items-center
-          text-xs mb-1 truncate cursor-pointer
-          rounded-full py-1 px-2
+        className={`flex justify-between items-center text-xs mb-1 truncate cursor-pointer rounded-full py-1 px-2 
           ${isAllDay 
-            ? `bg-${eventColor}-500 text-white` 
-            : `border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700`
+            ? `${eventColor} text-white` 
+            : `border border-${eventColor.replace('bg-', '')} bg-opacity-20 text-${eventColor.replace('bg-', '')}`
           }
-          ${darkMode && !isAllDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          ${darkMode && !isAllDay ? `border-${eventColor.replace('bg-', '')}-400 text-${eventColor.replace('bg-', '')}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
         `}
         onClick={(e) => {
@@ -124,7 +192,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <div className="flex items-center overflow-hidden">
-          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
+          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full ${eventColor} mr-1 flex-shrink-0`}></span>}
           <span className="truncate">{event.title}</span>
         </div>
         <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>

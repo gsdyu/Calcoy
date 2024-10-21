@@ -86,7 +86,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
       setNewTask(prev => ({ ...prev, [name]: value }));
     }
   };
-
   const handleSubmit = (e) => {
     e.preventDefault();
     if (selected === 'event') {
@@ -114,8 +113,10 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         allDay: newEvent.allDay,
         time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         frequency: newEvent.frequency,
-        calendar: newEvent.calendar
+        calendar: newEvent.calendar // This is your "occasion" field
       };
+
+      // Save the event to the backend here, including the "calendar" field
       console.log('Event being saved:', event);
       onSave(event);
     } else {
@@ -125,11 +126,14 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         time: newTask.time,
         frequency: newTask.frequency,
       };
+
+      // Save the task to the backend here
       console.log('Task being saved:', task);
       onSave(task);
     }
     handleClose();
-  };
+};
+
 
   const handleClose = () => {
     setIsVisible(false);

@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff } from 'react-icons/fi'; // Importing icons for dropdown effect
 
 const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-gray-400'];
+import MonthView from '@/components/Calendar/MonthView';  
 
 const Calendarapi = () => {
   const { darkMode } = useTheme();
@@ -19,7 +20,6 @@ const Calendarapi = () => {
   const familyBirthday = 'Family';
   const birthdays = 'Birthdays';
   const holidays = 'Holidays in United States';
-
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -34,14 +34,19 @@ const Calendarapi = () => {
             'Authorization': `Bearer ${token}`,
           },
         });
-
+  
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
         }
-
+  
         const data = await response.json();
         setEmail(data.email);
-        setItemColors(data.preferences.colors || {});
+        setItemColors(data.preferences.colors || {
+          Personal: 'bg-blue-500',
+          Family: 'bg-orange-500',
+          Work: 'bg-purple-500',
+          Holidays: 'bg-red-500',
+        }); // Set default colors if none exist
         setVisibleItems(data.preferences.visibility || {});
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -50,10 +55,10 @@ const Calendarapi = () => {
         setLoading(false);
       }
     };
-
-    fetchProfile(); // Fetch profile when component mounts
+  
+    fetchProfile();
   }, []);
-
+  
   const toggleVisibility = (item) => {
     const updatedVisibility = { ...visibleItems, [item]: !visibleItems[item] };
     setVisibleItems(updatedVisibility);
@@ -207,6 +212,7 @@ const ColorPicker = ({ item, colors, onSelectColor }) => {
           key={color}
           className={`w-6 h-6 rounded-full cursor-pointer ${color}`}
           onClick={() => onSelectColor(item, color)}
+          
         ></div>
       ))}
     </div>
