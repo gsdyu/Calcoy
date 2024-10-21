@@ -16,10 +16,25 @@
     margin-bottom: 10px;
   }
 
+  @keyframes growFadeIn {
+    0% {
+      transform: scale(0.8); 
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
 
   /* event details box and buttons */
   .eventDetailsBox {
-    border: 2px solid #8f8f8f;
+    animation: growFadeIn 0.4s ease-out;
+    opacity: 1;
+    transform-origin: top center;
+    transition: all 0.3s ease;
+    border: 3px solid #2f65b6;
+    width: 500px;
     padding: 20px;
     padding-bottom: 130px;
     border-radius: 15px;
@@ -45,7 +60,7 @@
     left: 0;
     width: 100%;
     background-color: rgb(86, 107, 139);
-    padding: 10px 0;
+    padding: 10px;
     display: flex;
     justify-content: center;
     border-radius: 0 0 15px 15px;
@@ -254,3 +269,5 @@
   .chatWindow::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
   }
+
+  
