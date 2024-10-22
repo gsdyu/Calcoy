@@ -64,6 +64,7 @@ const CalendarApp = () => {
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isTask: event.calendar === 'Task'
           };
         });
         setEvents(formattedEvents);
@@ -122,12 +123,13 @@ const CalendarApp = () => {
     setIsAddingEvent(false);
     setSelectedEvent(null);
   };
-
   const handleSaveEvent = async (event) => {
     const token = localStorage.getItem('token');
     if (!token) return;
   
-    showNotification('Saving...');
+    const isTask = event.calendar === 'Task';
+    showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
+    
     try {
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
@@ -150,6 +152,7 @@ const CalendarApp = () => {
           date: startTime.toLocaleDateString(),
           startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isTask: event.calendar === 'Task'
         };
   
         setEvents((prevEvents) => {
@@ -160,16 +163,16 @@ const CalendarApp = () => {
           }
         });
   
-        console.log('Event saved successfully:', formattedEvent);
+        console.log(`${isTask ? 'Task' : 'Event'} saved successfully:`, formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);
-        showNotification('Event saved successfully', 'Undo');
+        showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
       } else {
-        throw new Error('Failed to save event');
+        throw new Error(`Failed to save ${isTask ? 'task' : 'event'}`);
       }
     } catch (error) {
-      console.error('Error saving event:', error);
-      showNotification('Failed to save event');
+      console.error(`Error saving ${isTask ? 'task' : 'event'}:`, error);
+      showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
     }
   };
 
@@ -177,7 +180,10 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    showNotification('Deleting...');
+    const eventToDelete = events.find(e => e.id === eventId);
+    const isTask = eventToDelete?.calendar === 'Task';
+    showNotification(`Deleting ${isTask ? 'task' : 'event'}...`);
+
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
@@ -190,14 +196,14 @@ const CalendarApp = () => {
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
-        console.log('Event deleted successfully');
-        showNotification('Event deleted successfully', 'Undo');
+        console.log(`${isTask ? 'Task' : 'Event'} deleted successfully`);
+        showNotification(`${isTask ? 'Task' : 'Event'} deleted successfully`, 'Undo');
       } else {
-        throw new Error('Failed to delete event');
+        throw new Error(`Failed to delete ${isTask ? 'task' : 'event'}`);
       }
     } catch (error) {
-      console.error('Error deleting event:', error);
-      showNotification('Failed to delete event');
+      console.error(`Error deleting ${isTask ? 'task' : 'event'}:`, error);
+      showNotification(`Failed to delete ${isTask ? 'task' : 'event'}`);
     }
   };
 
@@ -205,12 +211,13 @@ const CalendarApp = () => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    showNotification('Updating...');
-    try {
-      const eventToUpdate = events.find(event => event.id === eventId);
-      if (!eventToUpdate) return;
+    const eventToUpdate = events.find(event => event.id === eventId);
+    if (!eventToUpdate) return;
 
-      // Store the current state of the event before updating
+    const isTask = eventToUpdate.calendar === 'Task';
+    showNotification(`Updating ${isTask ? 'task' : 'event'}...`);
+
+    try {
       setLastUpdatedEvent({ ...eventToUpdate });
 
       const startTime = new Date(eventToUpdate.start_time);
@@ -235,6 +242,7 @@ const CalendarApp = () => {
             date: newStartTime.toLocaleDateString(),
             startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isTask: eventToUpdate.calendar === 'Task'
           } : event
         )
       );
@@ -250,14 +258,14 @@ const CalendarApp = () => {
 
       if (response.ok) {
         const savedEvent = await response.json();
-        console.log('Event updated successfully:', savedEvent);
-        showNotification('Event updated', 'Undo');
+        console.log(`${isTask ? 'Task' : 'Event'} updated successfully:`, savedEvent);
+        showNotification(`${isTask ? 'Task' : 'Event'} updated`, 'Undo');
       } else {
-        throw new Error('Failed to update event');
+        throw new Error(`Failed to update ${isTask ? 'task' : 'event'}`);
       }
     } catch (error) {
-      console.error('Error updating event:', error);
-      showNotification('Failed to update event');
+      console.error(`Error updating ${isTask ? 'task' : 'event'}:`, error);
+      showNotification(`Failed to update ${isTask ? 'task' : 'event'}`);
       fetchEvents();
     }
   };
@@ -266,6 +274,8 @@ const CalendarApp = () => {
     if (lastUpdatedEvent) {
       const token = localStorage.getItem('token');
       if (!token) return;
+
+      const isTask = lastUpdatedEvent.calendar === 'Task';
 
       try {
         const response = await fetch(`http://localhost:5000/events/${lastUpdatedEvent.id}`, {
@@ -283,13 +293,13 @@ const CalendarApp = () => {
               event.id === lastUpdatedEvent.id ? lastUpdatedEvent : event
             )
           );
-          showNotification('Event reverted successfully');
+          showNotification(`${isTask ? 'Task' : 'Event'} reverted successfully`);
         } else {
-          throw new Error('Failed to undo event update');
+          throw new Error(`Failed to undo ${isTask ? 'task' : 'event'} update`);
         }
       } catch (error) {
-        console.error('Error undoing event update:', error);
-        showNotification('Failed to undo event update');
+        console.error(`Error undoing ${isTask ? 'task' : 'event'} update:`, error);
+        showNotification(`Failed to undo ${isTask ? 'task' : 'event'} update`);
       }
 
       setLastUpdatedEvent(null);

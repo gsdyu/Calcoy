@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { X, Check, Clock } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
