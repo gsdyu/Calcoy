@@ -168,7 +168,13 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     const hiddenCount = dayEvents.length - visibleCount;
   
     return (
-      <>
+      <div className={`
+        transition-all duration-300 ease-in-out origin-top
+        ${isAllDayExpanded 
+          ? 'opacity-100 scale-y-100' 
+          : 'opacity-95 scale-y-95'
+        }
+      `}>
         {dayEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
         {!isAllDayExpanded && dayEvents.length > maxVisibleEvents && (
           <div 
@@ -182,7 +188,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             +{hiddenCount} more
           </div>
         )}
-      </>
+      </div>
     );
   };
 
@@ -228,13 +234,18 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
         <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-between py-1">
           <span>All-day</span>
           {hasMoreThanThreeAllDayEvents && (
-            <button 
-              className="text-blue-500 hover:text-blue-600 focus:outline-none"
-              onClick={toggleAllDayExpansion}
-            >
-              {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-            </button>
-          )}
+          <button 
+            className="text-blue-500 hover:text-blue-600 focus:outline-none"
+            onClick={toggleAllDayExpansion}
+          >
+            <ChevronDown 
+              size={16} 
+              className={`transform transition-transform duration-300 ${
+                isAllDayExpanded ? 'rotate-180' : ''
+              }`}
+            />
+          </button>
+        )}
         </div>
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
