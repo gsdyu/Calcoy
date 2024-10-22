@@ -33,7 +33,6 @@
     opacity: 1;
     transform-origin: top center;
     transition: all 0.3s ease;
-    border: 3px solid #2f65b6;
     width: 500px;
     padding: 20px;
     border-radius: 15px;
@@ -45,11 +44,12 @@
   .eventDetailsBox p {
     margin: 5px 0;
     color: #b7c5e4;
+    font-weight: 600;
   }
 
   .eventTitle {
-    font-size: 22px;
-    font-weight: 700;
+    font-size: 20px;
+    font-weight: 750;
     color: #ffffff;
   }
 
@@ -72,7 +72,7 @@
   }
   
   .confirmButton svg, .denyButton svg {
-    margin-right: 10px;
+    margin-right: 30px;
   }
 
   .confirmButton, .denyButton {
@@ -86,7 +86,7 @@
     border-radius: 13px;
     cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: 700;
     transition: background-color 0.3s, transform 0.2s;
   }
   
@@ -118,7 +118,6 @@
     display: flex;
     flex-direction: column;
     height: 100vh;
-
   }
   
   .chatWindow {
@@ -269,5 +268,68 @@
   .chatWindow::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
   }
+
+  .editInput {
+    width: 100%;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+    border: none;
+  }
+  
+  .editInputDark {
+    background: #667486;
+    border-color: #444;
+    color: white;
+    border-radius: 10px;
+  }
+  
+  .editTextarea {
+    width: 100%;
+    padding: 8px;
+    margin: 4px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    min-height: 100px;
+    resize: vertical;
+    border: none;
+  }
+  
+  .editTextareaDark {
+    background: #667486;
+    color: white;
+    border-radius: 10px;
+  }
+
+  .editlabel {
+    font-weight: 700;
+  }
+  
+  .editButton {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 0.375rem;
+    background-color: transparent;
+    border: 1.5px solid #ffffff;
+    color: #ffffff;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .editButton:hover {
+    background: rgb(102, 144, 207);
+  }
+
+  .titleRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    margin-bottom: 1rem;
+  }
+
 
   

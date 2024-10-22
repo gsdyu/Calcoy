@@ -8,6 +8,7 @@ import { Sparkles } from 'lucide-react';
 import { CirclePlus } from 'lucide-react';
 import { CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import EventDetailsBox from './EventDetailsBox';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -21,6 +22,42 @@ const AiPage = () => {
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
+  };
+
+  const handleEdit = async (eventId, editedDetails) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      // First, update the message in the messages state
+      setMessages(prevMessages => 
+        prevMessages.map(msg => {
+          if (msg.eventDetails?.id === eventId) {
+            return {
+              ...msg,
+              eventDetails: editedDetails
+            };
+          }
+          return msg;
+        })
+      );
+
+      // Then, update the eventDetails state
+      setEventDetails(prevDetails =>
+        prevDetails.map(detail =>
+          detail.id === eventId ? editedDetails : detail
+        )
+      );
+
+    } catch (error) {
+      console.error('Error updating event:', error);
+      // Add an error message
+      setMessages(prev => [...prev, {
+        sender: 'bot',
+        text: 'There was an error updating the event.'
+      }]);
+      // You might want to revert the changes in the UI here
+    }
   };
 
   const handleSendMessage = async (e) => {
@@ -85,11 +122,11 @@ const AiPage = () => {
     textareaRef.current.style.height = 'auto';
   };
 
-  const handleConfirm = async (eventId) => {
+  const handleConfirm = async (eventId, editedDetails = null) => {
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const eventToConfirm = eventDetails.find(event => event.id === eventId);
+    const eventToConfirm = editedDetails || eventDetails.find(event => event.id === eventId);
 
     try {
       const response = await fetch('http://localhost:5000/events', {
@@ -157,29 +194,15 @@ const AiPage = () => {
             >
               {msg.text}
               {msg.eventDetails && (
-              <div className={styles.eventDetailsBox}>
-                <h1 className={styles.eventTitle}>{msg.eventDetails.title}</h1>
-                <p>{new Date(msg.eventDetails.start_time).toLocaleDateString()}</p>
-                <p className={styles.eventTime}>
-                  {new Date(msg.eventDetails.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - {new Date(msg.eventDetails.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </p>
-                <p className={styles.eventDescription}>{msg.eventDetails.description}</p>
-                
-                {/* Buttons arranged at the bottom */}
-                {!handledEvents[msg.eventDetails.id] && (
-                    <div className={styles.buttonSection}>
-                      <div className={styles.buttonContainer}>
-                        <button onClick={() => handleConfirm(msg.eventDetails.id)} className={styles.confirmButton}>
-                          <CirclePlus /> Confirm
-                        </button>
-                        <button onClick={() => handleDeny(msg.eventDetails.id)} className={styles.denyButton}>
-                          <CircleX /> Discard
-                        </button>
-                      </div>
-                    </div>
-                  )}
-              </div>
-            )}
+                <EventDetailsBox
+                  eventDetails={msg.eventDetails}
+                  onConfirm={handleConfirm}
+                  onDeny={handleDeny}
+                  onEdit={handleEdit}
+                  isHandled={handledEvents[msg.eventDetails.id]}
+                  darkMode={darkMode}
+                />
+              )}
             </div>
           ))}
         </div>
