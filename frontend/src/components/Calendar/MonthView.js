@@ -3,6 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
+import { Check } from 'lucide-react';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -100,6 +101,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
     const isAllDay = isAllDayEvent(event);
+    const isTask = event.calendar === 'Task';
     const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return (
@@ -124,10 +126,24 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <div className="flex items-center overflow-hidden">
-          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
+          {isTask ? (
+            <Check 
+              className={`w-3 h-3 mr-1 flex-shrink-0 
+                ${isAllDay 
+                  ? 'text-white' 
+                  : darkMode 
+                    ? `text-${eventColor}-400` 
+                    : `text-${eventColor}-500`
+                }`} 
+            />
+          ) : (
+            !isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`} />
+          )}
           <span className="truncate">{event.title}</span>
         </div>
-        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+          {eventTime}
+        </span>
       </div>
     );
   };
