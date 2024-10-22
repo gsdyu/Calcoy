@@ -331,5 +331,11 @@
     margin-bottom: 1rem;
   }
 
+  .handledIcon {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+  }
+
 
   

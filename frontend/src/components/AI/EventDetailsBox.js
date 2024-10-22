@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CirclePlus, CircleX, Edit2, Save, X } from 'lucide-react';
+import { CirclePlus, CircleX, Edit2, Save, X, Check } from 'lucide-react';
 import styles from './AiPage.module.css';
 
 const EventDetailsBox = ({ 
@@ -163,10 +163,14 @@ const EventDetailsBox = ({
     <div className={styles.eventDetailsBox}>
       <div className={styles.titleRow}>
         <h1 className={styles.eventTitle}>{eventDetails.title}</h1>
-        {!isHandled && (
-          <button onClick={handleEdit} className={styles.editButton}>
-            <Edit2 className="w-4 h-4" /> Edit
-          </button>
+        {!isHandled ? (
+            <button onClick={handleEdit} className={styles.editButton}>
+                <Edit2 className="w-4 h-4" /> Edit
+            </button>
+        ) : (
+            <span className={styles.handledIcon}>
+                <Check className="w-7 h-7" /> Added
+            </span>
         )}
       </div>
       <p>{startDateTime.date}</p>
