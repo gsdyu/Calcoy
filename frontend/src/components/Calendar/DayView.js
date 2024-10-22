@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 
 const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
@@ -119,7 +119,13 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const hiddenCount = allDayEvents.length - visibleCount;
   
     return (
-      <>
+      <div className={`
+        transition-all duration-300 ease-in-out origin-top
+        ${isAllDayExpanded 
+          ? 'opacity-100 scale-y-100' 
+          : 'opacity-95 scale-y-95'
+        }
+      `}>
         {allDayEvents.slice(0, visibleCount).map(renderAllDayEvent)}
         {!isAllDayExpanded && allDayEvents.length > maxVisibleEvents && (
           <div 
@@ -129,7 +135,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             +{hiddenCount} more
           </div>
         )}
-      </>
+      </div>
     );
   };
 
@@ -158,7 +164,12 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               className="text-blue-500 hover:text-blue-600"
               onClick={toggleAllDayExpansion}
             >
-              {isAllDayExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              <ChevronDown 
+                size={16} 
+                className={`transform transition-transform duration-400 ${
+                  isAllDayExpanded ? 'rotate-180' : ''
+                }`}
+              />
             </button>
           )}
         </div>
