@@ -27,18 +27,23 @@
     }
   }
 
-  /* event details box and buttons */
   .eventDetailsBox {
     animation: growFadeIn 0.4s ease-out;
     opacity: 1;
     transform-origin: top center;
     transition: all 0.3s ease;
     width: 500px;
-    padding: 20px;
     border-radius: 15px;
     background-color: rgb(63, 79, 105);
     margin-top: 10px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
 
+  .contentSection {
+  padding: 20px;
+  flex-grow: 1;
   }
   
   .eventDetailsBox p {
@@ -53,17 +58,32 @@
     color: #ffffff;
   }
 
+  .buttonWrapper {
+    transform: translateY(0);
+    opacity: 1;
+    transition: transform 0.3s ease-out, opacity 0.3s ease-out;
+  }
+
+  .buttonWrapper.hidden {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+
   .buttonSection {
-    margin-left: -20px;
-    margin-right: -20px;
-    margin-bottom: -20px;
     background-color: rgb(86, 107, 139);
     padding: 20px;
-    padding-top: 0px;
     display: flex;
     justify-content: center;
-    border-radius: 0 0 15px 15px;
-    margin-top: 20px;
+    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+    max-height: 100px;
+    opacity: 1;
+  }
+
+  .buttonSection.hidden {
+    max-height: 0;
+    opacity: 0;
+    padding: 0;
+    overflow: hidden;
   }
   
   .buttonContainer {
@@ -75,13 +95,12 @@
     margin-right: 30px;
   }
 
+
   .confirmButton, .denyButton {
     display: flex;
     align-items: center;
     width: 200px;
-    margin-top: 20px;
     padding: 10px 15px;
-    margin-right: 8px;
     border: none;
     border-radius: 13px;
     cursor: pointer;
@@ -301,8 +320,12 @@
     border-radius: 10px;
   }
 
-  .editlabel {
+  .editLabel {
+    display: block;
     font-weight: 700;
+    color: #ffffff;
+    margin-top: 5px;
+    font-size: 15px;
   }
   
   .editButton {
@@ -331,11 +354,38 @@
     margin-bottom: 1rem;
   }
 
-  .handledIcon {
-    display: inline-flex;
+  .statusIcon {
+    animation: scaleIn 0.3s ease-out forwards;
+    display: flex;
     align-items: center;
     gap: 5px;
-  }
+    color: white;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Animation for the icon appearance */
+@keyframes scaleIn {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.confirmed {
+  color: #4ade80;
+}
+
+.discarded {
+  color: #ff4f4f;
+}
 
 
   

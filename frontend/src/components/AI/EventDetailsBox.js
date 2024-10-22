@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CirclePlus, CircleX, Edit2, Save, X, Check } from 'lucide-react';
 import styles from './AiPage.module.css';
 
@@ -7,10 +7,20 @@ const EventDetailsBox = ({
   onConfirm, 
   onDeny, 
   onEdit,
-  isHandled,
+  isHandled: initialIsHandled,
   darkMode 
 }) => {
-  // Helper function to format date for datetime-local input
+  // Separate state for handling animation
+  const [isHandled, setIsHandled] = useState(initialIsHandled);
+  const [isVisible, setIsVisible] = useState(true);
+  const [status, setStatus] = useState(null);
+  
+  // Update local state when prop changes
+  useEffect(() => {
+    setIsHandled(initialIsHandled);
+    setIsVisible(!initialIsHandled);
+  }, [initialIsHandled]);
+
   const formatDateForInput = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -26,7 +36,6 @@ const EventDetailsBox = ({
     }
   };
 
-  // Helper function to format date for display
   const formatDateForDisplay = (dateString) => {
     try {
       const date = new Date(dateString);
@@ -51,6 +60,31 @@ const EventDetailsBox = ({
     end_time: formatDateForInput(eventDetails.end_time),
     description: eventDetails.description
   });
+
+  const handleActionWithAnimation = async (action, id) => {
+    setIsVisible(false);
+  
+    await new Promise(resolve => setTimeout(resolve, 300));
+    
+    action(id);
+    setIsHandled(true);
+  };
+
+  const handleConfirm = async (id) => {
+    setStatus('confirmed');
+    setIsVisible(false);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    onConfirm(id);
+    setIsHandled(true);
+  };
+  
+  const handleDeny = async (id) => {
+    setStatus('discarded');
+    setIsVisible(false);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    onDeny(id);
+    setIsHandled(true);
+  };
 
   const handleEdit = () => {
     setEditedDetails({
@@ -96,7 +130,7 @@ const EventDetailsBox = ({
     }));
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     setEditedDetails({
       ...eventDetails,
       start_time: formatDateForInput(eventDetails.start_time),
@@ -107,41 +141,51 @@ const EventDetailsBox = ({
   if (isEditing) {
     return (
       <div className={styles.eventDetailsBox}>
-        <label className={`${styles.editlabel} ${darkMode ? styles.editlabelDark : ''}`}>Event name</label>
-        <input
-          type="text"
-          name="title"
-          value={editedDetails.title}
-          onChange={handleInputChange}
-          className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
-        />
-        <div className={styles.dateTimeInputGroup}>
-          <label className={`${styles.editlabel} ${darkMode ? styles.editlabelDark : ''}`} >Start Time</label>
-          <input
-            type="datetime-local"
-            name="start_time"
-            value={editedDetails.start_time}
-            onChange={handleInputChange}
-            className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
-          />
+        <div className={styles.contentSection}>
+          <div className={styles.formGroup}>
+            <label className={styles.editLabel}>Event name</label>
+            <input
+              type="text"
+              name="title"
+              value={editedDetails.title}
+              onChange={handleInputChange}
+              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+            />
+          </div>
+  
+          <div className={styles.dateTimeInputGroup}>
+            <label className={styles.editLabel}>Start Time</label>
+            <input
+              type="datetime-local"
+              name="start_time"
+              value={editedDetails.start_time}
+              onChange={handleInputChange}
+              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+            />
+          </div>
+  
+          <div className={styles.dateTimeInputGroup}>
+            <label className={styles.editLabel}>End Time</label>
+            <input
+              type="datetime-local"
+              name="end_time"
+              value={editedDetails.end_time}
+              onChange={handleInputChange}
+              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+            />
+          </div>
+  
+          <div className={styles.formGroup}>
+            <label className={styles.editLabel}>Description</label>
+            <textarea
+              name="description"
+              value={editedDetails.description}
+              onChange={handleInputChange}
+              className={`${styles.editTextarea} ${darkMode ? styles.editTextareaDark : ''}`}
+            />
+          </div>
         </div>
-        <div className={styles.dateTimeInputGroup}>
-          <label className={`${styles.editlabel} ${darkMode ? styles.editlabelDark : ''}`}>End Time</label>
-          <input
-            type="datetime-local"
-            name="end_time"
-            value={editedDetails.end_time}
-            onChange={handleInputChange}
-            className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
-          />
-        </div>
-        <label className={`${styles.editlabel} ${darkMode ? styles.editlabelDark : ''}`} >Description</label>
-        <textarea
-          name="description"
-          value={editedDetails.description}
-          onChange={handleInputChange}
-          className={`${styles.editTextarea} ${darkMode ? styles.editTextareaDark : ''}`}
-        />
+  
         <div className={styles.buttonSection}>
           <div className={styles.buttonContainer}>
             <button onClick={handleSave} className={styles.confirmButton}>
@@ -161,38 +205,50 @@ const EventDetailsBox = ({
 
   return (
     <div className={styles.eventDetailsBox}>
-      <div className={styles.titleRow}>
-        <h1 className={styles.eventTitle}>{eventDetails.title}</h1>
-        {!isHandled ? (
+      <div className={styles.contentSection}>
+        <div className={styles.titleRow}>
+          <h1 className={styles.eventTitle}>{eventDetails.title}</h1>
+          {!isHandled ? (
             <button onClick={handleEdit} className={styles.editButton}>
-                <Edit2 className="w-4 h-4" /> Edit
+              <Edit2 className="w-4 h-4" /> Edit
             </button>
-        ) : (
-            <span className={styles.handledIcon}>
-                <Check className="w-7 h-7" /> Added
-            </span>
-        )}
+          ) : (
+            <div className={`${styles.statusIcon} ${styles[status]}`}>
+              {status === 'confirmed' ? (
+                <>
+                  <Check size={18} />
+                  Confirmed
+                </>
+              ) : (
+                <>
+                  <X size={18} />
+                  Discarded
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        <p>{startDateTime.date}</p>
+        <p className={styles.eventTime}>
+          {startDateTime.time} - {endDateTime.time}
+        </p>
+        <p className={styles.eventDescription}>{eventDetails.description}</p>
       </div>
-      <p>{startDateTime.date}</p>
-      <p className={styles.eventTime}>
-        {startDateTime.time} - {endDateTime.time}
-      </p>
-      <p className={styles.eventDescription}>{eventDetails.description}</p>
       
       {!isHandled && (
-        <div className={styles.buttonSection}>
+        <div className={`${styles.buttonSection} ${!isVisible ? styles.hidden : ''}`}>
           <div className={styles.buttonContainer}>
-            <button onClick={() => onConfirm(eventDetails.id)} className={styles.confirmButton}>
+            <button onClick={() => handleConfirm(eventDetails.id)} className={styles.confirmButton}>
               <CirclePlus /> Confirm
             </button>
-            <button onClick={() => onDeny(eventDetails.id)} className={styles.denyButton}>
+            <button onClick={() => handleDeny(eventDetails.id)} className={styles.denyButton}>
               <CircleX /> Discard
             </button>
           </div>
         </div>
       )}
     </div>
-  );
+);
 };
 
 export default EventDetailsBox;
