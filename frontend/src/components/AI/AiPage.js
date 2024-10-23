@@ -9,11 +9,13 @@ import { CirclePlus } from 'lucide-react';
 import { CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
+import LoadingDots from './LoadingDots';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [eventDetails, setEventDetails] = useState([]);
   const [handledEvents, setHandledEvents] = useState({});
 
@@ -70,7 +72,10 @@ const AiPage = () => {
     if (!token) {
       //handle error, i didnt read yet how to handle here
       console.error('not login')
+      setIsLoading(false);
     }
+
+    setIsLoading(true);
   
     // groq api
     try {
@@ -116,6 +121,10 @@ const AiPage = () => {
       console.error('Error fetching response:', error);
       const errorMessage = { sender: 'bot', text: 'There was an error' };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
+    } finally {
+      setIsLoading(false);
+      setInput('');
+      textareaRef.current.style.height = 'auto';
     }
   
     setInput('');
@@ -205,6 +214,11 @@ const AiPage = () => {
               )}
             </div>
           ))}
+          {isLoading && (
+            <div className={`${styles.message} ${darkMode ? styles.botDark : styles.bot}`}>
+              <LoadingDots />
+            </div>
+          )}
         </div>
         <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
           <textarea 
