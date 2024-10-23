@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import PersonalCalendar from '@/components/Sidebar/PersonalCalendar';
-import Calendarapi from '@/components/Sidebar/Calendarapi';
+import Calendarapi from '@/components/Sidebar/Calendarfilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
+import Googleapi from '@/components/API/Googleapi';
 
 const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) => {
   const { darkMode } = useTheme();
@@ -46,6 +47,8 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) 
           mainCalendarDate={mainCalendarDate}
         />
         <Calendarapi />
+        <Googleapi/>
+
         <Tasks />
       </div>
     </div>

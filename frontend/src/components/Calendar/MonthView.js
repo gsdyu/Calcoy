@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
-import Calendarapi from '@/components/Sidebar/Calendarapi';
+import Calendarapi from '@/components/Sidebar/Calendarfilter';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -204,7 +204,23 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    
+        const calendarType = event.calendar || 'default';
+  
+    // Use optional chaining and provide fallback color
+    const eventColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
     const days = [];
     let dayCounter = 1;
     let nextMonthCounter = 1;
