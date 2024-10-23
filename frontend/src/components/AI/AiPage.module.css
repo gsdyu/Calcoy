@@ -74,16 +74,18 @@
     padding: 20px;
     display: flex;
     justify-content: center;
-    transition: max-height 0.3s ease-out, opacity 0.2s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     max-height: 100px;
     opacity: 1;
+    transform: translateY(0);
   }
-
+  
   .buttonSection.hidden {
     max-height: 0;
     opacity: 0;
     padding: 0;
-    overflow: hidden;
+    transform: translateY(-100%);
+    pointer-events: none;
   }
   
   .buttonContainer {
