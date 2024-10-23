@@ -64,7 +64,8 @@ const CalendarApp = () => {
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isTask: event.calendar === 'Task'
+            isTask: event.calendar === 'Task',
+            completed: event.completed || false
           };
         });
         setEvents(formattedEvents);
@@ -123,6 +124,50 @@ const CalendarApp = () => {
     setIsAddingEvent(false);
     setSelectedEvent(null);
   };
+
+  // New function to handle task completion
+  const handleTaskComplete = async (taskId, completed) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const eventToUpdate = events.find(event => event.id === taskId);
+      if (!eventToUpdate) return;
+
+      const updatedEvent = {
+        ...eventToUpdate,
+        completed
+      };
+
+      const response = await fetch(`http://localhost:5000/events/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updatedEvent),
+      });
+
+      if (response.ok) {
+        setEvents(prevEvents =>
+          prevEvents.map(event =>
+            event.id === taskId ? { ...event, completed } : event
+          )
+        );
+        showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
+        // Close the modal if the task was completed
+        if (completed) {
+          handleCloseEventDetails();
+        }
+      } else {
+        throw new Error('Failed to update task');
+      }
+    } catch (error) {
+      console.error('Error updating task:', error);
+      showNotification('Failed to update task');
+    }
+  };
+
   const handleSaveEvent = async (event) => {
     const token = localStorage.getItem('token');
     if (!token) return;
@@ -152,7 +197,8 @@ const CalendarApp = () => {
           date: startTime.toLocaleDateString(),
           startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isTask: event.calendar === 'Task'
+          isTask: event.calendar === 'Task',
+          completed: event.completed || false
         };
   
         setEvents((prevEvents) => {
@@ -234,7 +280,6 @@ const CalendarApp = () => {
         end_time: newEndTime.toISOString(),
       };
 
-      // Optimistic update
       setEvents(prevEvents => 
         prevEvents.map(event => 
           event.id === eventId ? {
@@ -242,7 +287,8 @@ const CalendarApp = () => {
             date: newStartTime.toLocaleDateString(),
             startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isTask: eventToUpdate.calendar === 'Task'
+            isTask: eventToUpdate.calendar === 'Task',
+            completed: eventToUpdate.completed || false
           } : event
         )
       );
@@ -396,6 +442,7 @@ const CalendarApp = () => {
           onClose={handleCloseEventDetails}
           onEdit={handleEditFromDetails}
           onDelete={handleDeleteEvent}
+          onTaskComplete={handleTaskComplete}  
         />
       )}
       {isAddingEvent && (
