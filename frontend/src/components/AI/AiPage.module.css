@@ -147,6 +147,7 @@
     flex: 1;
     padding: 10px;
     overflow-y: auto;
+    padding-bottom: 80px;
   }
   
   .message {
@@ -160,13 +161,11 @@
   }
   
   .user {
-    text-align: right;
     background-color: rgb(136, 165, 209);
     align-self: flex-end;
   }
 
   .userDark {
-    text-align: right;
     background-color: rgb(67, 85, 112);
     align-self: flex-end;
   }
@@ -225,6 +224,8 @@
     font-size: 14px;
     line-height: 1.5;
     font-size: 16px;
+    max-height: 260px;
+    overflow-y: auto;
   }
 
   .textareaDark {
@@ -239,10 +240,8 @@
     font-size: 14px;
     line-height: 1.5;
     font-size: 16px;
-  }
-
-  .textarea:focus {
-    outline: none;
+    max-height: 260px;
+    overflow-y: auto;
   }
 
   .button {
@@ -288,6 +287,30 @@
   
   .chatWindow::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
+  }
+
+  /* text area scrollbar stuff */
+
+  .textarea::-webkit-scrollbar {
+    width: 12px;
+  }
+  
+  .textarea::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+  }
+  
+  .textarea::-webkit-scrollbar-thumb {
+    background: rgba(126, 145, 173, 0.6);
+    border-radius: 10px;
+  }
+  
+  .textarea::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 165, 0.8);
+  }
+
+  .textarea:focus {
+    outline: none;
   }
 
   .editInput {
