@@ -63,7 +63,9 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       req.session.token = token;
       res.cookie('auth_token', token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        secure: process.env.node_env === 'production',
+        path: '/',
       });
 
       // Redirect to the username page if the user has no username set
@@ -145,10 +147,11 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
           const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
           // Store the token in the session or cookies
-          req.session.token = token;
           res.cookie('auth_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict',
+            path: '/',
           });
 
           // Redirect to the username page if the user is new and has no username set
@@ -232,7 +235,13 @@ app.post('/auth/set-username', async (req, res) => {
       const token = jwt.sign({ userId: newUser.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
       // Send the response
-      res.status(201).json({ message: 'User created successfully', user: newUser.rows[0], token });
+      res.cookie('auth_token', token, {
+        httpOnly: true,
+        sameSite: 'strict',
+        secure: process.env.node_env === 'production',
+        path:'/',
+      });
+      res.status(201).json({ message: 'User created successfully', user: newUser.rows[0]});
     } catch (error) {
       console.error('Signup error:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -371,6 +380,13 @@ app.post('/auth/set-username', async (req, res) => {
                 const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
                 // Return the JWT token to the client
+                
+                res.cookie('auth_token', token, {
+                  httpOnly: true,
+                  sameSite: 'strict',
+                  secure: process.env.node_env === 'production',
+                  path:'/',
+                });
                 return res.json({ token });
             } else {
                 return res.status(401).json({ error: 'Invalid or expired 2FA code' });
@@ -380,4 +396,10 @@ app.post('/auth/set-username', async (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
         }
     });
+
+
+   app.post('/logout', (req, res) => {
+     res.clearCookie("auth_token", {path: '/'});
+     return res.status(200).json({message: "Log out successful"});
+   });
 };

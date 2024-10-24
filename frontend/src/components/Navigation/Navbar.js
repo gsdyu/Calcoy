@@ -75,20 +75,6 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           {isCollapsed ? <ChevronRight className={`h-4 w-4 ${iconColor}`} /> : <ChevronLeft className={`h-4 w-4 ${iconColor}`} />}
         </Button>
       </div>
-      <Button
-        variant="primary"
-        className={`
-          mx-auto my-2 bg-blue-500 text-white hover:bg-blue-600
-          flex items-center justify-center
-          transition-colors duration-200
-          rounded-full
-          ${isCollapsed ? "w-10 h-10" : "w-[90%] h-10"}
-        `}
-        onClick={onAddEvent}
-      >
-        <Plus className="h-5 w-5 min-w-[20px]" />
-        {!isCollapsed && <span className="ml-2">Create</span>}
-      </Button>
       <nav className="w-full px-1 flex-grow">
         <MenuItem 
           icon={Home} 
