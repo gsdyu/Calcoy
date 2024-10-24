@@ -61,12 +61,23 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         });
       }
     } else if (initialDate && (initialDate.getHours() !== 0 || initialDate.getMinutes() !== 0)) {
-      // Only use initialDate time for WeekView/DayView clicks
-      // (where hours/minutes are specifically set)
+      // Handle clicks from WeekView/DayView with rounded times
       const startDate = new Date(initialDate);
+      const minutes = startDate.getMinutes();
+      
+      // Round to nearest 30 minutes
+      if (minutes < 30) {
+        startDate.setMinutes(0);
+      } else {
+        startDate.setMinutes(30);
+      }
+      startDate.setSeconds(0);
+      startDate.setMilliseconds(0);
+    
       const endDate = new Date(startDate);
       endDate.setHours(startDate.getHours() + 1);
-  
+      endDate.setMinutes(startDate.getMinutes()); 
+    
       setNewEvent(prev => ({
         ...prev,
         date: startDate.toISOString().split('T')[0],
