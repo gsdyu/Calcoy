@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 
 const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
   const { darkMode } = useTheme();
@@ -36,8 +36,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const endHour = endDate.getHours();
     const endMinute = endDate.getMinutes();
 
-    const top = (startHour + startMinute / 60) * 60; // 60px per hour
-    const height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+    const top = (startHour + startMinute / 60) * 60;
+    const height = event.calendar === 'Task' ? 30 : ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
     return {
       top: `${top}px`,
@@ -92,6 +92,44 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   const renderAllDayEvent = (event) => {
     const eventColor = event.color || 'blue';
+    const isTask = event.calendar === 'Task';
+    const isCompleted = event.completed;
+
+    if (isTask) {
+      return (
+        <div
+          key={event.id}
+          className={`
+            flex justify-between items-center
+            text-xs mb-1 truncate cursor-pointer
+            rounded-full py-1 px-2
+            ${isCompleted ? 'opacity-50' : ''}
+            border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+            ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+            hover:bg-opacity-30 transition-colors duration-200 z-40
+            mr-5
+            ${isCompleted ? 'line-through' : ''}
+          `}
+          onClick={(e) => handleEventClick(event, e)}
+          style={{ position: 'relative', zIndex: 40 }}
+        >
+          <div className="flex items-center overflow-hidden">
+            <Check 
+              className={`w-3 h-3 mr-1 flex-shrink-0
+                ${isCompleted ? 'opacity-50' : ''} 
+                ${darkMode 
+                  ? `text-${eventColor}-400` 
+                  : `text-${eventColor}-500`
+                }`} 
+            />
+            <span className={`truncate ${isCompleted ? 'line-through' : ''}`}>
+              {event.title}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         key={event.id}
@@ -118,6 +156,13 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       : (allDayEvents.length <= maxVisibleEvents ? allDayEvents.length : 2);
     const hiddenCount = allDayEvents.length - visibleCount;
   
+    const sortedEvents = [...allDayEvents].sort((a, b) => {
+      if (a.calendar === 'Task' && b.calendar === 'Task') {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      }
+      return 0;
+    });
+
     return (
       <div className={`
         transition-all duration-300 ease-in-out origin-top
@@ -126,7 +171,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           : 'opacity-95 scale-y-95'
         }
       `}>
-        {allDayEvents.slice(0, visibleCount).map(renderAllDayEvent)}
+        {sortedEvents.slice(0, visibleCount).map(renderAllDayEvent)}
         {!isAllDayExpanded && allDayEvents.length > maxVisibleEvents && (
           <div 
             className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
@@ -219,22 +264,60 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 }}
               ></div>
             ))}
-            {timedEvents.map(event => (
-              <div
-                key={event.id}
-                className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
-                style={getEventStyle(event)}
-                onClick={(e) => handleEventClick(event, e)}
-              >
-                <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
-                  <div className="font-bold">{event.title}</div>
-                  <div className="text-xs">
-                    {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                    {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {timedEvents.map(event => {
+              if (event.calendar === 'Task') {
+                const eventColor = event.color || 'blue';
+                const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                return (
+                  <div
+                    key={event.id}
+                    className={`
+                      absolute text-xs overflow-hidden cursor-pointer
+                      rounded-full py-1 px-2
+                      ${event.completed ? 'opacity-50' : ''}
+                      border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+                      ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+                      hover:bg-opacity-30 transition-colors duration-200
+                      ${event.completed ? 'line-through' : ''}
+                    `}
+                    style={getEventStyle(event)}
+                    onClick={(e) => handleEventClick(event, e)}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center overflow-hidden">
+                        <Check 
+                          className={`w-3 h-3 mr-1 flex-shrink-0
+                            ${event.completed ? 'opacity-50' : ''} 
+                            ${darkMode 
+                              ? `text-${eventColor}-400` 
+                              : `text-${eventColor}-500`
+                            }`} 
+                        />
+                        <span className="truncate">{event.title}</span>
+                      </div>
+                      <span className="ml-2 text-[10px]">{startTime}</span>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={event.id}
+                  className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
+                  style={getEventStyle(event)}
+                  onClick={(e) => handleEventClick(event, e)}
+                >
+                  <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
+                    <div className="font-bold">{event.title}</div>
+                    <div className="text-xs">
+                      {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
+                      {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
