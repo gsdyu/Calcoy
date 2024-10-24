@@ -270,7 +270,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               onDrop={(e) => onDrop(e, day, 0)}
             >
               {isSelected && (
-                <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
+                <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
               )}
               {renderAllDayEvents(allDayEvents)}
             </div>
@@ -324,7 +324,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     onDrop={(e) => onDrop(e, day, hour)}
                   >
                     {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10"></div>
+                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
                     )}
                   </div>
                 );
