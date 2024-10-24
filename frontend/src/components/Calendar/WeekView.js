@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -57,7 +57,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     const endMinute = endDate.getMinutes();
 
     const top = (startHour + startMinute / 60) * 60;
-    const height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+    const height = event.calendar === 'Task' ? 30 : ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
     return {
       top: `${top}px`,
@@ -136,6 +136,45 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
   const renderAllDayEvent = (event) => {
     const eventColor = event.color || 'blue';
+    const isTask = event.calendar === 'Task';
+    const isCompleted = event.completed;
+
+    if (isTask) {
+      return (
+        <div
+          key={event.id}
+          draggable
+          onDragStart={(e) => onDragStart(e, event.id)}
+          className={`
+            flex justify-between items-center
+            text-xs mb-1 truncate cursor-pointer
+            rounded-full py-1 px-2
+            ${isCompleted ? 'opacity-50' : ''}
+            bg-${eventColor}-500 text-white
+            hover:bg-opacity-80 transition-colors duration-200 z-40
+            mr-5
+            ${isCompleted ? 'line-through' : ''}
+          `}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEventClick(event, e);
+          }}
+          style={{ position: 'relative', zIndex: 40 }}
+        >
+          <div className="flex items-center overflow-hidden">
+            <Check 
+              className={`w-3 h-3 mr-1 flex-shrink-0
+                ${isCompleted ? 'opacity-50' : ''} 
+                text-white`}
+            />
+            <span className={`truncate ${isCompleted ? 'line-through' : ''}`}>
+              {event.title}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div
         key={event.id}
@@ -162,10 +201,17 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
   const renderAllDayEvents = (dayEvents) => {
     const maxVisibleEvents = 3;
+    const sortedEvents = [...dayEvents].sort((a, b) => {
+      if (a.calendar === 'Task' && b.calendar === 'Task') {
+        if (a.completed !== b.completed) return a.completed ? 1 : -1;
+      }
+      return 0;
+    });
+    
     const visibleCount = isAllDayExpanded 
-      ? dayEvents.length 
-      : (dayEvents.length <= maxVisibleEvents ? dayEvents.length : 2);
-    const hiddenCount = dayEvents.length - visibleCount;
+      ? sortedEvents.length 
+      : (sortedEvents.length <= maxVisibleEvents ? sortedEvents.length : 2);
+    const hiddenCount = sortedEvents.length - visibleCount;
   
     return (
       <div className={`
@@ -175,8 +221,8 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
           : 'opacity-95 scale-y-95'
         }
       `}>
-        {dayEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
-        {!isAllDayExpanded && dayEvents.length > maxVisibleEvents && (
+        {sortedEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
+        {!isAllDayExpanded && sortedEvents.length > maxVisibleEvents && (
           <div 
             className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
             onClick={(e) => {
@@ -234,18 +280,18 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
         <div className="w-16 flex-shrink-0 text-xs pr-2 flex flex-col items-end justify-between py-1">
           <span>All-day</span>
           {hasMoreThanThreeAllDayEvents && (
-          <button 
-            className="text-blue-500 hover:text-blue-600 focus:outline-none"
-            onClick={toggleAllDayExpansion}
-          >
-            <ChevronDown 
-              size={16} 
-              className={`transform transition-transform duration-300 ${
-                isAllDayExpanded ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-        )}
+            <button 
+              className="text-blue-500 hover:text-blue-600 focus:outline-none"
+              onClick={toggleAllDayExpansion}
+            >
+              <ChevronDown 
+                size={16} 
+                className={`transform transition-transform duration-300 ${
+                  isAllDayExpanded ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          )}
         </div>
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
@@ -341,8 +387,12 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
               style={{ top: `${getCurrentTimePosition()}px` }}
             >
               <div className="relative w-full">
-                <div className="absolute left-0 right-0 border-t border-red-500"></div>
-                <div className="absolute left-0 w-3 h-3 bg-red-500 rounded-full transform -translate-x-1.5 -translate-y-1.5"></div>
+                <div 
+                  className="absolute border-t border-red-500" 
+                  style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
+                >
+                  <div className="absolute left-0 w-3 h-3 bg-red-500 rounded-full transform -translate-x-1.5 -translate-y-1.5"></div>
+                </div>
               </div>
             </div>
           )
@@ -356,27 +406,78 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                   const eventDate = new Date(event.start_time);
                   return !isAllDayEvent(event) && isSameDay(eventDate, day);
                 })
-                .map(event => (
-                  <div
-                    key={event.id}
-                    draggable
-                    onDragStart={(e) => onDragStart(e, event.id)}
-                    className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
-                    style={getEventStyle(event)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleEventClick(event, e);
-                    }}
-                  >
-                    <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
-                      <div className="font-bold">{event.title}</div>
-                      <div className="text-xs">
-                        {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                        {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                .sort((a, b) => {
+                  if (a.calendar === 'Task' && b.calendar === 'Task') {
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                  }
+                  return 0;
+                })
+                .map(event => {
+                  if (event.calendar === 'Task') {
+                    const eventColor = event.color || 'blue';
+                    const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                    return (
+                      <div
+                        key={event.id}
+                        draggable
+                        onDragStart={(e) => onDragStart(e, event.id)}
+                        className={`
+                          absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
+                          rounded-full py-1 px-2
+                          ${event.completed ? 'opacity-50' : ''}
+                          border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+                          ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+                          hover:bg-opacity-30 transition-colors duration-200
+                          ${event.completed ? 'line-through' : ''}
+                        `}
+                        style={getEventStyle(event)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleEventClick(event, e);
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <div className="flex items-center overflow-hidden">
+                            <Check 
+                              className={`w-3 h-3 mr-1 flex-shrink-0
+                                ${event.completed ? 'opacity-50' : ''} 
+                                ${darkMode 
+                                  ? `text-${eventColor}-400` 
+                                  : `text-${eventColor}-500`
+                                }`} 
+                            />
+                            <span className="truncate">{event.title}</span>
+                          </div>
+                          <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${event.completed ? 'opacity-50' : ''}`}>
+                            {startTime}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <div
+                      key={event.id}
+                      draggable
+                      onDragStart={(e) => onDragStart(e, event.id)}
+                      className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600 pointer-events-auto"
+                      style={getEventStyle(event)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleEventClick(event, e);
+                      }}
+                    >
+                      <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
+                        <div className="font-bold">{event.title}</div>
+                        <div className="text-xs">
+                          {new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - 
+                          {new Date(event.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               }
             </div>
           ))}
