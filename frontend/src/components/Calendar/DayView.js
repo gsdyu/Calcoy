@@ -104,9 +104,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
-            ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
-            hover:bg-opacity-30 transition-colors duration-200 z-40
+            bg-${eventColor}-500 text-white
+            hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
           `}
@@ -117,10 +116,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             <Check 
               className={`w-3 h-3 mr-1 flex-shrink-0
                 ${isCompleted ? 'opacity-50' : ''} 
-                ${darkMode 
-                  ? `text-${eventColor}-400` 
-                  : `text-${eventColor}-500`
-                }`} 
+                text-white`} 
             />
             <span className={`truncate ${isCompleted ? 'line-through' : ''}`}>
               {event.title}
@@ -267,7 +263,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {timedEvents.map(event => {
               if (event.calendar === 'Task') {
                 const eventColor = event.color || 'blue';
-                const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 return (
                   <div
                     key={event.id}
@@ -295,7 +291,9 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                         />
                         <span className="truncate">{event.title}</span>
                       </div>
-                      <span className="ml-2 text-[10px]">{startTime}</span>
+                      <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${event.completed ? 'opacity-50' : ''}`}>
+                        {startTime}
+                      </span>
                     </div>
                   </div>
                 );
