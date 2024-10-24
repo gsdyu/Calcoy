@@ -107,8 +107,10 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       try {
         const response = await fetch('http://localhost:5000/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          credentials: 'include',
+        
         });
   
         if (!response.ok) {

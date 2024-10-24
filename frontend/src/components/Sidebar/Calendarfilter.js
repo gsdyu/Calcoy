@@ -31,8 +31,9 @@ const Calendarapi = () => {
       try {
         const response = await fetch('http://localhost:5000/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
           },
+          credentials: 'include',
         });
   
         if (!response.ok) {
@@ -88,9 +89,10 @@ const Calendarapi = () => {
       const response = await fetch('http://localhost:5000/profile/preferences', {
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
+      
         body: JSON.stringify({ preferences }),
       });
       if (!response.ok) {
