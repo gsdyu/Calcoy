@@ -34,7 +34,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     setIsVisible(true);
     
     if (event) {
-      // Check if it's a task
+      // Handle editing existing event
       if (event.calendar === 'Task') {
         setSelected('task');
         const startDate = new Date(event.start_time);
@@ -47,7 +47,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
           frequency: event.frequency || 'Does not repeat',
         });
       } else {
-        // Handle regular event
         const startDate = new Date(event.start_time);
         const endDate = new Date(event.end_time);
         setNewEvent({
@@ -61,8 +60,27 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
           calendar: event.calendar || 'Personal'
         });
       }
+    } else if (initialDate && (initialDate.getHours() !== 0 || initialDate.getMinutes() !== 0)) {
+      // Only use initialDate time for WeekView/DayView clicks
+      // (where hours/minutes are specifically set)
+      const startDate = new Date(initialDate);
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + 1);
+  
+      setNewEvent(prev => ({
+        ...prev,
+        date: startDate.toISOString().split('T')[0],
+        startTime: startDate.toTimeString().slice(0, 5),
+        endTime: endDate.toTimeString().slice(0, 5)
+      }));
+      
+      setNewTask(prev => ({
+        ...prev,
+        date: startDate.toISOString().split('T')[0],
+        time: startDate.toTimeString().slice(0, 5)
+      }));
     } else {
-      // Set default times for new events/tasks
+      // Use default time range for MonthView clicks and Add Event button
       const { startTime, endTime } = getDefaultTimeRange();
       setNewEvent(prev => ({
         ...prev,
