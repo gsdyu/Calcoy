@@ -9,11 +9,41 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [selected, setSelected] = useState('event');
   const [showTaskTime, setShowTaskTime] = useState(false);
+
+  const getLocalDateString = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const getDefaultTimeRange = (date = new Date()) => {
+    const roundedDate = new Date(date);
+    roundedDate.setMinutes(Math.ceil(roundedDate.getMinutes() / 30) * 30);
+    roundedDate.setSeconds(0);
+    roundedDate.setMilliseconds(0);
+
+    const endDate = new Date(roundedDate);
+    endDate.setHours(endDate.getHours() + 1);
+
+    return {
+      startTime: roundedDate.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }).slice(0, 5),
+      endTime: endDate.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }).slice(0, 5)
+    };
+  };
   
   // State for events
   const [newEvent, setNewEvent] = useState({
     title: '',
-    date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    date: initialDate ? getLocalDateString(initialDate) : getLocalDateString(new Date()),
     startTime: '',
     endTime: '',
     allDay: false,
@@ -25,7 +55,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
   // State for tasks
   const [newTask, setNewTask] = useState({
     title: '',
-    date: initialDate ? initialDate.toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+    date: initialDate ? getLocalDateString(initialDate) : getLocalDateString(new Date()),
     time: '',
     frequency: 'Does not repeat',
   });
@@ -42,8 +72,12 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         setShowTaskTime(hasTime);
         setNewTask({
           title: event.title,
-          date: startDate.toISOString().split('T')[0],
-          time: hasTime ? startDate.toTimeString().slice(0, 5) : '',
+          date: getLocalDateString(startDate),
+          time: hasTime ? startDate.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }).slice(0, 5) : '',
           frequency: event.frequency || 'Does not repeat',
         });
       } else {
@@ -51,9 +85,17 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         const endDate = new Date(event.end_time);
         setNewEvent({
           title: event.title,
-          date: startDate.toISOString().split('T')[0],
-          startTime: startDate.toTimeString().slice(0, 5),
-          endTime: endDate.toTimeString().slice(0, 5),
+          date: getLocalDateString(startDate),
+          startTime: startDate.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }).slice(0, 5),
+          endTime: endDate.toLocaleTimeString('en-US', { 
+            hour12: false, 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }).slice(0, 5),
           allDay: event.allDay || false,
           frequency: event.frequency || 'Does not repeat',
           location: event.location || '',
@@ -80,15 +122,27 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     
       setNewEvent(prev => ({
         ...prev,
-        date: startDate.toISOString().split('T')[0],
-        startTime: startDate.toTimeString().slice(0, 5),
-        endTime: endDate.toTimeString().slice(0, 5)
+        date: getLocalDateString(startDate),
+        startTime: startDate.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }).slice(0, 5),
+        endTime: endDate.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }).slice(0, 5)
       }));
       
       setNewTask(prev => ({
         ...prev,
-        date: startDate.toISOString().split('T')[0],
-        time: startDate.toTimeString().slice(0, 5)
+        date: getLocalDateString(startDate),
+        time: startDate.toLocaleTimeString('en-US', { 
+          hour12: false, 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        }).slice(0, 5)
       }));
     } else {
       // Use default time range for MonthView clicks and Add Event button
@@ -104,21 +158,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
       }));
     }
   }, [event, initialDate]);
-
-  const getDefaultTimeRange = (date = new Date()) => {
-    const roundedDate = new Date(date);
-    roundedDate.setMinutes(Math.ceil(roundedDate.getMinutes() / 30) * 30);
-    roundedDate.setSeconds(0);
-    roundedDate.setMilliseconds(0);
-
-    const endDate = new Date(roundedDate);
-    endDate.setHours(endDate.getHours() + 1);
-
-    return {
-      startTime: roundedDate.toTimeString().slice(0, 5),
-      endTime: endDate.toTimeString().slice(0, 5)
-    };
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
