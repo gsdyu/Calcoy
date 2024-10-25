@@ -129,38 +129,51 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(day);
     dayEnd.setHours(23, 59, 59, 999);
-
-    // Don't create duplicate 12 AM events
+  
+    // Special case for exact midnight/12:00 AM end time
     if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0 && 
-        dayStart.getDate() === eventEnd.getDate()) {
+        dayStart.getDate() === eventEnd.getDate() &&
+        dayStart.getMonth() === eventEnd.getMonth()) {
       return false;
     }
-
+  
     return eventStart <= dayEnd && eventEnd >= dayStart;
   };
 
   const isEventCrossingMidnight = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    return endDate.getDate() > startDate.getDate();
+    
+    const nextDay = new Date(startDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setHours(0, 0, 0, 0);
+    return endDate >= nextDay;
   };
 
   const formatEventTime = (event, isNextDay) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    
-    if (isNextDay) {
-      // For next day portion, show full time
-      return `${endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
-    } else if (endDate.getDate() > startDate.getDate()) {
-      // For first day portion of cross-midnight event, show only start time
-      return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
-    } else {
-      // For regular events, show full range
-      return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${
-        endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-      }`;
+  
+    // If event crosses midnight
+    if (isEventCrossingMidnight(event)) {
+      if (isNextDay) {
+        // Next day portion - show just end time
+        return endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      } else {
+        // First day portion - show just start time
+        return startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      }
     }
+  
+    // For events ending exactly at midnight (00:00)
+    if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
+      return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - 12:00 AM`;
+    }
+  
+    // Regular non-crossing events - show full range
+    return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${
+      endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+    }`;
   };
   const handleDateClick = (day) => {
     onDateClick(new Date(day));
@@ -478,6 +491,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 .map(event => {
                   const eventStart = new Date(event.start_time);
                   const isNextDay = day.getDate() > eventStart.getDate();
+                  const isCrossingMidnight = isEventCrossingMidnight(event);
 
                   if (event.calendar === 'Task') {
                     const eventColor = event.color || 'blue';
