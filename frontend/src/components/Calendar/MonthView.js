@@ -17,8 +17,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         const containerHeight = containerRef.current.clientHeight;
         const weeksInMonth = getWeeksInMonth(currentDate);
         const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
-        setCellHeight(calculatedCellHeight);
-
+        // 4.9 is offset gained from trial and error; optimizes tallest containerHeight before going off screen, and needing to scroll 
+        setCellHeight(calculatedCellHeight - 4.9);
         const eventHeight = 24; 
         const dateHeight = 24; 
         const moreIndicatorHeight = 20; 
