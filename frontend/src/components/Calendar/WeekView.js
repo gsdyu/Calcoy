@@ -48,16 +48,39 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
            startDate.getFullYear() === endDate.getFullYear();
   };
 
-  const getEventStyle = (event) => {
+  const getEventStyle = (event, isNextDayPortion = false) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    const startHour = startDate.getHours();
-    const startMinute = startDate.getMinutes();
-    const endHour = endDate.getHours();
-    const endMinute = endDate.getMinutes();
+    let startHour = startDate.getHours();
+    let startMinute = startDate.getMinutes();
+    let endHour = endDate.getHours();
+    let endMinute = endDate.getMinutes();
+
+    // Handle next day portion of events
+    if (isNextDayPortion) {
+      startHour = 0;
+      startMinute = 0;
+    }
+
+    // Calculate display times
+    if (!isNextDayPortion && endDate.getDate() > startDate.getDate()) {
+      // First day portion ends at midnight
+      endHour = 24;
+      endMinute = 0;
+    } else if (endHour === 0 && endMinute === 0) {
+      // If ends at exactly midnight
+      endHour = 24;
+      endMinute = 0;
+    }
 
     const top = (startHour + startMinute / 60) * 60;
-    const height = event.calendar === 'Task' ? 30 : ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+    let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+
+    // Minimum height for visibility (30px = 30 minutes)
+    const minHeight = 30;
+    if (height < minHeight && event.calendar !== 'Task') {
+      height = minHeight;
+    }
 
     return {
       top: `${top}px`,
@@ -99,6 +122,46 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       date1.getFullYear() === date2.getFullYear();
   };
 
+  const shouldShowEventOnDay = (event, day) => {
+    const eventStart = new Date(event.start_time);
+    const eventEnd = new Date(event.end_time);
+    const dayStart = new Date(day);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    // Don't create duplicate 12 AM events
+    if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0 && 
+        dayStart.getDate() === eventEnd.getDate()) {
+      return false;
+    }
+
+    return eventStart <= dayEnd && eventEnd >= dayStart;
+  };
+
+  const isEventCrossingMidnight = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return endDate.getDate() > startDate.getDate();
+  };
+
+  const formatEventTime = (event, isNextDay) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    
+    if (isNextDay) {
+      // For next day portion, show full time
+      return `${endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    } else if (endDate.getDate() > startDate.getDate()) {
+      // For first day portion of cross-midnight event, show only start time
+      return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`;
+    } else {
+      // For regular events, show full range
+      return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${
+        endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+      }`;
+    }
+  };
   const handleDateClick = (day) => {
     onDateClick(new Date(day));
   };
@@ -239,10 +302,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   };
 
   const hasMoreThanThreeAllDayEvents = weekDays.some(day => {
-    const allDayEvents = events.filter(event => isAllDayEvent(event) && isSameDay(new Date(event.start_time), day));
+    const allDayEvents = events.filter(event => 
+      isAllDayEvent(event) && isSameDay(new Date(event.start_time), day)
+    );
     return allDayEvents.length > 3;
   });
-
   return (
     <div className={`h-full flex flex-col ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-white text-gray-800'}`}>
       <style>{scrollbarStyles}</style>
@@ -397,15 +461,14 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             </div>
           )
         ))}
+
         {/* Render events */}
         <div className="absolute top-0 left-16 right-0 bottom-0 pointer-events-none">
           {weekDays.map((day, dayIndex) => (
-            <div key={`events-${dayIndex}`} className="absolute top-0 bottom-0" style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}>
+            <div key={`events-${dayIndex}`} className="absolute top-0 bottom-0" 
+                 style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}>
               {events
-                .filter(event => {
-                  const eventDate = new Date(event.start_time);
-                  return !isAllDayEvent(event) && isSameDay(eventDate, day);
-                })
+                .filter(event => !isAllDayEvent(event) && shouldShowEventOnDay(event, day))
                 .sort((a, b) => {
                   if (a.calendar === 'Task' && b.calendar === 'Task') {
                     if (a.completed !== b.completed) return a.completed ? 1 : -1;
@@ -413,6 +476,9 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                   return 0;
                 })
                 .map(event => {
+                  const eventStart = new Date(event.start_time);
+                  const isNextDay = day.getDate() > eventStart.getDate();
+
                   if (event.calendar === 'Task') {
                     const eventColor = event.color || 'blue';
                     const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
@@ -431,10 +497,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                           ${event.completed ? 'line-through' : ''}
                         `}
                         style={getEventStyle(event)}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEventClick(event, e);
-                        }}
+                        onClick={(e) => handleEventClick(event, e)}
                       >
                         <div className="flex items-center justify-between w-full">
                           <div className="flex items-center overflow-hidden">
@@ -458,21 +521,17 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 
                   return (
                     <div
-                      key={event.id}
+                      key={`${event.id}${isNextDay ? '-next' : ''}`}
                       draggable
                       onDragStart={(e) => onDragStart(e, event.id)}
                       className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600 pointer-events-auto"
-                      style={getEventStyle(event)}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleEventClick(event, e);
-                      }}
+                      style={getEventStyle(event, isNextDay)}
+                      onClick={(e) => handleEventClick(event, e)}
                     >
-                      <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
-                        <div className="font-bold">{event.title}</div>
-                        <div className="text-xs">
-                          {new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - 
-                          {new Date(event.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}
+                      <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto min-h-[30px]">
+                        <div className="font-bold truncate">{event.title}</div>
+                        <div className="text-xs whitespace-nowrap">
+                          {formatEventTime(event, isNextDay)}
                         </div>
                       </div>
                     </div>
