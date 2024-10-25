@@ -202,13 +202,17 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         startDateTime = new Date(`${newEvent.date}T00:00:00`);
         endDateTime = new Date(`${newEvent.date}T23:59:59`);
       } else {
-        // Use string concatenation for consistent date handling
         startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
         endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
         
-        // Handle events that cross midnight
+        // Handle events that cross midnight, including month boundaries
         if (endDateTime <= startDateTime) {
-          endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+          // Create a new date for the end time
+          endDateTime = new Date(startDateTime);
+          // First set the time
+          const [endHours, endMinutes] = newEvent.endTime.split(':');
+          endDateTime.setHours(Number(endHours), Number(endMinutes), 0);
+          // Then add a day to handle month/year boundaries correctly
           endDateTime.setDate(endDateTime.getDate() + 1);
         }
       }
@@ -222,7 +226,9 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         calendar: newEvent.calendar,
         allDay: newEvent.allDay,
         time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-        crossesMidnight: endDateTime.getDate() !== startDateTime.getDate()
+        crossesMidnight: endDateTime.getDate() !== startDateTime.getDate() ||
+                        endDateTime.getMonth() !== startDateTime.getMonth() ||
+                        endDateTime.getFullYear() !== startDateTime.getFullYear()
       };
     }
 
