@@ -77,7 +77,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
     // Minimum height for visibility (30px = 30 minutes)
-    const minHeight = 30;
+    const minHeight = 22;
     if (height < minHeight && event.calendar !== 'Task') {
       height = minHeight;
     }
@@ -528,11 +528,28 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}
                     >
-                      <div className="w-full h-full p-1 flex flex-col justify-between pointer-events-auto min-h-[30px]">
-                        <div className="font-bold truncate">{event.title}</div>
-                        <div className="text-xs whitespace-nowrap">
-                          {formatEventTime(event, isNextDay)}
-                        </div>
+                      <div className="w-full h-full pointer-events-auto min-h-[22px]">
+                        {/* For very short events (<30min), show just the time on the right */}
+                        {((new Date(event.end_time).getHours() - new Date(event.start_time).getHours()) * 60 + 
+                          (new Date(event.end_time).getMinutes() - new Date(event.start_time).getMinutes())) < 30 ? (
+                          <div className="w-full h-full flex items-center justify-between px-1.5">
+                            <div className="truncate flex-grow text-[11px]">{event.title}</div>
+                            <div className="text-[11px] ml-1 whitespace-nowrap flex-shrink-0">
+                              {formatEventTime(event, isNextDay)}
+                            </div>
+                          </div>
+                        ) : (
+                          /* For regular events, show title and time at the top with larger font */
+                          <div className="w-full h-full p-1.5 flex flex-col">
+                            <div className="font-bold truncate text-sm">{event.title}</div>
+                            <div className="text-xs whitespace-nowrap">
+                              {/* Only show the formatted time without the next day check for 11PM-12AM case */}
+                              {new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - {
+                                new Date(event.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
+                              }
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
