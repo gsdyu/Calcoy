@@ -83,6 +83,31 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
   }
 );
 
+// Google Auth Route for Importing Calendar Events
+app.get('/auth/google/calendar', passport.authenticate('google', {
+    scope: ['https://www.googleapis.com/auth/calendar.readonly'], // Request Calendar read-only scope
+    session: false // Do not create session
+  }));
+  
+  // Google Auth Callback Route for Importing Calendar Events
+  app.get('/auth/google/calendar/callback', passport.authenticate('google', { failureRedirect: '/auth/login', session: false }),
+    async (req, res) => {
+      try {
+        const accessToken = req.user.accessToken; // Extract the access token from Google OAuth
+        const email = req.user.email;
+        
+        // You can add logic here to fetch user information if needed, but this is mainly for accessing Google Calendar
+        
+        // Redirect to frontend and include the access token in the URL
+        res.redirect(`http://localhost:3000/calendar?token=${accessToken}`);
+      } catch (error) {
+        console.error('Google Calendar OAuth error:', error);
+        res.status(500).send('Internal server error');
+      }
+    }
+  );
+  
+
   // Azure AD Authentication route
   app.get('/auth/azure', (req, res) => {
     const cryptoProvider = new msal.CryptoProvider();

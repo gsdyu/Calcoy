@@ -7,7 +7,7 @@ import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff } from 'react-icons/fi'; //
 const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-gray-400'];
 import MonthView from '@/components/Calendar/MonthView';  
 
-const Calendarapi = () => {
+const Calendarfilter = () => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -20,6 +20,7 @@ const Calendarapi = () => {
   const familyBirthday = 'Family';
   const birthdays = 'Birthdays';
   const holidays = 'Holidays in United States';
+
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem('token');
@@ -41,13 +42,17 @@ const Calendarapi = () => {
         }
   
         const data = await response.json();
+
         setEmail(data.email);
-        setItemColors(data.preferences.colors || {
-          Personal: 'bg-blue-500',
-          Family: 'bg-orange-500',
-          Work: 'bg-purple-500',
-          Holidays: 'bg-red-500',
-        }); // Set default colors if none exist
+
+        // If colors exist in preferences, use them. If not, fallback to default colors.
+        setItemColors({
+          email: data.preferences.colors?.email || 'bg-blue-500',
+          familyBirthday: data.preferences.colors?.familyBirthday || 'bg-orange-500',
+          birthdays: data.preferences.colors?.birthdays || 'bg-green-500',
+          holidays: data.preferences.colors?.holidays || 'bg-red-500',
+        });
+
         setVisibleItems(data.preferences.visibility || {});
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -135,7 +140,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('email', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.email || 'bg-blue-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.email}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
             </div>
             {visibleItems.email ? <FiEye /> : <FiEyeOff />}
@@ -150,7 +155,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('familyBirthday', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.familyBirthday || 'bg-orange-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.familyBirthday}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{familyBirthday}</p>
             </div>
             {visibleItems.familyBirthday ? <FiEye /> : <FiEyeOff />}
@@ -165,7 +170,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('birthdays', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.birthdays || 'bg-green-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.birthdays}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{birthdays}</p>
             </div>
             {visibleItems.birthdays ? <FiEye /> : <FiEyeOff />}
@@ -180,7 +185,7 @@ const Calendarapi = () => {
             onContextMenu={(e) => togglePopup('holidays', e)} // Right-click to toggle popup
           >
             <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.holidays || 'bg-red-500'}`}></div>
+              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors.holidays}`}></div>
               <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{holidays}</p>
             </div>
             {visibleItems.holidays ? <FiEye /> : <FiEyeOff />}
@@ -200,7 +205,6 @@ const Calendarapi = () => {
             <ColorPicker item="holidays" colors={colorOptions} onSelectColor={changeColor} />
           )}
         </div>
-        
       )}
     </div>
   );
@@ -214,11 +218,10 @@ const ColorPicker = ({ item, colors, onSelectColor }) => {
           key={color}
           className={`w-6 h-6 rounded-full cursor-pointer ${color}`}
           onClick={() => onSelectColor(item, color)}
-          
         ></div>
       ))}
     </div>
   );
 };
 
-export default Calendarapi;
+export default Calendarfilter;
