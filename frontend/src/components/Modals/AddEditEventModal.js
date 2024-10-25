@@ -174,7 +174,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
           end_time: new Date(taskDate.setHours(23, 59, 59)).toISOString(),
           location: '',
           frequency: newTask.frequency,
-          calendar: 'Task', // Mark as task
+          calendar: 'Task',
           allDay: true,
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
@@ -186,10 +186,10 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         eventData = {
           title: newTask.title.trim() || "(No title)",
           start_time: taskDateTime.toISOString(),
-          end_time: new Date(taskDateTime.getTime() + 30 * 60000).toISOString(), // 30 min duration
+          end_time: new Date(taskDateTime.getTime() + 30 * 60000).toISOString(),
           location: '',
           frequency: newTask.frequency,
-          calendar: 'Task', // Mark as task
+          calendar: 'Task',
           allDay: false,
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
@@ -197,12 +197,20 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     } else {
       // Regular event
       let startDateTime, endDateTime;
+      
       if (newEvent.allDay) {
         startDateTime = new Date(`${newEvent.date}T00:00:00`);
         endDateTime = new Date(`${newEvent.date}T23:59:59`);
       } else {
+        // Use string concatenation for consistent date handling
         startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
         endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+        
+        // Handle events that cross midnight
+        if (endDateTime <= startDateTime) {
+          endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
+          endDateTime.setDate(endDateTime.getDate() + 1);
+        }
       }
 
       eventData = {
@@ -213,7 +221,8 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         frequency: newEvent.frequency,
         calendar: newEvent.calendar,
         allDay: newEvent.allDay,
-        time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        crossesMidnight: endDateTime.getDate() !== startDateTime.getDate()
       };
     }
 
