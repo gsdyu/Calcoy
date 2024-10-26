@@ -18,6 +18,37 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return () => clearInterval(timer);
   }, []);
 
+  const isEventCrossingMidnight = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    
+    const nextDay = new Date(startDate);
+    nextDay.setDate(startDate.getDate() + 1);
+    nextDay.setHours(0, 0, 0, 0);
+    
+    return endDate.getTime() > nextDay.getTime();
+  };
+
+  const shouldShowEventOnDay = (event, day) => {
+    const eventStart = new Date(event.start_time);
+    const eventEnd = new Date(event.end_time);
+    const dayStart = new Date(day);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(day);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const nextDayStart = new Date(dayStart);
+    nextDayStart.setDate(nextDayStart.getDate() + 1);
+
+    // If this is an event ending at midnight exactly
+    if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
+      return eventStart <= dayEnd && eventEnd.getTime() !== dayStart.getTime();
+    }
+
+    // For regular events
+    return eventStart <= dayEnd && eventEnd > dayStart;
+  };
+
   const isAllDayEvent = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -28,23 +59,37 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
            startDate.getFullYear() === endDate.getFullYear();
   };
 
-  const getEventStyle = (event) => {
+  const getEventStyle = (event, isNextDay = false) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    const startHour = startDate.getHours();
-    const startMinute = startDate.getMinutes();
-    const endHour = endDate.getHours();
-    const endMinute = endDate.getMinutes();
+    
+    // For events on the next day, start at midnight (0:00)
+    let startHour = isNextDay ? 0 : startDate.getHours();
+    let startMinute = isNextDay ? 0 : startDate.getMinutes();
+    let endHour = endDate.getHours();
+    let endMinute = endDate.getMinutes();
+    
+    if (endHour === 0 && endMinute === 0) {
+      endHour = 24;
+      endMinute = 0;
+    }
 
+    // Calculate position and size
     const top = (startHour + startMinute / 60) * 60;
-    const height = event.calendar === 'Task' ? 30 : ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+    let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+
+    // Minimum height for visibility
+    const minHeight = 40;
+    if (height < minHeight && event.calendar !== 'Task') {
+      height = minHeight;
+    }
 
     return {
       top: `${top}px`,
       height: `${height}px`,
       left: '0',
       right: '20px',
-      zIndex: 10, // Ensure events are above the grid
+      zIndex: 10,
     };
   };
 
@@ -54,11 +99,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (hours + minutes / 60) * 60;
   };
 
-  const filteredEvents = events.filter(event => {
-    const eventDate = new Date(event.start_time);
-    return eventDate.toDateString() === currentDate.toDateString();
-  });
-
+  const filteredEvents = events.filter(event => shouldShowEventOnDay(event, currentDate));
   const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
   const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
 
@@ -235,7 +276,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 style={{ 
                   top: `${hour * 60}px`, 
                   height: '60px',
-                  transform: 'translateY(-50%)'  // This centers the text vertically
+                  transform: 'translateY(-50%)'
                 }}
               >
                 {hour === 0 ? null : formatHour(hour)}
@@ -298,19 +339,49 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                   </div>
                 );
               }
+              const start = new Date(event.start_time);
+              const end = new Date(event.end_time);
+              const isCrossingMidnight = isEventCrossingMidnight(event);
+              const isNextDay = start.getDate() !== currentDate.getDate();
 
               return (
                 <div
                   key={event.id}
                   className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
-                  style={getEventStyle(event)}
+                  style={getEventStyle(event, isNextDay)}
                   onClick={(e) => handleEventClick(event, e)}
                 >
-                  <div className="w-full h-full p-1 flex flex-col pointer-events-auto">
-                    <div className="font-bold">{event.title}</div>
-                    <div className="text-xs">
-                      {new Date(event.start_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 
-                      {new Date(event.end_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  <div className="w-full h-full p-1.5 flex flex-col justify-between pointer-events-auto">
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <div className="font-bold text-sm truncate">{event.title}</div>
+                        {isCrossingMidnight && isNextDay && (
+                          <span className="text-[10px] ml-1 bg-blue-600 px-1 rounded">Cont'd</span>
+                        )}
+                      </div>
+                      <div className="text-xs whitespace-nowrap mt-0.5">
+                        {isCrossingMidnight ? (
+                          isNextDay ? (
+                            // Next day portion
+                            <div className="flex items-center justify-between">
+                              <span>12:00 AM</span>
+                              <span>→ {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                            </div>
+                          ) : (
+                            // First day portion
+                            <div className="flex items-center justify-between">
+                              <span>{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                              <span>→ 12:00 AM (next day)</span>
+                            </div>
+                          )
+                        ) : (
+                          // Regular events
+                          <div className="flex items-center justify-between">
+                            <span>{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                            <span>→ {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
