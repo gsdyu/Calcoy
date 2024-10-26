@@ -3,10 +3,10 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import PersonalCalendar from '@/components/Sidebar/PersonalCalendar';
-import Calendarfilter from '@/components/Sidebar/Calendarfilter';
+import CalendarFilter from '@/components/Sidebar/CalendarFilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
-import Calendarbutton from '@/components/Sidebar/Calendarbutton';
+import CalendarButton from '@/components/Sidebar/CalendarButton';
 
 const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) => {
   const { darkMode } = useTheme();
@@ -46,8 +46,8 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) 
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
         />
-        <Calendarfilter />
-        <Calendarbutton /> 
+        <CalendarFilter />
+        <CalendarButton /> 
         <Tasks />
       </div>
     </div>
