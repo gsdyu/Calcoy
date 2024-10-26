@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
+const { authenticateToken } = require('../authMiddleware');
 
 module.exports = (app, pool) => {
   // Configure session middleware
@@ -398,8 +399,12 @@ app.post('/auth/set-username', async (req, res) => {
     });
 
 
-   app.post('/logout', (req, res) => {
+   app.post('/auth/logout', (req, res) => {
      res.clearCookie("auth_token", {path: '/'});
      return res.status(200).json({message: "Log out successful"});
    });
+  
+  app.get('/auth/check', authenticateToken, (req, res) => {
+    return res.status(200).json({isLoggedIn: "True"});
+  });
 };
