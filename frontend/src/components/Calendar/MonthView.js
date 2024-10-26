@@ -17,8 +17,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         const containerHeight = containerRef.current.clientHeight;
         const weeksInMonth = getWeeksInMonth(currentDate);
         const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
-        setCellHeight(calculatedCellHeight);
-
+        // the offset is used to maximize the containerHeight without being too big to need a scroll bar
+        // without offset: calculatedCellHeight is too large, and requires a scroll bar; offset removes scroll bar
+        // default offset: satisfy months with 4 and 6 weeks.
+        let offset = (calculatedCellHeight * .022)
+        if (weeksInMonth === 5) offset = (calculatedCellHeight * .020)
+        setCellHeight(calculatedCellHeight - offset);
         const eventHeight = 24; 
         const dateHeight = 24; 
         const moreIndicatorHeight = 20; 
@@ -89,9 +93,18 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
+  const isAllDayEvent = (event) => {
+    const startDate = new Date(event.start_time);
+    const endDate = new Date(event.end_time);
+    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
+           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
+           isSameDay(startDate, endDate);
+  };
+
   const renderEventCompact = (event) => {
     const eventColor = event.color || 'blue';
-    const eventTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const isAllDay = isAllDayEvent(event);
+    const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
 
     return (
       <div 
@@ -102,9 +115,11 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          border border-${eventColor}-500
-          bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
-          ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          ${isAllDay 
+            ? `bg-${eventColor}-500 text-white` 
+            : `border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700`
+          }
+          ${darkMode && !isAllDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
         `}
         onClick={(e) => {
@@ -113,7 +128,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <div className="flex items-center overflow-hidden">
-          <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>
+          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
           <span className="truncate">{event.title}</span>
         </div>
         <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
@@ -152,8 +167,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isSelected = isSameDay(date, selectedDate);
 
       const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
-      const displayedEvents = dayEvents.slice(0, eventsPerDay);
-      const additionalEventsCount = dayEvents.length - eventsPerDay;
+      const allDayEvents = dayEvents.filter(isAllDayEvent);
+      const regularEvents = dayEvents.filter(event => !isAllDayEvent(event));
+      
+      const sortedEvents = [...allDayEvents, ...regularEvents];
+      const displayedEvents = sortedEvents.slice(0, eventsPerDay);
+      const additionalEventsCount = Math.max(0, sortedEvents.length - eventsPerDay);
 
       days.push(
         <div
@@ -183,7 +202,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           </span>
           <div className="mt-1 space-y-1 overflow-hidden" style={{ maxHeight: `${cellHeight - 24 - 8}px` }}>
             {displayedEvents.map(event => renderEventCompact(event))}
-            {dayEvents.length > eventsPerDay && (
+            {additionalEventsCount > 0 && (
               <button
                 className={`text-xs ${darkMode ? 'text-gray-400' : 'text-gray-500'} font-medium hover:underline`}
                 onClick={(e) => {
@@ -198,7 +217,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           {openPopover && isSameDay(openPopover, date) && (
             <DayEventPopover
               date={date}
-              events={dayEvents}
+              events={sortedEvents}
               isOpen={true}
               onOpenChange={(open) => {
                 if (!open) setOpenPopover(null);

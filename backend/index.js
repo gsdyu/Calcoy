@@ -5,9 +5,12 @@ const cors = require('cors');
 const { Pool } = require('pg');
 const session = require('express-session');
 const jwt = require('jsonwebtoken'); 
+const cookieParser = require('cookie-parser');
 
 // Initialize express app
 const app = express();
+
+app.use(cookieParser())
 
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
@@ -46,11 +49,12 @@ pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
 pool.query(`  
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    username VARCHAR(32) UNIQUE NOT NULL,
+    username VARCHAR(32) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,  -- Set password to allow NULL for OAuth users
     profile_image VARCHAR(255),
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
+	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );

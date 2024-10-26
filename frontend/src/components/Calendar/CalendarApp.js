@@ -46,12 +46,14 @@ const CalendarApp = () => {
   };
 
   const fetchEvents = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
   
     try {
       const response = await fetch('http://localhost:5000/events', {
-        headers: { Authorization: `Bearer ${token}` },
+        credentials: 'include',
       });
       if (response.ok) {
         const data = await response.json();
@@ -124,9 +126,11 @@ const CalendarApp = () => {
   };
 
   const handleSaveEvent = async (event) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-  
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
+
     showNotification('Saving...');
     try {
       const method = event.id ? 'PUT' : 'POST';
@@ -136,8 +140,8 @@ const CalendarApp = () => {
         method,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(event),
       });
   
@@ -174,16 +178,18 @@ const CalendarApp = () => {
   };
 
   const handleDeleteEvent = async (eventId) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
 
     showNotification('Deleting...');
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
         headers: {
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
       });
 
       if (response.ok) {
@@ -202,8 +208,10 @@ const CalendarApp = () => {
   };
 
   const handleEventUpdate = async (eventId, newDate) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
 
     showNotification('Updating...');
     try {
@@ -243,8 +251,8 @@ const CalendarApp = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include', 
         body: JSON.stringify(updatedEvent),
       });
 
@@ -264,16 +272,18 @@ const CalendarApp = () => {
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {
-      const token = localStorage.getItem('token');
-      if (!token) return;
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
 
       try {
         const response = await fetch(`http://localhost:5000/events/${lastUpdatedEvent.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
           },
+          credentials: 'include',
           body: JSON.stringify(lastUpdatedEvent),
         });
 

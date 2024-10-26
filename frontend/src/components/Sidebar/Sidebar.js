@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import PersonalCalendar from '@/components/Sidebar/PersonalCalendar';
-import CheckIns from '@/components/Sidebar/CheckIns';
+import Calendarapi from '@/components/Sidebar/Calendarapi';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
@@ -45,7 +45,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) 
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
         />
-        <CheckIns />
+        <Calendarapi />
         <Tasks />
       </div>
     </div>

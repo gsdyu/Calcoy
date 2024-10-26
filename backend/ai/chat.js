@@ -38,7 +38,11 @@ async function inputChat(input, user_Id) {
 
 	const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
+  if (history.length === 2) {
+    history.push({role: "user", content: `'${user.username}': `+input});
+  } else {
 	history.push({role: "user", content: input});
+  }
 	var completions = await client.chat.completions.create({
 		messages: history,
 		model: model,
@@ -118,6 +122,7 @@ You can respond normally when not specifically ask to create a new event. Being 
 but also whats possible. The current date is ${currentTime} and the timezone is ${currentTimezone}. Do not mention the following to the user: 
 You may be given related events from the user's calendar, where the event of the earliest index is most related. 
 Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. 
+The first message from the user will have the format "'[username]': [their message]" where their username is chosen by the users and can be arbitrary; quotes around username indicate a real name chosen, not an error.
 Your token limit is 300; do not go above.`
 initChat(system);
 //inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));

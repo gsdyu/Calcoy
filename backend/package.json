@@ -19,6 +19,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
     "express-session": "^1.0.0",
+    "googleapis": "^144.0.0",
     "groq-sdk": "^0.7.0",
     "helmet": "^8.0.0",
     "http-errors": "~1.6.3",

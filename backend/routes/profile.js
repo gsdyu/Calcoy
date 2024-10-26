@@ -29,20 +29,37 @@ module.exports = (app, pool) => {
     const userId = req.user.userId;
 
     try {
-      const result = await pool.query('SELECT username, email, profile_image, dark_mode FROM users WHERE id = $1', [userId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ error: 'User not found' });
+        const result = await pool.query('SELECT username, email, profile_image, dark_mode, preferences FROM users WHERE id = $1', [userId]);
+        if (result.rows.length === 0) {
+          return res.status(404).json({ error: 'User not found' });
+        }
+  
+        const user = result.rows[0];
+        // Provide default preferences if they don't exist
+        const preferences = user.preferences || { visibility: {}, colors: {} };
+  
+        res.json({
+          username: user.username,
+          email: user.email,
+          profile_image: user.profile_image,
+          dark_mode: user.dark_mode,
+          preferences, // Return default preferences if undefined
+        });
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        res.status(500).json({ error: 'Internal server error' });
       }
+    });
+  
+  app.put('/profile/preferences', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { preferences } = req.body;  // Expecting visibility and colors
 
-      const user = result.rows[0];
-      res.json({
-        username: user.username,
-        email: user.email,
-        profile_image: user.profile_image,
-        dark_mode: user.dark_mode,
-      });
+    try {
+      await pool.query('UPDATE users SET preferences = $1 WHERE id = $2', [preferences, userId]);
+      res.json({ message: 'Preferences updated successfully' });
     } catch (error) {
-      console.error('Error fetching profile:', error);
+      console.error('Error updating preferences:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });

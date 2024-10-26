@@ -21,8 +21,10 @@ const Profile = () => {
   useEffect(() => {
     // Fetch user data from backend
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials: 'include',
+      });
+      if (!check.ok) {
         setError('No token found. Please login.');
         setLoading(false);
         return;
@@ -30,9 +32,7 @@ const Profile = () => {
 
       try {
         const response = await fetch('http://localhost:5000/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
         });
 
         if (!response.ok) {
@@ -61,9 +61,13 @@ const Profile = () => {
   const handleNameSave = async () => {
     setIsEditingName(false);
 
-    const token = localStorage.getItem('token');
-    if (!token) return;
-	
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) {
+      alert("No token found. Please login.")
+      return
+    }	
 
     try {
 	  // Checks that desired username fits within the schema range
@@ -74,8 +78,8 @@ const Profile = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify({ username: displayName }),
       });
 
@@ -98,15 +102,18 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('profile_image', file);
 
-      const token = localStorage.getItem('token');
-      if (!token) return;
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials: 'include',
+      });
+      if (!check.ok) {
+        alert("No token found. Please login.")
+        return
+      }
 
       try {
         const response = await fetch('http://localhost:5000/profile/picture', {
           method: 'PUT',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
+          credentials: 'include',
           body: formData,
 
         });
@@ -146,15 +153,17 @@ const Profile = () => {
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
 
       <div className="flex items-center mb-8">
-        <div className="relative w-24 h-24 rounded-full bg-gray-300 flex items-center justify-center overflow-hidden mr-6">
+        <div className="relative w-24 h-24 rounded-full flex items-center justify-center mr-6"
+             style = {{zIndex: 1}}>
           {profileImage ? (
-            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover" />
+            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
           ) : (
             <DefaultProfileIcon />
           )}
           <button 
             onClick={() => fileInputRef.current.click()} 
             className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 text-white hover:bg-blue-600 transition-colors"
+            style = {{zIndex: 10}}
           >
             <Edit2 size={16} />
           </button>
