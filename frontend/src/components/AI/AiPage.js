@@ -24,8 +24,11 @@ const AiPage = () => {
 
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    const token = localStorage.getItem('token');
-    if (!token) {
+    const check = await fetch('http://localhost:5000/auth/check-auth', {
+      method: 'GET',
+      credentials: 'include',
+    })
+    if (!check.ok) {
       //handle error, i didnt read yet how to handle here
       console.error('not login')
     };
