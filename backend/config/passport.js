@@ -37,9 +37,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
       return true;
     }).map(event => {
       let eventData = {user_id: 'userid'};
-      console.log(event)
       if (!event.start.date && !event.end.date) {
-        console.log('lecking')
         eventData = {
           user_id: userId,
           title: event.summary || 'no title',
@@ -52,7 +50,6 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
         };
       }
       else if (!event.start.datetime && !event.end.datetime) {
-        console.log('becking')
         eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
@@ -64,19 +61,39 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
           time_zone: event.start.timeZone || 'UTC'
         };
       }
-      console.log('showing')
-      console.log(eventData)
       return eventData;
     });
-    Object.keys(events).forEach(key => {
-    console.log(key);
-    console.log(events[key]
-    )})
+    //Object.keys(events).forEach(key => {
+    //console.log(key);
+    //console.log(events[key]
+    //)})
+    await pool.query(`SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone 
+      FROM events WHERE embedding IS NULL`, async (err, res) => {
+      if (err) {
+        console.err("Error getting title", err);
+      } else {
+        for (let i=0; i<res.rows.length; i+=75) {
+          subRows = res.rows.splice(i,i+75);
+          console.log(subRows.map(
+            (row) => [row.title, row.start_time, row.end_time, row.location]
+          ))
+          console.log(`Hello $1`, ['dog'])
+
+          //const embeds = await createEmbeddings(JSON.stringify(subRow)));
+          //await pool.query(
+          //``
+          //)
+        }
+        //const embed = await createEmbeddings(JSON.stringify(res.rows.slice(0,75)));
+        console.log(res.rows.slice(200,220).length)
+      }
+    })
   for (const event of events) {
     await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
        ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`, 
+      
       [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
     );
   }
