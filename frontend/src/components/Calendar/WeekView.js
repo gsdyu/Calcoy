@@ -48,48 +48,49 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
            startDate.getFullYear() === endDate.getFullYear();
   };
 
-  const getEventStyle = (event, isNextDayPortion = false) => {
-    const startDate = new Date(event.start_time);
-    const endDate = new Date(event.end_time);
-    let startHour = startDate.getHours();
-    let startMinute = startDate.getMinutes();
-    let endHour = endDate.getHours();
-    let endMinute = endDate.getMinutes();
 
-    // Handle next day portion of events
-    if (isNextDayPortion) {
-      startHour = 0;
-      startMinute = 0;
-    }
+const getEventStyle = (event, isNextDayPortion = false) => {
+  const startDate = new Date(event.start_time);
+  const endDate = new Date(event.end_time);
+  let startHour = startDate.getHours();
+  let startMinute = startDate.getMinutes();
+  let endHour = endDate.getHours();
+  let endMinute = endDate.getMinutes();
 
-    // Calculate display times
-    if (!isNextDayPortion && endDate.getDate() > startDate.getDate()) {
-      // First day portion ends at midnight
-      endHour = 24;
-      endMinute = 0;
-    } else if (endHour === 0 && endMinute === 0) {
-      // If ends at exactly midnight
-      endHour = 24;
-      endMinute = 0;
-    }
+  // Handle next day portion of events
+  if (isNextDayPortion) {
+    startHour = 0;
+    startMinute = 0;
+  }
 
-    const top = (startHour + startMinute / 60) * 60;
-    let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
+  // Calculate end time for events crossing midnight
+  if (!isNextDayPortion && isEventCrossingMidnight(event)) {
+    // First day portion ends at midnight
+    endHour = 24;
+    endMinute = 0;
+  } else if (endHour === 0 && endMinute === 0) {
+    // If ends at exactly midnight
+    endHour = 24;
+    endMinute = 0;
+  }
 
-    // Minimum height for visibility (30px = 30 minutes)
-    const minHeight = 22;
-    if (height < minHeight && event.calendar !== 'Task') {
-      height = minHeight;
-    }
+  const top = (startHour + startMinute / 60) * 60;
+  let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
-    return {
-      top: `${top}px`,
-      height: `${height}px`,
-      left: '0px',
-      right: '20px',
-      zIndex: 30,
-    };
+  // Minimum height for visibility
+  const minHeight = 22;
+  if (height < minHeight && event.calendar !== 'Task') {
+    height = minHeight;
+  }
+
+  return {
+    top: `${top}px`,
+    height: `${height}px`,
+    left: '0px',
+    right: '20px',
+    zIndex: 30,
   };
+};
 
   const getCurrentTimePosition = () => {
     const hours = currentTime.getHours();
@@ -130,31 +131,31 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     const dayEnd = new Date(day);
     dayEnd.setHours(23, 59, 59, 999);
   
-    // Special case for exact midnight/12:00 AM end time
-    if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0 && 
-        dayStart.getDate() === eventEnd.getDate() &&
-        dayStart.getMonth() === eventEnd.getMonth()) {
-      return false;
+    // Special case for exact midnight end time
+    if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
+      // Don't show on the end day if it ends exactly at midnight
+      return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
     }
   
-    return eventStart <= dayEnd && eventEnd >= dayStart;
+    return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
   };
 
   const isEventCrossingMidnight = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     
+    // Create next day at midnight in the same timezone
     const nextDay = new Date(startDate);
-    nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setDate(startDate.getDate() + 1);
     nextDay.setHours(0, 0, 0, 0);
-    return endDate >= nextDay;
+    
+    return endDate.getTime() > nextDay.getTime();
   };
 
   const formatEventTime = (event, isNextDay) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
   
-    // If event crosses midnight
     if (isEventCrossingMidnight(event)) {
       if (isNextDay) {
         // Next day portion - show just end time
@@ -165,12 +166,12 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       }
     }
   
-    // For events ending exactly at midnight (00:00)
+    // For events ending exactly at midnight
     if (endDate.getHours() === 0 && endDate.getMinutes() === 0) {
       return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - 12:00 AM`;
     }
   
-    // Regular non-crossing events - show full range
+    // Regular events
     return `${startDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - ${
       endDate.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
     }`;
@@ -490,7 +491,15 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                 })
                 .map(event => {
                   const eventStart = new Date(event.start_time);
-                  const isNextDay = day.getDate() > eventStart.getDate();
+                  const eventEnd = new Date(event.end_time);
+                  
+                  // Determine if this is a next day portion by comparing calendar dates
+                  const currentDate = new Date(day);
+                  currentDate.setHours(0, 0, 0, 0);
+                  const eventStartDate = new Date(eventStart);
+                  eventStartDate.setHours(0, 0, 0, 0);
+                  
+                  const isNextDay = currentDate.getTime() > eventStartDate.getTime();
                   const isCrossingMidnight = isEventCrossingMidnight(event);
 
                   if (event.calendar === 'Task') {
@@ -533,6 +542,21 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                     );
                   }
 
+                  // Calculate duration considering midnight crossing
+                  const start = new Date(event.start_time);
+                  const end = new Date(event.end_time);
+                  
+                  let endHours = end.getHours();
+                  if (endHours === 0 && end.getMinutes() === 0) {
+                    endHours = 24;
+                  }
+                  
+                  const durationMinutes = isNextDay ? 
+                    ((end.getHours() + 24 * (end.getDate() - start.getDate()) - start.getHours()) * 60) +
+                    (end.getMinutes() - start.getMinutes()) :
+                    ((endHours - start.getHours()) * 60) + 
+                    (end.getMinutes() - start.getMinutes());
+
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
@@ -543,9 +567,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                       onClick={(e) => handleEventClick(event, e)}
                     >
                       <div className="w-full h-full pointer-events-auto min-h-[22px]">
-                        {/* For very short events (<30min), show just the time on the right */}
-                        {((new Date(event.end_time).getHours() - new Date(event.start_time).getHours()) * 60 + 
-                          (new Date(event.end_time).getMinutes() - new Date(event.start_time).getMinutes())) < 30 ? (
+                        {durationMinutes < 30 ? (
                           <div className="w-full h-full flex items-center justify-between px-1.5">
                             <div className="truncate flex-grow text-[11px]">{event.title}</div>
                             <div className="text-[11px] ml-1 whitespace-nowrap flex-shrink-0">
@@ -553,14 +575,10 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
                             </div>
                           </div>
                         ) : (
-                          /* For regular events, show title and time at the top with larger font */
                           <div className="w-full h-full p-1.5 flex flex-col">
                             <div className="font-bold truncate text-sm">{event.title}</div>
                             <div className="text-xs whitespace-nowrap">
-                              {/* Only show the formatted time without the next day check for 11PM-12AM case */}
-                              {new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })} - {
-                                new Date(event.end_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })
-                              }
+                              {formatEventTime(event, isNextDay)}
                             </div>
                           </div>
                         )}
