@@ -68,7 +68,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     let startMinute = isNextDay ? 0 : startDate.getMinutes();
     let endHour = endDate.getHours();
     let endMinute = endDate.getMinutes();
-    
+
     if (endHour === 0 && endMinute === 0) {
       endHour = 24;
       endMinute = 0;
@@ -266,7 +266,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
       {/* Time slots */}
       <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
-        <div className="flex" style={{ height: '1440px' }}> {/* 24 hours * 60px per hour */}
+        <div className="flex" style={{ height: '1440px' }}>
           {/* Time column */}
           <div className="w-16 flex-shrink-0 relative">
             {hours.map((hour) => (
@@ -351,37 +351,25 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                   style={getEventStyle(event, isNextDay)}
                   onClick={(e) => handleEventClick(event, e)}
                 >
-                  <div className="w-full h-full p-1.5 flex flex-col justify-between pointer-events-auto">
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <div className="font-bold text-sm truncate">{event.title}</div>
-                        {isCrossingMidnight && isNextDay && (
-                          <span className="text-[10px] ml-1 bg-blue-600 px-1 rounded">Cont'd</span>
-                        )}
-                      </div>
-                      <div className="text-xs whitespace-nowrap mt-0.5">
-                        {isCrossingMidnight ? (
-                          isNextDay ? (
-                            // Next day portion
-                            <div className="flex items-center justify-between">
-                              <span>12:00 AM</span>
-                              <span>→ {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                            </div>
-                          ) : (
-                            // First day portion
-                            <div className="flex items-center justify-between">
-                              <span>{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                              <span>→ 12:00 AM (next day)</span>
-                            </div>
-                          )
-                        ) : (
-                          // Regular events
-                          <div className="flex items-center justify-between">
-                            <span>{start.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                            <span>→ {end.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}</span>
-                          </div>
-                        )}
-                      </div>
+                  <div className="w-full h-full p-1.5 flex flex-col pointer-events-auto">
+                    <div className="flex items-center justify-between">
+                      <div className="font-bold truncate">{event.title}</div>
+                      {isCrossingMidnight && isNextDay && (
+                        <span className="text-[10px] ml-1 bg-blue-600 px-1 rounded">Cont'd</span>
+                      )}
+                    </div>
+                    <div className="text-xs">
+                      {isNextDay ? (
+                        // Next day portion
+                        `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      ) : isEventCrossingMidnight(event) ? (
+                        // First day portion
+                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM (next day)`
+                      ) : (
+                        // Regular event
+                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
+                          end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                      )}
                     </div>
                   </div>
                 </div>
