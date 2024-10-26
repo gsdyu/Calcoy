@@ -40,10 +40,32 @@ module.exports = (pool) => {
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     callbackURL: 'http://localhost:5000/auth/google/calendar/callback',
-    scope: ['https://www.googleapis.com/auth/calendar.readonly']
+    scope: [
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ],
+    accessType: 'offline',
+    prompt: 'consent',
   }, async (accessToken, refreshToken, profile, done) => {
-    return done(null, { accessToken, profile });
+    try {
+      console.log("Access Token:", accessToken);
+      console.log("Profile:", profile);
+      const email = profile.emails && profile.emails[0] && profile.emails[0].value;
+      if (!email) return done(new Error("No email found in profile"));
+    
+      let user = await findOrCreateUser(email, pool);
+      return done(null, { accessToken, user });
+    } catch (error) {
+      console.error('Detailed OAuth Error:', error);
+      return done(error, null);
+    }
   }));
+  
+  
+  
+  
+  
 
   // Serialize user to session
   passport.serializeUser((user, done) => {
