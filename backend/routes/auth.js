@@ -90,9 +90,8 @@ app.get('/auth/google/calendar', passport.authenticate('google-calendar', {
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile'
       ],
-      
   }),
-  async (req, res) => {console.log("hello")}
+  async (req, res) => {console.log("User authenticated:", req.user);}
 );
   
   // Google Auth Callback Route for Importing Calendar Events
