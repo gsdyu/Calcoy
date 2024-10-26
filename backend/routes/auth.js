@@ -381,14 +381,13 @@ app.post('/auth/set-username', async (req, res) => {
                 const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
                 // Return the JWT token to the client
-                
                 res.cookie('auth_token', token, {
                   httpOnly: true,
                   sameSite: 'strict',
                   secure: process.env.node_env === 'production',
                   path:'/',
                 });
-                return res.json({ token });
+              return res.status(200).json({message: 'Success'});
             } else {
                 return res.status(401).json({ error: 'Invalid or expired 2FA code' });
             }
