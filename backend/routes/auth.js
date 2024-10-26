@@ -47,7 +47,7 @@ app.use(passport.session());
 
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
-
+ 
 // Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
   async (req, res) => {
