@@ -1,8 +1,56 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const fetch = require('node-fetch');
+
+// Helper function to find or create a user by email
+const findOrCreateUser = async (email, pool) => {
+  let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+  let user = userResult.rows[0];
+
+  if (!user) {
+    const newUserResult = await pool.query(
+      'INSERT INTO users (email) VALUES ($1) RETURNING *',
+      [email]
+    );
+    user = newUserResult.rows[0];
+  }
+
+  return user;
+};
+
+// Helper function to fetch and save calendar events to PostgreSQL
+const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
+  const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  
+  if (!response.ok) throw new Error('Failed to fetch calendar events');
+
+  const calendarData = await response.json();
+  const events = calendarData.items.map(event => ({
+    user_id: userId,
+    title: event.summary || 'No Title',
+    description: event.description || '',
+    start_time: event.start.dateTime,
+    end_time: event.end.dateTime,
+    location: event.location || '',
+    calendar: 'Google',
+    time_zone: event.start.timeZone || 'UTC'
+  }));
+
+  for (const event of events) {
+    await pool.query(
+      `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+       ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`, 
+      [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
+    );
+  }
+};
 
 module.exports = (pool) => {
-  // Google OAuth Strategy configuration
+  // Google OAuth Strategy for login
   passport.use(
     new GoogleStrategy(
       {
@@ -14,20 +62,7 @@ module.exports = (pool) => {
         const email = profile.emails[0].value;
 
         try {
-          // Check if user already exists
-          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-          let user = userResult.rows[0];
-
-          if (!user) {
-            // Create a new user without a password and without a username
-            const newUserResult = await pool.query(
-              'INSERT INTO users (email) VALUES ($1) RETURNING *',
-              [email]
-            );
-            user = newUserResult.rows[0];
-          }
-
-          // Proceed with user data
+          const user = await findOrCreateUser(email, pool);
           return done(null, user);
         } catch (error) {
           console.error('Google signup error:', error);
@@ -36,6 +71,8 @@ module.exports = (pool) => {
       }
     )
   );
+
+  // Google OAuth Strategy for Calendar access
   passport.use('google-calendar', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
@@ -50,32 +87,22 @@ module.exports = (pool) => {
   }, async (accessToken, refreshToken, profile, done) => {
     try {
       console.log("Access Token:", accessToken);
-      console.log("Profile:", profile);
       const email = profile.emails && profile.emails[0] && profile.emails[0].value;
       if (!email) return done(new Error("No email found in profile"));
-    
-      let user = await findOrCreateUser(email, pool);
-      return done(null, { accessToken, user });
+
+      const user = await findOrCreateUser(email, pool);
+      await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
+
+      return done(null, user);
     } catch (error) {
-      console.error('Detailed OAuth Error:', error);
+      console.error('Google Calendar OAuth error:', error);
       return done(error, null);
     }
   }));
-  
-  
-  
-  
-  
 
   // Serialize user to session
-  passport.serializeUser((user, done) => {
-    done(null, user.id);
-  });
-  // Serialize user to session
-  passport.serializeUser((user, done) => {
-    done(null, user.id);
-  });
-
+  passport.serializeUser((user, done) => done(null, user.id));
+  
   // Deserialize user from session
   passport.deserializeUser(async (id, done) => {
     try {
