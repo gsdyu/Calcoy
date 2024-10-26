@@ -36,7 +36,19 @@ module.exports = (pool) => {
       }
     )
   );
+  passport.use('google-calendar', new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: 'http://localhost:5000/auth/google/calendar/callback',
+    scope: ['https://www.googleapis.com/auth/calendar.readonly']
+  }, async (accessToken, refreshToken, profile, done) => {
+    return done(null, { accessToken, profile });
+  }));
 
+  // Serialize user to session
+  passport.serializeUser((user, done) => {
+    done(null, user.id);
+  });
   // Serialize user to session
   passport.serializeUser((user, done) => {
     done(null, user.id);
