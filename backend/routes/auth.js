@@ -85,7 +85,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 );
 
 // Google Auth Route for Importing Calendar Events
-app.get('/auth/google/calendar', passport.authenticate('google-calendar', {
+app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
     scope: [
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/userinfo.email',

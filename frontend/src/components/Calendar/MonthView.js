@@ -210,7 +210,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-        const calendarType = event.calendar || 'default';
+    const calendarType = event.calendar || 'default';
   
     // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 

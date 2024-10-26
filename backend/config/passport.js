@@ -1,6 +1,8 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const fetch = require('node-fetch');
+const { createEmbeddings } = require('../ai/embeddings');
+
 
 // Helper function to find or create a user by email
 const findOrCreateUser = async (email, pool) => {
@@ -28,17 +30,48 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
   if (!response.ok) throw new Error('Failed to fetch calendar events');
 
   const calendarData = await response.json();
-  const events = calendarData.items.map(event => ({
-    user_id: userId,
-    title: event.summary || 'No Title',
-    description: event.description || '',
-    start_time: event.start.dateTime,
-    end_time: event.end.dateTime,
-    location: event.location || '',
-    calendar: 'Google',
-    time_zone: event.start.timeZone || 'UTC'
-  }));
 
+  try {
+    const events = calendarData.items.filter(event => {
+      if (event.status === 'cancelled') return false;
+      return true;
+    }).map(event => {
+      let eventData = {user_id: 'userid'};
+      console.log(event)
+      if (!event.start.date && !event.end.date) {
+        console.log('lecking')
+        eventData = {
+          user_id: userId,
+          title: event.summary || 'no title',
+          description: event.description || '',
+          start_time: new Date(event.start.dateTime),
+          end_time: new Date(event.end.dateTime),
+          location: event.location || '',
+          calendar: 'google',
+          time_zone: event.start.timezone || 'utc'
+        };
+      }
+      else if (!event.start.datetime && !event.end.datetime) {
+        console.log('becking')
+        eventData = {
+          user_id: userId,
+          title: event.summary || 'No Title',
+          description: event.description || '',
+          start_time: new Date(`${event.start.date}T00:00:00`),
+          end_time: new Date(`${event.start.date}T23:59:59`),
+          location: event.location || '',
+          calendar: 'google',
+          time_zone: event.start.timeZone || 'UTC'
+        };
+      }
+      console.log('showing')
+      console.log(eventData)
+      return eventData;
+    });
+    Object.keys(events).forEach(key => {
+    console.log(key);
+    console.log(events[key]
+    )})
   for (const event of events) {
     await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
@@ -46,6 +79,9 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
        ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`, 
       [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
     );
+  }
+  } catch (error) {
+    console.error(`error: ${error}`)
   }
 };
 
