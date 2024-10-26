@@ -89,12 +89,14 @@ app.get('/auth/google/calendar', passport.authenticate('google-calendar', {
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/userinfo.email',
         'https://www.googleapis.com/auth/userinfo.profile'
-      ]
+      ],
       
-  }));
+  }),
+  async (req, res) => {console.log("hello")}
+);
   
   // Google Auth Callback Route for Importing Calendar Events
-  app.get('/auth/google/calendar/callback', passport.authenticate('google', { failureRedirect: '/auth/login', session: false }),
+  app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
     async (req, res) => {
       try {
         const accessToken = req.user.accessToken; // Extract the access token from Google OAuth
