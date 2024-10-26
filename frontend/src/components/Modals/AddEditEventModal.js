@@ -164,14 +164,14 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     let eventData;
 
     if (selected === 'task') {
-      const taskDate = new Date(`${newTask.date}`);
+      const taskDate = new Date(newTask.date + 'T00:00:00'); 
       
       if (!showTaskTime || !newTask.time) {
-        // All-day task
+        // All-day task - set to local midnight
         eventData = {
           title: newTask.title.trim() || "(No title)",
-          start_time: new Date(taskDate.setHours(0, 0, 0)).toISOString(),
-          end_time: new Date(taskDate.setHours(23, 59, 59)).toISOString(),
+          start_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate()).toISOString(),
+          end_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate(), 23, 59, 59).toISOString(),
           location: '',
           frequency: newTask.frequency,
           calendar: 'Task',
@@ -181,7 +181,8 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
       } else {
         // Task with specific time
         const [hours, minutes] = newTask.time.split(':');
-        const taskDateTime = new Date(taskDate.setHours(Number(hours), Number(minutes), 0));
+        const taskDateTime = new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate(), 
+          Number(hours), Number(minutes));
         
         eventData = {
           title: newTask.title.trim() || "(No title)",
