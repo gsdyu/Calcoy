@@ -21,85 +21,71 @@ const findOrCreateUser = async (email, pool) => {
 };
 
 // Helper function to fetch and save calendar events to PostgreSQL
+// Helper function to fetch and save Google Calendar events with incremental sync
 const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
-  const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${accessToken}` },
+  // Retrieve the last sync token for this user, if any
+  const result = await pool.query('SELECT sync_token FROM users WHERE id = $1', [userId]);
+  let syncToken = result.rows[0]?.sync_token;
+
+  let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true';
+  if (syncToken) {
+      console.log("Performing incremental sync.");
+      url += `&syncToken=${syncToken}`;
+  } else {
+      console.log("Performing full sync.");
+  }
+
+  // Fetch events with sync or full sync token
+  const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` }
   });
-  
-  if (!response.ok) throw new Error('Failed to fetch calendar events');
+
+  if (!response.ok) {
+      if (response.status === 410) {
+          // Token invalidated, trigger a full sync
+          console.warn('Sync token expired, initiating a full sync.');
+          await pool.query('UPDATE users SET sync_token = NULL WHERE id = $1', [userId]);
+          return await fetchAndSaveGoogleCalendarEvents(accessToken, userId, pool);
+      }
+      throw new Error('Failed to fetch calendar events');
+  }
+
   const calendarData = await response.json();
 
-  try {
-    const events = calendarData.items.filter(event => {
-      if (event.status === 'cancelled') return false;
-      return true;
-    }).map(event => {
-      let eventData = {user_id: 'userid'};
-      if (!event.start.date && !event.end.date) {
-        eventData = {
-          user_id: userId,
-          title: event.summary || 'no title',
-          description: event.description || '',
-          start_time: new Date(event.start.dateTime),
-          end_time: new Date(event.end.dateTime),
-          location: event.location || '',
-          calendar: 'google',
-          time_zone: event.start.timezone || 'utc'
-        };
-      }
-      else if (!event.start.datetime && !event.end.datetime) {
-        eventData = {
+  // Save events to the database
+  const events = calendarData.items;
+  for (const event of events) {
+      const eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
           description: event.description || '',
-          start_time: new Date(`${event.start.date}T00:00:00`),
-          end_time: new Date(`${event.start.date}T23:59:59`),
+          start_time: new Date(event.start.dateTime || `${event.start.date}T00:00:00`),
+          end_time: new Date(event.end.dateTime || `${event.end.date}T23:59:59`),
           location: event.location || '',
           calendar: 'google',
           time_zone: event.start.timeZone || 'UTC'
-        };
-      }
-      return eventData;
-    });
-    //Object.keys(events).forEach(key => {
-    //console.log(key);
-    //console.log(events[key]
-    //)})
-    await pool.query(`SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone 
-      FROM events WHERE embedding IS NULL`, async (err, res) => {
-      if (err) {
-        console.err("Error getting title", err);
-      } else {
-        for (let i=0; i<res.rows.length; i+=75) {
-      //    subRows = res.rows.splice(i,i+75);
-      //    console.log(subRows.map(
-      //      (row) => [row.title, row.start_time, row.end_time, row.location]
-      //    ))
-      //    console.log(`Hello $1`, ['dog'])
+      };
 
-          //const embeds = await createEmbeddings(JSON.stringify(subRow)));
-          //await pool.query(
-          //``
-          //)
-        }
-        //const embed = await createEmbeddings(JSON.stringify(res.rows.slice(0,75)));
-        //console.log(res.rows.slice(200,220).length)
-      }
-    })
-  for (const event of events) {
-    await pool.query(
-      `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-       ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`, 
-      
-      [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
-    );
+      await pool.query(
+          `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+           ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`,
+          [
+              eventData.user_id, eventData.title, eventData.description,
+              eventData.start_time, eventData.end_time,
+              eventData.location, eventData.calendar, eventData.time_zone
+          ]
+      );
   }
-  } catch (error) {
-    console.error(`error: ${error}`)
+
+  // Update sync token for the next incremental sync
+  const newSyncToken = calendarData.nextSyncToken;
+  if (newSyncToken) {
+      await pool.query('UPDATE users SET sync_token = $1 WHERE id = $2', [newSyncToken, userId]);
   }
 };
+
 
 // Set up the Google OAuth strategies for login and calendar access
 module.exports = (pool) => {
@@ -211,15 +197,27 @@ app.post('/webhook/google-calendar', async (req, res) => {
     return res.status(400).send('Missing required headers');
   }
   const getUserAccessToken = async (userId, pool) => {
-    try {
-      const result = await pool.query('SELECT access_token FROM users WHERE id = $1', [userId]);
-      if (!result.rows[0]) throw new Error('User not found');
-      return result.rows[0].access_token;
-    } catch (error) {
-      console.error('Error fetching access token:', error);
-      throw error; // Ensure error is propagated if token not found
+    let result = await pool.query('SELECT access_token, refresh_token FROM users WHERE id = $1', [userId]);
+    let accessToken = result.rows[0]?.access_token;
+    const refreshToken = result.rows[0]?.refresh_token;
+
+    console.log('Access Token before validation:', accessToken);
+
+    // Test the access token validity
+    const testResponse = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
+    if (testResponse.status === 401 && refreshToken) {
+        // Access token is expired or invalid, so refresh it
+        console.log('Access token expired or invalid. Attempting to refresh...');
+        accessToken = await refreshAccessToken(userId, pool);
+        console.log('New Access Token after refresh:', accessToken);
+    } else if (!refreshToken) {
+        throw new Error('No refresh token available to refresh access token.');
     }
-  };
+
+    return accessToken;
+};
+
+
   
   try {
     const userId = extractUserIdFromChannelId(channelId); // Implement based on your channel ID format

@@ -55,11 +55,15 @@ pool.query(`
     password TEXT,  -- Set password to allow NULL for OAuth users
     profile_image VARCHAR(255),
 	 access_token TEXT,
+	sync_token VARCHAR(255),
+ 	refresh_token TEXT,
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
 	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
+  
+  
 `).then(() => {
   console.log("Users table is ready");
   pool.query(`
@@ -81,7 +85,13 @@ pool.query(`
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));
-
+pool.query(`
+	ALTER TABLE users
+  ALTER COLUMN id SET DATA TYPE BIGINT;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT;
+  `).then(() => {
+	console.log("Updated column type to BIGINT successfully.");
+  }).catch(err => console.error('Error updating column to BIGINT:', err));
 // Additional routes
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);

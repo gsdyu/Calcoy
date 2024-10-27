@@ -23,31 +23,37 @@ const refreshAccessToken = async (userId, pool) => {
         })
     });
 
-    if (!response.ok) throw new Error('Failed to refresh access token');
+    if (!response.ok) {
+        const errorDetails = await response.json();
+        console.error('Failed to refresh access token:', errorDetails); // Log detailed error
+        throw new Error('Failed to refresh access token');
+    }
 
     const data = await response.json();
     const newAccessToken = data.access_token;
 
-    // Update the database with the new access token
+    // Update the access token in the database and log success
     await pool.query('UPDATE users SET access_token = $1 WHERE id = $2', [newAccessToken, userId]);
+    console.log('Access token refreshed and saved:', newAccessToken);
 
     return newAccessToken;
 };
 
-// Function to retrieve a valid access token, refreshing it if necessary
+
 const getUserAccessToken = async (userId, pool) => {
     let result = await pool.query('SELECT access_token FROM users WHERE id = $1', [userId]);
     let accessToken = result.rows[0]?.access_token;
 
-    // Test the access token to see if it’s valid
+    // Test the access token validity
     const testResponse = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
     if (testResponse.status === 401) {
-        // Access token is expired or invalid; attempt to refresh it
+        // If token is invalid, refresh it
         accessToken = await refreshAccessToken(userId, pool);
     }
 
     return accessToken;
 };
+
 
 // Main webhook handler function
 const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
@@ -60,9 +66,9 @@ const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
 
     try {
         const userId = extractUserIdFromChannelId(channelId);
-        const accessToken = await getUserAccessToken(userId, pool);
+        const accessToken = await getUserAccessToken(userId, pool); // Updated with refreshed token if needed
 
-        // Fetch the updated event details using a valid access token
+        // Fetch the updated event details using the valid access token
         const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${resourceId}`, {
             method: 'GET',
             headers: { Authorization: `Bearer ${accessToken}` }
@@ -82,5 +88,6 @@ const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
         res.status(500).send('Internal Server Error');
     }
 };
+
 
 module.exports = handleGoogleCalendarWebhook;
