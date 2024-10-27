@@ -68,7 +68,7 @@ const AiPage = () => {
   
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    const check = await fetch('http://localhost:5000/auth/check-auth', {
+    const check = await fetch('http://localhost:5000/auth/check', {
       method: 'GET',
       credentials: 'include',
     })
