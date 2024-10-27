@@ -310,7 +310,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                     key={event.id}
                     className={`
                       absolute text-xs overflow-hidden cursor-pointer
-                      rounded-full py-1 px-2
+                      rounded py-1 px-2
                       ${event.completed ? 'opacity-50' : ''}
                       border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
                       ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
@@ -323,7 +323,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                     <div className="flex items-center justify-between w-full">
                       <div className="flex items-center overflow-hidden">
                         <Check 
-                          className={`w-3 h-3 mr-1 flex-shrink-0
+                          className={`w-4 h-4 mr-1 flex-shrink-0
                             ${event.completed ? 'opacity-50' : ''} 
                             ${darkMode 
                               ? `text-${eventColor}-400` 
