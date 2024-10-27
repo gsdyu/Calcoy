@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
-import Calendarapi from '@/components/Sidebar/Calendarfilter';
+import Calendarapi from '@/components/Sidebar/CalendarFilter';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -24,9 +24,9 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         const calculatedCellHeight = Math.floor(containerHeight / weeksInMonth);
         // the offset is used to maximize the containerHeight without being too big to need a scroll bar
         // without offset: calculatedCellHeight is too large, and requires a scroll bar; offset removes scroll bar
-        // default offset: .019 (19%) satisfy months with 4 and 6 weeks.
-        let offset = (calculatedCellHeight * .019)
-        if (weeksInMonth === 5) offset = (calculatedCellHeight * .017)
+        // default offset: satisfy months with 4 and 6 weeks.
+        let offset = (calculatedCellHeight * .022)
+        if (weeksInMonth === 5) offset = (calculatedCellHeight * .020)
         setCellHeight(calculatedCellHeight - offset);
         const eventHeight = 24; 
         const dateHeight = 24; 
@@ -210,7 +210,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-        const calendarType = event.calendar || 'default';
+    const calendarType = event.calendar || 'default';
   
     // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 

@@ -24,7 +24,6 @@ pool.query(`
 	DROP TABLE events;
 	DROP TABLE users;
 `)
-	.then(() => console.log("Drop successful."))
 	.catch((err) => console.error("Error dropping tables:", err));
 
 console.log("Dropping...")

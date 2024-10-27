@@ -13,12 +13,15 @@ async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
 		model: "jina-embeddings-v3",
 		task : "text-matching",
 		dimensions: 128,
-		late_chunking: false,
+		late_chunking: true,
 		embedding_type: "float",
 		input: input
 	};
 	const response = await axios.post(url, data, {headers})
-		.then(response=>response.data.data.map(item => item.embedding))
+		.then(response=> {
+      console.log(response.data.usage);
+      response.data.data.map(item => {item.embedding})
+    })
 		.then(data=>data)
 		.catch(error=>console.error(error));
 	return response;

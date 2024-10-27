@@ -7,7 +7,7 @@ import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff } from 'react-icons/fi'; //
 const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-gray-400'];
 import MonthView from '@/components/Calendar/MonthView';  
 
-const Calendarfilter = () => {
+const CalendarFilter = () => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
@@ -23,8 +23,10 @@ const Calendarfilter = () => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials:'include',
+      })
+      if (!check.ok) {
         setError('No token found. Please login.');
         setLoading(false);
         return;
@@ -90,7 +92,6 @@ const Calendarfilter = () => {
 
   const savePreferences = async (preferences) => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/profile/preferences', {
         method: 'PUT',
         headers: {
@@ -224,4 +225,4 @@ const ColorPicker = ({ item, colors, onSelectColor }) => {
   );
 };
 
-export default Calendarfilter;
+export default CalendarFilter;

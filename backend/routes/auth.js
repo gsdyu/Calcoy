@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
+const { authenticateToken } = require('../authMiddleware');
 
 module.exports = (app, pool) => {
   // Configure session middleware
@@ -84,7 +85,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 );
 
 // Google Auth Route for Importing Calendar Events
-app.get('/auth/google/calendar', passport.authenticate('google-calendar', {
+app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
     scope: [
         'https://www.googleapis.com/auth/calendar.readonly',
         'https://www.googleapis.com/auth/userinfo.email',
@@ -410,14 +411,13 @@ app.post('/auth/set-username', async (req, res) => {
                 const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
                 // Return the JWT token to the client
-                
                 res.cookie('auth_token', token, {
                   httpOnly: true,
                   sameSite: 'strict',
                   secure: process.env.node_env === 'production',
                   path:'/',
                 });
-                return res.json({ token });
+              return res.status(200).json({message: 'Success'});
             } else {
                 return res.status(401).json({ error: 'Invalid or expired 2FA code' });
             }
@@ -428,8 +428,12 @@ app.post('/auth/set-username', async (req, res) => {
     });
 
 
-   app.post('/logout', (req, res) => {
+   app.post('/auth/logout', (req, res) => {
      res.clearCookie("auth_token", {path: '/'});
      return res.status(200).json({message: "Log out successful"});
    });
+  
+  app.get('/auth/check', authenticateToken, (req, res) => {
+    return res.status(200).json({isLoggedIn: "True"});
+  });
 };

@@ -19,7 +19,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
 
   const toggleLogout = async () => {
     try {
-      const response = await fetch('http://localhost:5000/logout', {
+      const response = await fetch('http://localhost:5000/auth/logout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json'},
         credentials: 'include',
@@ -39,9 +39,13 @@ const Profile = ({ isCollapsed, darkMode }) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const token = localStorage.getItem('token'); // Assuming token is stored in localStorage
+      const check = await fetch('http://localhost:5000/auth/check', {
+        method: 'GET',
+        headers: {'Content-Type': 'application/json'},
+        credentials: 'include',
+      });
 
-      if (!token) {
+      if (!check.ok) {
         setError('No token found. Please login.');
         return;
       }

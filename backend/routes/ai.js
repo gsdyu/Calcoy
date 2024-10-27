@@ -24,7 +24,8 @@ module.exports = (app, pool) => {
           SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone
           FROM events
           WHERE user_id=${userId}
-          ORDER BY embedding <-> '${JSON.stringify(embed[0])}';`)
+          ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
+          LIMIT 5;`)
             .then(context => {
               //formattedContext is almost same logic as frontend CalendarApp with formattedEvents variable. Converts global time from database to 
               //local time

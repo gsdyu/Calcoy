@@ -3,6 +3,7 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const fetch = require('node-fetch');
 const express = require('express');
 const app = express(); // Assuming this is your main file
+const { createEmbeddings } = require('../ai/embeddings');
 
 // Helper function to find or create a user by email
 const findOrCreateUser = async (email, pool) => {
@@ -28,24 +29,75 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
   
   if (!response.ok) throw new Error('Failed to fetch calendar events');
   const calendarData = await response.json();
-  const events = calendarData.items.map(event => ({
-    user_id: userId,
-    title: event.summary || 'No Title',
-    description: event.description || '',
-    start_time: event.start.dateTime,
-    end_time: event.end.dateTime,
-    location: event.location || '',
-    calendar: 'Google',
-    time_zone: event.start.timeZone || 'UTC'
-  }));
 
+  try {
+    const events = calendarData.items.filter(event => {
+      if (event.status === 'cancelled') return false;
+      return true;
+    }).map(event => {
+      let eventData = {user_id: 'userid'};
+      if (!event.start.date && !event.end.date) {
+        eventData = {
+          user_id: userId,
+          title: event.summary || 'no title',
+          description: event.description || '',
+          start_time: new Date(event.start.dateTime),
+          end_time: new Date(event.end.dateTime),
+          location: event.location || '',
+          calendar: 'google',
+          time_zone: event.start.timezone || 'utc'
+        };
+      }
+      else if (!event.start.datetime && !event.end.datetime) {
+        eventData = {
+          user_id: userId,
+          title: event.summary || 'No Title',
+          description: event.description || '',
+          start_time: new Date(`${event.start.date}T00:00:00`),
+          end_time: new Date(`${event.start.date}T23:59:59`),
+          location: event.location || '',
+          calendar: 'google',
+          time_zone: event.start.timeZone || 'UTC'
+        };
+      }
+      return eventData;
+    });
+    //Object.keys(events).forEach(key => {
+    //console.log(key);
+    //console.log(events[key]
+    //)})
+    await pool.query(`SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone 
+      FROM events WHERE embedding IS NULL`, async (err, res) => {
+      if (err) {
+        console.err("Error getting title", err);
+      } else {
+        for (let i=0; i<res.rows.length; i+=75) {
+          subRows = res.rows.splice(i,i+75);
+          console.log(subRows.map(
+            (row) => [row.title, row.start_time, row.end_time, row.location]
+          ))
+          console.log(`Hello $1`, ['dog'])
+
+          //const embeds = await createEmbeddings(JSON.stringify(subRow)));
+          //await pool.query(
+          //``
+          //)
+        }
+        //const embed = await createEmbeddings(JSON.stringify(res.rows.slice(0,75)));
+        console.log(res.rows.slice(200,220).length)
+      }
+    })
   for (const event of events) {
     await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
        ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`, 
+      
       [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
     );
+  }
+  } catch (error) {
+    console.error(`error: ${error}`)
   }
 };
 
