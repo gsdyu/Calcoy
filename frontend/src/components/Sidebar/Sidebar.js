@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import PersonalCalendar from '@/components/Sidebar/PersonalCalendar';
 import Calendarapi from '@/components/Sidebar/Calendarapi';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete }) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -46,7 +46,11 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate }) 
           mainCalendarDate={mainCalendarDate}
         />
         <Calendarapi />
-        <Tasks />
+        <Tasks 
+          events={events}
+          selectedDate={selectedDate || mainCalendarDate}
+          onTaskComplete={onTaskComplete}
+        />
       </div>
     </div>
   );

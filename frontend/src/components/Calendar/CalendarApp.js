@@ -425,6 +425,8 @@ const CalendarApp = () => {
               onViewChange={handleViewChange}
               onClose={toggleSidebar}
               mainCalendarDate={selectedDate || currentDate}
+              events={events}
+              onTaskComplete={handleTaskComplete}
             />
           )}
         </div>
