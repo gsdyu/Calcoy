@@ -114,6 +114,10 @@ module.exports = (pool) => {
       const email = profile.emails[0].value;
       try {
         const user = await findOrCreateUser(email, pool);
+        await pool.query(
+          'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
+          [accessToken, refreshToken, user.id]
+        );
         return done(null, user);
       } catch (error) {
         console.error('Google signup error:', error);
@@ -142,7 +146,7 @@ module.exports = (pool) => {
       const user = await findOrCreateUser(email, pool);
       await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
-      const webhookUrl = 'https://1179-47-146-160-30.ngrok-free.app/webhook/google-calendar';
+      const webhookUrl = 'https://302e-47-146-160-30.ngrok-free.app/webhook/google-calendar';
       await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
             await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
 
@@ -207,9 +211,16 @@ app.post('/webhook/google-calendar', async (req, res) => {
     return res.status(400).send('Missing required headers');
   }
   const getUserAccessToken = async (userId, pool) => {
-    const result = await pool.query('SELECT access_token FROM users WHERE id = $1', [userId]);
-    return result.rows[0]?.access_token;
+    try {
+      const result = await pool.query('SELECT access_token FROM users WHERE id = $1', [userId]);
+      if (!result.rows[0]) throw new Error('User not found');
+      return result.rows[0].access_token;
+    } catch (error) {
+      console.error('Error fetching access token:', error);
+      throw error; // Ensure error is propagated if token not found
+    }
   };
+  
   try {
     const userId = extractUserIdFromChannelId(channelId); // Implement based on your channel ID format
     const accessToken = await getUserAccessToken(userId, pool); // Retrieve access token for the user
@@ -222,6 +233,7 @@ app.post('/webhook/google-calendar', async (req, res) => {
 
     if (eventResponse.ok) {
       const event = await eventResponse.json();
+      console.error('Failed to fetch event details:', errorDetails); // Log detailed error response
       await saveOrUpdateEventInDatabase(userId, event, pool); // Update your DB with the latest event data
       res.status(200).send('Event received and processed');
     } else {
