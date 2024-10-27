@@ -24,11 +24,13 @@ module.exports = (app, pool) => {
         [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
       )
         .then(result => {
-        pool.query(`
-          UPDATE events
-          SET embedding = '${JSON.stringify(embed[0])}'
-          WHERE user_id='${userId}' AND location='${location}' AND start_time='${startDate.toISOString()}' AND end_time='${endDate.toISOString()}'
-          `);
+        if (embed) {
+          pool.query(`
+            UPDATE events
+            SET embedding = '${JSON.stringify(embed[0])}'
+            WHERE user_id='${userId}' AND location='${location}' AND start_time='${startDate.toISOString()}' AND end_time='${endDate.toISOString()}'
+            `);
+        }
           return result;
         })
       res.status(201).json({ message: 'Event created', event: result.rows[0] });

@@ -26,7 +26,7 @@ async function initChat(content = "You are an assistant. You may be provided wit
 	var check = client.chat.completions.create({
 		messages: history,
 		model: model,
-		max_tokens: 100,
+		max_tokens: 128,
 		})
 	return 1;
 }
