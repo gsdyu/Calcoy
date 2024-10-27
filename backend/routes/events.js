@@ -43,9 +43,9 @@ module.exports = (app, pool) => {
   // Get events route
   app.get('/events', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
-
     try {
       const result = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY start_time', [userId]);
+      res.json(result.rows)
     } catch (error) {
       console.error('Get events error:', error);
       res.status(500).json({ error: 'Internal server error' });
