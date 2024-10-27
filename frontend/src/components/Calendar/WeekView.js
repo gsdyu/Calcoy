@@ -512,7 +512,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                         onDragStart={(e) => onDragStart(e, event.id)}
                         className={`
                           absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
-                          rounded-full py-1 px-2
+                          rounded
                           ${event.completed ? 'opacity-50' : ''}
                           border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
                           ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
@@ -522,7 +522,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                         style={getEventStyle(event)}
                         onClick={(e) => handleEventClick(event, e)}
                       >
-                        <div className="flex items-center justify-between w-full">
+                        <div className="flex items-center justify-between w-full p-1.5">
                           <div className="flex items-center overflow-hidden">
                             <Check 
                               className={`w-3 h-3 mr-1 flex-shrink-0
