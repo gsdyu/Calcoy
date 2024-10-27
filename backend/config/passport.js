@@ -95,6 +95,8 @@ module.exports = (pool) => {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: '/auth/google/callback',
+      accessType: 'offline', // Request offline access to get a refresh token
+      prompt: 'consent' // Force re-consent to receive the refresh token
     },
     async (accessToken, refreshToken, profile, done) => {
       const email = profile.emails[0].value;
@@ -113,37 +115,44 @@ module.exports = (pool) => {
   ));
 
   // Google OAuth Strategy for Calendar access
-  passport.use('google-calendar', new GoogleStrategy({
-    clientID: process.env.GOOGLE_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'http://localhost:5000/auth/google/calendar/callback',
-    scope: [
-      'https://www.googleapis.com/auth/calendar.readonly',
-      'https://www.googleapis.com/auth/userinfo.email',
-      'https://www.googleapis.com/auth/userinfo.profile'
-    ],
-    accessType: 'offline',
-    prompt: 'consent',
-  }, async (accessToken, refreshToken, profile, done) => {
-    try {
-      const email = profile.emails && profile.emails[0] && profile.emails[0].value;
-      if (!email) return done(new Error("No email found in profile"));
+ passport.use('google-calendar', new GoogleStrategy({
+  clientID: process.env.GOOGLE_CLIENT_ID,
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+  callbackURL: 'http://localhost:5000/auth/google/calendar/callback',
+  scope: [
+    'https://www.googleapis.com/auth/calendar.readonly',
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile'
+  ],
+  accessType: 'offline',
+  prompt: 'consent',
+}, async (accessToken, refreshToken, profile, done) => {
+  try {
+    const email = profile.emails && profile.emails[0] && profile.emails[0].value;
+    if (!email) return done(new Error("No email found in profile"));
 
-      const user = await findOrCreateUser(email, pool);
-      await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
+    // Fetch or create the user
+    const user = await findOrCreateUser(email, pool);
 
-      const webhookUrl = 'https://302e-47-146-160-30.ngrok-free.app/webhook/google-calendar';
-      await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
-            await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
+    // Save calendar events to the database
+    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
-      // add accessToken to the user for the callback
-      user.accessToken=accessToken
-      return done(null, user);
-    } catch (error) {
-      console.error('Google Calendar OAuth error:', error);
-      return done(error, null);
-    }
-  }));
+    // Webhook URL for Google Calendar notifications
+    const webhookUrl = 'https://c7f0-47-146-160-30.ngrok-free.app/webhook/google-calendar';
+    
+    // Set up Google Calendar notification only once
+    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
+
+    // Add accessToken to the user object for further use
+    user.accessToken = accessToken;
+    
+    return done(null, user);
+  } catch (error) {
+    console.error('Google Calendar OAuth error:', error);
+    return done(error, null);
+  }
+}));
+
 
   // Serialize user to session
   passport.serializeUser((user, done) => done(null, user.id));
@@ -196,26 +205,31 @@ app.post('/webhook/google-calendar', async (req, res) => {
   if (!channelId || !resourceId) {
     return res.status(400).send('Missing required headers');
   }
-  const getUserAccessToken = async (userId, pool) => {
-    let result = await pool.query('SELECT access_token, refresh_token FROM users WHERE id = $1', [userId]);
-    let accessToken = result.rows[0]?.access_token;
-    const refreshToken = result.rows[0]?.refresh_token;
 
-    console.log('Access Token before validation:', accessToken);
+  try {
+    const userId = extractUserIdFromChannelId(channelId);
+    const accessToken = await getUserAccessToken(userId, pool);
 
-    // Test the access token validity
-    const testResponse = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);
-    if (testResponse.status === 401 && refreshToken) {
-        // Access token is expired or invalid, so refresh it
-        console.log('Access token expired or invalid. Attempting to refresh...');
-        accessToken = await refreshAccessToken(userId, pool);
-        console.log('New Access Token after refresh:', accessToken);
-    } else if (!refreshToken) {
-        throw new Error('No refresh token available to refresh access token.');
+    const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${resourceId}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
+
+    if (eventResponse.ok) {
+      const event = await eventResponse.json();
+      await saveOrUpdateEventInDatabase(userId, event, pool);
+      res.status(200).send('Event received and processed');
+    } else {
+      const errorDetails = await eventResponse.json();
+      console.error('Failed to fetch event details:', errorDetails);
+      res.status(401).send(`Failed to fetch event details: ${errorDetails.error.message}`);
     }
+  } catch (error) {
+    console.error('Error processing Google Calendar webhook:', error);
+    res.status(500).send('Internal Server Error');
+  }
+ 
 
-    return accessToken;
-};
 
 
   
