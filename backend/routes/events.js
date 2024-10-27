@@ -28,7 +28,8 @@ module.exports = (app, pool) => {
         pool.query(`
           UPDATE events
           SET embedding = '${JSON.stringify(embed[0])}'
-          WHERE user_id='${userId}' AND location='${location}' AND start_time='${startDate.toISOString()}' AND end_time='${endDate.toISOString()}'
+          WHERE user_id='${userId}' AND title = '${title}' AND location='${location}' AND start_time='${startDate.toISOString()}' 
+          AND end_time='${endDate.toISOString()}';
           `);
           return result;
         })
