@@ -63,10 +63,8 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
       }
       return eventData;
     });
-    //Object.keys(events).forEach(key => {
-    //console.log(key);
-    //console.log(events[key]
-    //)})
+
+  // stores the callback events into our calendar
   for (const event of events) {
     await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
@@ -75,45 +73,23 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
        RETURNING *;`, 
       
       [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
-    )//.then(_ => {
-        //pool.query(`SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone 
-          //FROM events WHERE embedding IS NULL`, async (err, res) => {
-          //if (err) {
-            //console.err("Error getting title", err);
-          //} else {
-            //const unique_rows = res.rows.map(row => {
-              //return [row.user_id ,row.title, row.start_time.toISOString(), row.end_time.toISOString(), row.location]; 
-            //})
-            //const batch = 3;
-            //for (let i=0; i<1; i+=batch) {
-              //const sub_rows = res.rows.slice(i,i+batch).map(row=>JSON.stringify(row))
-              //const embed = await createEmbeddings(sub_rows);
-              //const sub_queries = unique_rows.slice(0,batch).map((row, j) => {
-                //console.log(j)
-                //console.log(embed[j])
-                //return pool.query(`
-                  //UPDATE events
-                  //SET embedding = '${JSON.stringify(embed[j])}'
-                  //WHERE user_id=$1 AND title=$2 AND start_time=$3 AND end_time=$4 AND location=$5; 
-                //`, [row.user_id, row.title, row.start_time, row.end_time, row.location]);
-              //}) 
-              //const sub_results = await Promise.all(sub_queries);
-              //console.log(sub_results)
-            //}
-//
-            ////for (let i=0; i<1; i+=75) {
-            ////}
-              //
-//
-              ////const embeds = await createEmbeddings(JSON.stringify(subRow)));
-              ////await pool.query(
-              ////``
-              ////)
-            //
-            ////const embed = await createEmbeddings(JSON.stringify(res.rows.slice(0,75)));
-          //}
-        //})
-        //});
+    ).then(async result => {
+       // checks for embedding on all events. can convert to function
+       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+       // callback events will always be given even if our calendar already has it stored
+       const row = result.rows;
+       console.log(row)
+       if (!row[0]) {
+         return};
+       const embed = await createEmbeddings(JSON.stringify(row)
+       ).then(embed_result => {
+         console.log(row)
+         pool.query(`UPDATE events
+                     SET embedding = $6
+                     WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                     [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
+       }) 
+    })
   }
   } catch (error) {
     console.error(`error: ${error}`)

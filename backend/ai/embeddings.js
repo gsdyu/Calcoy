@@ -19,8 +19,9 @@ async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
 	};
 	const response = await axios.post(url, data, {headers})
 		.then(response=> {
-      console.log(response.data.usage);
-      console.log(response.data)
+      //add an argument to show token usage or not to function
+      //console.log(response.data.usage);
+      //console.log(response.data)
       return response.data.data.map(item => {return item.embedding})
     })
 		.then(data=>data)
