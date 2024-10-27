@@ -347,7 +347,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               return (
                 <div
                   key={event.id}
-                  className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600"
+                  className={`absolute bg-blue-500 bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-blue-600
+                   ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}
                   style={getEventStyle(event, isNextDay)}
                   onClick={(e) => handleEventClick(event, e)}
                 >
@@ -355,7 +356,11 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                     <div className="flex items-center justify-between">
                       <div className="font-bold truncate">{event.title}</div>
                       {isCrossingMidnight && isNextDay && (
-                        <span className="text-[10px] ml-1 bg-blue-600 px-1 rounded">Cont'd</span>
+                        <span className={`text-[10px] ml-1 px-1 rounded
+                          ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
+                        `}>
+                          Cont'd
+                        </span>
                       )}
                     </div>
                     <div className="text-xs">
