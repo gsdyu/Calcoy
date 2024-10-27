@@ -18,6 +18,7 @@ module.exports = (app, pool) => {
     }
 
     try {
+      console.log(req.body)
       const embed = await createEmbeddings(JSON.stringify(req.body));
       const result = await pool.query(
         'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
@@ -44,7 +45,6 @@ module.exports = (app, pool) => {
 
     try {
       const result = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY start_time', [userId]);
-      res.json(result.rows);
     } catch (error) {
       console.error('Get events error:', error);
       res.status(500).json({ error: 'Internal server error' });
