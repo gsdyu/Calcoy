@@ -562,7 +562,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
                       draggable
                       onDragStart={(e) => onDragStart(e, event.id)}
-                      className="absolute bg-blue-500 text-white text-xs overflow-hidden rounded cursor-pointer hover:bg-blue-600 transition-colors duration-200 border border-blue-600 pointer-events-auto"
+                      className={`absolute bg-blue-500 bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-blue-600 pointer-events-auto
+                        ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}
                     >
