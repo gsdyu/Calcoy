@@ -6,6 +6,7 @@ const { Pool } = require('pg');
 const session = require('express-session');
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
+const handleGoogleCalendarWebhook = require('./routes/webhook');
 
 // Initialize express app
 const app = express();
@@ -53,6 +54,7 @@ pool.query(`
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,  -- Set password to allow NULL for OAuth users
     profile_image VARCHAR(255),
+	 access_token TEXT,
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
 	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
@@ -84,6 +86,8 @@ pool.query(`
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
 require('./routes/ai')(app, pool);
+app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool));
+
 app.get('/', async (req, res) => {
   res.send({ "status": "ready" });
 });
