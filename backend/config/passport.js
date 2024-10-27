@@ -72,11 +72,11 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
         console.err("Error getting title", err);
       } else {
         for (let i=0; i<res.rows.length; i+=75) {
-          subRows = res.rows.splice(i,i+75);
-          console.log(subRows.map(
-            (row) => [row.title, row.start_time, row.end_time, row.location]
-          ))
-          console.log(`Hello $1`, ['dog'])
+      //    subRows = res.rows.splice(i,i+75);
+      //    console.log(subRows.map(
+      //      (row) => [row.title, row.start_time, row.end_time, row.location]
+      //    ))
+      //    console.log(`Hello $1`, ['dog'])
 
           //const embeds = await createEmbeddings(JSON.stringify(subRow)));
           //await pool.query(
@@ -84,7 +84,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
           //)
         }
         //const embed = await createEmbeddings(JSON.stringify(res.rows.slice(0,75)));
-        console.log(res.rows.slice(200,220).length)
+        //console.log(res.rows.slice(200,220).length)
       }
     })
   for (const event of events) {
@@ -146,6 +146,8 @@ module.exports = (pool) => {
       await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
             await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
 
+      // add accessToken to the user for the callback
+      user.accessToken=accessToken
       return done(null, user);
     } catch (error) {
       console.error('Google Calendar OAuth error:', error);
