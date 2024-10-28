@@ -2,10 +2,9 @@ const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
 
 module.exports = (app, pool) => {
-
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed } = req.body;
     const userId = req.user.userId;
 
     // Convert start_time and end_time to Date objects
@@ -21,18 +20,9 @@ module.exports = (app, pool) => {
       console.log(req.body)
       const embed = await createEmbeddings(JSON.stringify(req.body));
       const result = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
+        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, completed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false]
       )
-        .then(result => {
-        pool.query(`
-          UPDATE events
-          SET embedding = '${JSON.stringify(embed[0])}'
-          WHERE user_id='${userId}' AND title = '${title}' AND location='${location}' AND start_time='${startDate.toISOString()}' 
-          AND end_time='${endDate.toISOString()}';
-          `);
-          return result;
-        })
       res.status(201).json({ message: 'Event created', event: result.rows[0] });
     } catch (error) {
       console.error('Create event error:', error);
@@ -54,7 +44,7 @@ module.exports = (app, pool) => {
 
   // Update event route
   app.put('/events/:eventId', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed } = req.body;
     const userId = req.user.userId;
     const eventId = req.params.eventId;
 
@@ -75,10 +65,10 @@ module.exports = (app, pool) => {
         return res.status(404).json({ error: 'Event not found or you do not have permission to update this event' });
       }
 
-      // If the event exists and belongs to the user, update it
+      // If the event exists and belongs to the user, update it including completed status
       const updateResult = await pool.query(
-        'UPDATE events SET title = $1, description = $2, start_time = $3, end_time = $4, location = $5, frequency = $6, calendar = $7, time_zone = $8 WHERE id = $9 RETURNING *',
-        [title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, eventId]
+        'UPDATE events SET title = $1, description = $2, start_time = $3, end_time = $4, location = $5, frequency = $6, calendar = $7, time_zone = $8, completed = $9 WHERE id = $10 RETURNING *',
+        [title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false, eventId]
       );
       
       if (updateResult.rowCount > 0) {
@@ -88,6 +78,37 @@ module.exports = (app, pool) => {
       }
     } catch (error) {
       console.error('Update event error:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  // Update task completion status
+  app.put('/events/:eventId/complete', authenticateToken, async (req, res) => {
+    const { completed } = req.body;
+    const userId = req.user.userId;
+    const eventId = req.params.eventId;
+
+    try {
+      // Check if the event belongs to the authenticated user
+      const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
+      
+      if (checkResult.rows.length === 0) {
+        return res.status(404).json({ error: 'Task not found or you do not have permission to update this task' });
+      }
+
+      // Update only the completed status
+      const updateResult = await pool.query(
+        'UPDATE events SET completed = $1 WHERE id = $2 RETURNING *',
+        [completed, eventId]
+      );
+      
+      if (updateResult.rowCount > 0) {
+        res.json({ message: 'Task completion status updated successfully', event: updateResult.rows[0] });
+      } else {
+        res.status(500).json({ error: 'Failed to update task completion status' });
+      }
+    } catch (error) {
+      console.error('Update task completion error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });

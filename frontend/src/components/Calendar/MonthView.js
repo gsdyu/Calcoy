@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
 import Calendarapi from '@/components/Sidebar/CalendarFilter';
+import { Check } from 'lucide-react';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
   const { darkMode } = useTheme();
@@ -177,6 +178,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         })();
     
     const isAllDay = isAllDayEvent(event);
+    const isTask = event.calendar === 'Task';
+    const isCompleted = event.completed;
     const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   
     return (
@@ -184,13 +187,18 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         key={event.id}
         draggable
         onDragStart={(e) => onDragStart(e, event.id)}
-        className={`flex justify-between items-center text-xs mb-1 truncate cursor-pointer rounded-full py-1 px-2 
+        className={`
+          flex justify-between items-center
+          text-xs mb-1 truncate cursor-pointer
+          rounded-full py-1 px-2
+          ${isCompleted ? 'opacity-50' : ''}
           ${isAllDay 
             ? `${eventColor} text-white` 
             : `border border-${eventColor.replace('bg-', '')} bg-opacity-20 text-${eventColor.replace('bg-', '')}`
           }
           ${darkMode && !isAllDay ? `border-${eventColor.replace('bg-', '')}-400 text-${eventColor.replace('bg-', '')}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
+          ${isTask && isCompleted ? 'line-through' : ''}
         `}
         onClick={(e) => {
           e.stopPropagation();
@@ -198,10 +206,27 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         }}
       >
         <div className="flex items-center overflow-hidden">
-          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full ${eventColor} mr-1 flex-shrink-0`}></span>}
-          <span className="truncate">{event.title}</span>
+          {isTask ? (
+            <Check 
+              className={`w-3 h-3 mr-1 flex-shrink-0
+                ${isCompleted ? 'opacity-50' : ''} 
+                ${isAllDay 
+                  ? 'text-white' 
+                  : darkMode 
+                    ? `text-${eventColor}-400` 
+                    : `text-${eventColor}-500`
+                }`} 
+            />
+          ) : (
+            !isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`} />
+          )}
+          <span className={`truncate ${isTask && isCompleted ? 'line-through' : ''}`}>
+            {event.title}
+          </span>
         </div>
-        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${isCompleted ? 'opacity-50' : ''}`}>
+          {eventTime}
+        </span>
       </div>
     );
   };
@@ -210,7 +235,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    const calendarType = event.calendar || 'default';
+    const calendarType = 'default';
   
     // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
@@ -252,7 +277,15 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isWeekendDay = isWeekend(date);
       const isSelected = isSameDay(date, selectedDate);
 
-      const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date));
+      // Sort completed tasks to the end
+      const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date))
+        .sort((a, b) => {
+          if (a.calendar === 'Task' && b.calendar === 'Task') {
+            if (a.completed !== b.completed) return a.completed ? 1 : -1;
+          }
+          return 0;
+        });
+
       const allDayEvents = dayEvents.filter(isAllDayEvent);
       const regularEvents = dayEvents.filter(event => !isAllDayEvent(event));
       

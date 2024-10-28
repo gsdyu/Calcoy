@@ -54,7 +54,7 @@ pool.query(`
     password TEXT,  -- Set password to allow NULL for OAuth users
     profile_image VARCHAR(255),
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
-	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
+    preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
@@ -74,6 +74,7 @@ pool.query(`
       time_zone VARCHAR(50),
       embedding vector(128),
       CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
+      completed BOOLEAN DEFAULT false,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
   `).then(() => console.log("Events table is ready"))
