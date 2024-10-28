@@ -9,7 +9,8 @@ module.exports = (app, pool) => {
   })
   app.post('/ai', authenticateToken, async (req, res) => {
     try {
-      const userInput = req.body.message;
+      // gives embedding context of todays date
+      const userInput = req.body.message + `; Todays Date ${new Date()}`;
       const userId = req.user.userId;
       //const userId = req.user.userId;
       if (!userInput) {
@@ -21,7 +22,8 @@ module.exports = (app, pool) => {
       createEmbeddings(userInput)
         .then(embed => {
           pool.query(`
-          SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone
+          SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, 
+          embedding <-> '${JSON.stringify(embed[0])}' as correlation
           FROM events
           WHERE user_id=${userId}
           ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
