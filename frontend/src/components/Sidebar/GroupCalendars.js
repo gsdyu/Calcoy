@@ -5,10 +5,9 @@ import { Calendar, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 
-const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
+const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleChangeActiveCalendar}) => {
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
-  const [activeCalendar, setActiveCalendar] = useState(null); // Track the active calendar view
   
   const groupCalendars = [
     { id: 1, name: "Team Events", icon: "👥" },
@@ -16,13 +15,10 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
     { id: 3, name: "Project Deadlines", icon: "🏁" }
   ];
 
-  const handleAddCalendar = () => {
+  const handleOpenCalendar = () => {
     setIsCreateCalendarOpen(true);
   };
 
-  const handleOpenCalendar = (calendarId) => {
-    setActiveCalendar(calendarId); // Set the active calendar based on the clicked item
-  };
 
   const handleCloseCreateCalendarModal = () => {
     setIsCreateCalendarOpen(false);
@@ -41,14 +37,14 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
         {/* Main Calendar Button */}
         <button 
           className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center" 
-          onClick={() => setActiveCalendar(null)}
+          onClick={() => handleChangeActiveCalendar(null)}
         >
           <Calendar size={24} className="text-white" />
         </button>
         
         {/* Shared Calendar Button */}
         <button 
-          onClick={() => handleOpenCalendar(0)} // Set active view for Shared Calendar
+          onClick={() => handleChangeActiveCalendar(0)} // Set active view for Shared Calendar
           className={`w-12 h-12 rounded-full bg-green-600 flex items-center justify-center ${activeCalendar === 0 ? 'border-2 border-blue-500' : ''}`}
         >
           <Calendar size={24} className="text-white" />
@@ -60,7 +56,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
         {groupCalendars.map(calendar => (
           <button 
             key={calendar.id} 
-            onClick={() => handleOpenCalendar(calendar.id)} // Set the active calendar on click
+            onClick={() => handleChangeActiveCalendar(calendar.id)} // Set the active calendar on click
             className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center ${activeCalendar === calendar.id ? 'border-2 border-blue-500' : ''}`}
           >
             {calendar.icon}
@@ -70,7 +66,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
         {/* Add New Calendar Button */}
         <button 
           className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center mt-auto`} 
-          onClick={handleAddCalendar}
+          onClick={handleOpenCalendar}
         >
           <Plus size={24} />
         </button>
@@ -81,13 +77,6 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen }) => {
       )}
 
       {/* Main Content Area */}
-      <div className="p-4 flex-grow">
-        {activeCalendar === 0 && <div>Shared Calendar Content</div>}
-        {activeCalendar === 1 && <div>Team Events Content</div>}
-        {activeCalendar === 2 && <div>Family Calendar Content</div>}
-        {activeCalendar === 3 && <div>Project Deadlines Content</div>}
-        {activeCalendar === null && <div>Main Calendar View</div>}
-      </div>
     </div>
   );
 };

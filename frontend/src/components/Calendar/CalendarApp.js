@@ -22,6 +22,7 @@ const CalendarApp = () => {
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [activeCalendar, setActiveCalendar] = useState(null); // Track the active calendar view
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [shiftDirection, setShiftDirection] = useState(null);
@@ -46,6 +47,7 @@ const CalendarApp = () => {
   };
 
   const fetchEvents = async () => {
+    console.log(GroupCalendars.activeCalendar)
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
@@ -382,6 +384,10 @@ const CalendarApp = () => {
     setSelectedDate(date);
   };
 
+  const handleChangeActiveCalendar = (calendarId) => {
+    setActiveCalendar(calendarId); // Set the active calendar based on the clicked item
+  };
+
   return (
     <div className={`flex h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'}`}>
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -440,6 +446,8 @@ const CalendarApp = () => {
               mainCalendarDate={selectedDate || currentDate}
               events={events}
               onTaskComplete={handleTaskComplete}
+              activeCalendar={activeCalendar}
+              handleChangeActiveCalendar={handleChangeActiveCalendar}
             />
           )}
         </div>
@@ -449,6 +457,8 @@ const CalendarApp = () => {
           profileImage={profileImage}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
+          activeCalendar={activeCalendar}
+          handleChangeActiveCalendar={handleChangeActiveCalendar}
         />
       </div>
       {isEventDetailsOpen && (

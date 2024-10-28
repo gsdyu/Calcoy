@@ -2,13 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import PersonalCalendar from '@/components/Sidebar/PersonalCalendar';
+import TitleCalendar from '@/components/Sidebar/TitleCalendar';
 import CalendarFilter from '@/components/Sidebar/CalendarFilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 import CalendarButton from '@/components/Sidebar/CalendarButton';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete }) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar }) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -38,7 +38,10 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
   return (
     <div className={`w-60 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex flex-col relative transition-all duration-300 h-full`}>
       <div className="flex-grow overflow-hidden">
-        <PersonalCalendar />
+        <TitleCalendar 
+          activeCalendar={activeCalendar}
+          handleChangeActiveCalendar={handleChangeActiveCalendar}
+        />
         <MiniCalendar 
           onDateSelect={handleMiniCalendarDateSelect} 
           currentView={currentView} 
