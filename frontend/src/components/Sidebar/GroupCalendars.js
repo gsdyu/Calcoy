@@ -10,9 +10,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   
   const groupCalendars = [
-    { id: 1, name: "Team Events", icon: "👥" },
-    { id: 2, name: "Family Calendar", icon: "👪" },
-    { id: 3, name: "Project Deadlines", icon: "🏁" }
+
   ];
 
   const handleOpenCalendar = () => {
