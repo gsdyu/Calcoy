@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { FcGoogle } from 'react-icons/fc';
 import { FiCalendar } from 'react-icons/fi';
 import Googleapi from '@/components/API/Googleapi';
-import ICAL from 'ical.js'; // Import ical.js for browser-based ICS parsing
+import ICAL from 'ical.js';
 
 const CalendarPopup = ({ onClose }) => {
   const { darkMode } = useTheme();
@@ -14,6 +14,7 @@ const CalendarPopup = ({ onClose }) => {
   const [showCanvasInput, setShowCanvasInput] = useState(false);
   const [canvasUrl, setCanvasUrl] = useState('');
   const [events, setEvents] = useState([]);
+  const [errorMessage, setErrorMessage] = useState(''); // New state for error message
   const { handleGoogleCalendarAuth } = Googleapi();
 
   useEffect(() => {
@@ -33,23 +34,32 @@ const CalendarPopup = ({ onClose }) => {
   };
 
   const handleCanvasImport = async () => {
+    setErrorMessage(''); // Reset error message
     if (canvasUrl) {
       try {
-        const response = await fetch(canvasUrl);
-        if (!response.ok) throw new Error('Failed to fetch calendar URL');
+        const response = await fetch('http://localhost:5000/auth/proxy-fetch', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ url: canvasUrl })
+        });
 
-        const data = await response.text();
-        const parsedEvents = parseIcsData(data);
-        setEvents(parsedEvents);
-        console.log('Imported events:', parsedEvents);
-        
-        setCanvasUrl('');
-        setShowCanvasInput(false);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Failed to fetch calendar data: ${errorText}`);
+        }
+
+        const { message } = await response.json();
+        console.log("Import successful:", message);
+        window.location.href = '/calendar';
+
       } catch (error) {
-        console.error('Error importing events:', error);
+        setErrorMessage('URL is invalid'); // Display error message in red
       }
     } else {
-      console.error('Please enter a valid Canvas URL');
+      setErrorMessage('Please enter a valid Canvas URL');
     }
   };
 
@@ -89,6 +99,10 @@ const CalendarPopup = ({ onClose }) => {
         </div>
 
         <p className="mb-6 text-lg">Link your Calendar accounts to view events in your calendar.</p>
+
+        {errorMessage && (
+          <div className="text-red-500 mb-4">{errorMessage}</div> // Error message in red
+        )}
 
         <button
           onClick={handleGoogleCalendarAuth}

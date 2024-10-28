@@ -43,6 +43,7 @@ const getUserAccessToken = async (userId, pool) => {
     let result = await pool.query('SELECT access_token, refresh_token FROM users WHERE id = $1', [userId]);
     let accessToken = result.rows[0]?.access_token;
     const refreshToken = result.rows[0]?.refresh_token;
+    console.log( accessToken);
 
     // Test the access token validity
     const testResponse = await fetch(`https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=${accessToken}`);

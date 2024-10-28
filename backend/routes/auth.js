@@ -4,6 +4,8 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
+const ICAL = require('ical.js');
+
 const { authenticateToken } = require('../authMiddleware');
 
 module.exports = (app, pool) => {
@@ -82,65 +84,95 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       res.status(500).send('Internal server error');
     }
   }
-);
+)
+;
 
 // Google Auth Route for Importing Calendar Events
 app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
-    scope: [
-        'https://www.googleapis.com/auth/calendar.readonly',
-        'https://www.googleapis.com/auth/userinfo.email',
-        'https://www.googleapis.com/auth/userinfo.profile'
-      ],
-  }),
-  async (req, res) => {console.log("User authenticated:", req.user);}
+  scope: [
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile'
+    ],
+}),
+async (req, res) => {console.log("User authenticated:", req.user);}
 );
-  
-  // Google Auth Callback Route for Importing Calendar Events
-  app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
-  async (req, res) => {
-    try {
-        const accessToken = req.user.accessToken; 
-      
-      
-      res.redirect(`http://localhost:3000/calendar?token=${accessToken}`);
-    } catch (error) {
-      console.error('Callback error:', error);
-      res.status(500).send('Internal server error');
+
+// Google Auth Callback Route for Importing Calendar Events
+app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
+async (req, res) => {
+  try {
+      const accessToken = req.user.accessToken; 
+    
+    
+    res.redirect(`http://localhost:3000/calendar?token=${accessToken}`);
+  } catch (error) {
+    console.error('Callback error:', error);
+    res.status(500).send('Internal server error');
+  }
+});
+app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
+  const userId = req.user.userId; // Retrieve userId directly from the token
+  const { url } = req.body;
+
+  console.log("Received proxy-fetch request for user:", userId, "with URL:", url); // Debug log
+
+  if (!url) {
+    return res.status(400).json({ error: 'URL is required' });
+  }
+
+  try {
+    // Fetch the calendar data from the provided URL
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error('Failed to fetch data from the provided URL');
     }
-  });
-  
 
-  // Azure AD Authentication route
-  app.get('/auth/azure', (req, res) => {
-    const cryptoProvider = new msal.CryptoProvider();
+    const data = await response.text();
+    const jcalData = ICAL.parse(data);
+    const comp = new ICAL.Component(jcalData);
+    const vevents = comp.getAllSubcomponents('vevent');
 
-    cryptoProvider
-      .generatePkceCodes()
-      .then(({ verifier, challenge }) => {
-        req.session.codeVerifier = verifier;
+    const events = vevents.map(event => {
+      const vEvent = new ICAL.Event(event);
+      return {
+        title: vEvent.summary || 'No Title',
+        description: vEvent.description || '',
+        start_time: vEvent.startDate.toJSDate(),
+        end_time: vEvent.endDate.toJSDate(),
+        location: vEvent.location || '',
+        calendar: 'canvas',
+        time_zone: vEvent.startDate.zone.tzid || 'UTC',
+      };
+    });
 
-        const authCodeUrlParameters = {
-          scopes: ['openid', 'profile', 'email'],
-          redirectUri: 'http://localhost:5000/auth/azure/callback',
-          codeChallenge: challenge,
-          codeChallengeMethod: 'S256',
-        };
+    // Insert events into the database
+    const insertPromises = events.map(event =>
+      pool.query(
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT DO NOTHING`,
+        [
+          userId, // Directly use userId from the token
+          event.title,
+          event.description,
+          event.start_time,
+          event.end_time,
+          event.location,
+          event.calendar,
+          event.time_zone,
+        ]
+      )
+    );
 
-        pca
-          .getAuthCodeUrl(authCodeUrlParameters)
-          .then((response) => {
-            res.redirect(response);
-          })
-          .catch((error) => {
-            console.error('AuthCodeUrl Error:', error);
-            res.status(500).send('Error generating auth code URL');
-          });
-      })
-      .catch((error) => {
-        console.error('PKCE Code Generation Error:', error);
-        res.status(500).send('Error generating PKCE codes');
-      });
-  });
+    await Promise.all(insertPromises);
+    res.status(200).json({ message: 'Events imported successfully' });
+
+  } catch (error) {
+    console.error('Error in proxy fetch:', error);
+    res.status(500).json({ error: 'Error fetching data from the URL' });
+  }
+});
 
   // Azure AD Authentication callback route
   app.get('/auth/azure/callback', (req, res) => {
