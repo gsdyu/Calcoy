@@ -10,6 +10,7 @@ import { CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingDots from './LoadingDots';
+import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -18,6 +19,8 @@ const AiPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [eventDetails, setEventDetails] = useState([]);
   const [handledEvents, setHandledEvents] = useState({});
+  const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
+  const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
 
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
@@ -135,6 +138,7 @@ const AiPage = () => {
     const eventToConfirm = editedDetails || eventDetails.find(event => event.id === eventId);
 
     try {
+      showNotification(`Saving event...`);
       const response = await fetch('http://localhost:5000/events', {
         method: 'POST',
         headers: {
@@ -149,13 +153,15 @@ const AiPage = () => {
       }
 
       const result = await response.json();
+      showNotification(`Event saved successfully`);
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
       ]);
       setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
-      console.error('Error creating event:', error);
+      console.error('Error saving event:', error);
+      showNotification(`Failed to create event`)
       setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Error creating event.' }]);
     }
   };
@@ -163,6 +169,7 @@ const AiPage = () => {
   const handleDeny = (eventId) => {
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
+    showNotification("Event creation canceled")
   };
 
   useEffect(() => {
@@ -186,6 +193,12 @@ const AiPage = () => {
       handleSendMessage(e);
     }
   };
+
+  const showNotification = (message, action = '') => {
+    setNotification({ message, action, isVisible: true });
+    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
+  };
+
 
   return (
     <>
@@ -234,6 +247,12 @@ const AiPage = () => {
             <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
           </button>
         </form>
+        <NotificationSnackbar
+          message={notification.message}
+          action={notification.action}
+          isVisible={notification.isVisible}
+          onActionClick={() => {console.log('placeholder')}}
+        />
       </div>
     </>
   );
