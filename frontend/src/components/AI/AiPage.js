@@ -27,9 +27,6 @@ const AiPage = () => {
   };
 
   const handleEdit = async (eventId, editedDetails) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     try {
       // First, update the message in the messages state
       setMessages(prevMessages => 
@@ -135,9 +132,6 @@ const AiPage = () => {
   };
 
   const handleConfirm = async (eventId, editedDetails = null) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
     const eventToConfirm = editedDetails || eventDetails.find(event => event.id === eventId);
 
     try {
@@ -145,8 +139,8 @@ const AiPage = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(eventToConfirm),
       });
 
