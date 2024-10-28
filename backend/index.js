@@ -49,7 +49,6 @@ pool.query(`
     profile_image VARCHAR(255),
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
 	  preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
-
     two_factor_expires TIMESTAMPTZ
   );
 `).then(() => {
@@ -66,6 +65,7 @@ pool.query(`
       frequency VARCHAR(50),
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
+      completed BOOLEAN DEFAULT false,
       CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, start_time, end_time),
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
