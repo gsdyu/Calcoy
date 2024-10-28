@@ -355,13 +355,19 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                   <div className="w-full h-full p-1.5 flex flex-col pointer-events-auto">
                     <div className="flex items-center justify-between">
                       <div className="font-bold truncate">{event.title}</div>
-                      {isCrossingMidnight && isNextDay && (
+                      {isNextDay ? (
                         <span className={`text-[10px] ml-1 px-1 rounded
                           ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
                         `}>
                           Cont'd
                         </span>
-                      )}
+                      ) : isCrossingMidnight ? (
+                        <span className={`text-[10px] ml-1 px-1 rounded
+                          ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
+                        `}>
+                          Next day
+                        </span>
+                      ) : null}
                     </div>
                     <div className="text-xs">
                       {isNextDay ? (
@@ -369,7 +375,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                         `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
                       ) : isEventCrossingMidnight(event) ? (
                         // First day portion
-                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM (next day)`
+                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM`
                       ) : (
                         // Regular event
                         `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
