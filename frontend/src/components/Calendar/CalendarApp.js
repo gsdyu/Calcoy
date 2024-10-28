@@ -129,8 +129,11 @@ const CalendarApp = () => {
 
   // New function to handle task completion
   const handleTaskComplete = async (taskId, completed) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) return;
 
     try {
       const eventToUpdate = events.find(event => event.id === taskId);
@@ -145,8 +148,8 @@ const CalendarApp = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
         },
+        credentials: 'include',
         body: JSON.stringify(updatedEvent),
       });
 

@@ -74,7 +74,7 @@ pool.query(`
       time_zone VARCHAR(50),
       embedding vector(128),
       CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
-      completed BOOLEAN DEFAULT false,
+      completed BOOLEAN,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
   `).then(() => console.log("Events table is ready"))
