@@ -24,6 +24,7 @@ const GroupList = ({ onGroupSelect }) => {
       const response = await fetch('/api/servers/join', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         body: JSON.stringify({ serverId: group.id, userId: 1 }) // Replace with actual user ID
       });
       const data = await response.json();
