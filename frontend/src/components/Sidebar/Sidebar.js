@@ -48,7 +48,6 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
         />
         <CalendarFilter />
         <CalendarButton /> 
-        <Calendarapi />
         <Tasks 
           events={events}
           selectedDate={selectedDate || mainCalendarDate}
