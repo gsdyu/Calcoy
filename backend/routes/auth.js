@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
+const { createEmbeddings } = require('../ai/embeddings');
 const ICAL = require('ical.js');
 
 const { authenticateToken } = require('../authMiddleware');
@@ -141,17 +142,19 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
         start_time: vEvent.startDate.toJSDate(),
         end_time: vEvent.endDate.toJSDate(),
         location: vEvent.location || '',
-        calendar: 'canvas',
+        calendar: 'task',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
+        completed: true,
       };
     });
 
     // Insert events into the database
     const insertPromises = events.map(event =>
       pool.query(
-        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT DO NOTHING`,
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone, completed)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+         ON CONFLICT DO NOTHING
+         RETURNING *;`,
         [
           userId, // Directly use userId from the token
           event.title,
@@ -161,8 +164,37 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.location,
           event.calendar,
           event.time_zone,
+          event.completed,
         ]
-      )
+    ).then(async result => {
+       // checks for embedding on all events. can convert to function
+       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+       // callback events will always be given even if our calendar already has it stored
+       const row = result.rows;
+       console.log(row)
+       if (!row[0]) {
+         console.log('Import: Event already added')
+         return};
+       try {
+         const embed = await createEmbeddings(JSON.stringify(row)
+         ).then(embed_result => {
+           if (embed_result === null || embed_result === undefined) { 
+             console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+             return
+           }
+           console.log(embed_result.length)
+           console.log(row)
+           pool.query(`UPDATE events
+                       SET embedding = $6
+                       WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                       [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
+         }) 
+       } catch (error) {
+           if (error.status===402) {
+             console.log("Error: Out of tokens")
+           }
+         }
+    })
     );
 
     await Promise.all(insertPromises);

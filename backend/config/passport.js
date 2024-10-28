@@ -65,14 +65,23 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
     });
 
   // stores the callback events into our calendar
-  for (const event of events) {
-    await pool.query(
-      `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
-       ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING
-       RETURNING *;`, 
-      
-      [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.calendar, event.time_zone]
+    // Insert events into the database
+    const insertPromises = events.map(event =>
+      pool.query(
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT DO NOTHING
+         RETURNING *;`,
+        [
+          event.user_id, 
+          event.title,
+          event.description,
+          event.start_time,
+          event.end_time,
+          event.location,
+          event.calendar,
+          event.time_zone,
+        ]
     ).then(async result => {
        // checks for embedding on all events. can convert to function
        // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
@@ -80,18 +89,34 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
        const row = result.rows;
        console.log(row)
        if (!row[0]) {
+         console.log('Import: Event already added')
          return};
-       const embed = await createEmbeddings(JSON.stringify(row)
-       ).then(embed_result => {
-         console.log(row)
-         pool.query(`UPDATE events
-                     SET embedding = $6
-                     WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-                     [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
-       }) 
+       try {
+         const embed = await createEmbeddings(JSON.stringify(row)
+         ).then(embed_result => {
+           if (embed_result === null || embed_result === undefined) { 
+             console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+             return
+           }
+           console.log(embed_result.length)
+           console.log(row)
+           pool.query(`UPDATE events
+                       SET embedding = $6
+                       WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                       [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
+         }) 
+       } catch (error) {
+           if (error.status===402) {
+             console.log("Error: Out of tokens")
+           }
+         }
     })
-  }
+    );
+
+    await Promise.all(insertPromises);
+
   } catch (error) {
+
     console.error(`error: ${error}`)
   }
 };
