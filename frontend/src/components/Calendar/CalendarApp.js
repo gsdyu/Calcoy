@@ -163,9 +163,13 @@ const CalendarApp = () => {
         );
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         // Close the modal if the task was completed
+        // tempor commented out for sprint. dont think its meant to stay open yet if not 
+        /*
         if (completed) {
           handleCloseEventDetails();
         }
+        */
+        handleCloseEventDetails();
       } else {
         throw new Error('Failed to update task');
       }
