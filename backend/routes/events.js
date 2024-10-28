@@ -11,9 +11,8 @@ module.exports = (app, pool) => {
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
 
-    // Check if end time is after start time
-    if (endDate <= startDate) {
-      return res.status(400).json({ error: 'End time must be after start time' });
+    if (endDate < startDate) {
+      return res.status(400).json({ error: 'End time cannot be before start time' });
     }
 
     try {
@@ -52,9 +51,8 @@ module.exports = (app, pool) => {
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
 
-    // Check if end time is after start time
-    if (endDate <= startDate) {
-      return res.status(400).json({ error: 'End time must be after start time' });
+    if (endDate < startDate) {
+      return res.status(400).json({ error: 'End time must be before start time' });
     }
 
     try {

@@ -142,9 +142,9 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
         start_time: vEvent.startDate.toJSDate(),
         end_time: vEvent.endDate.toJSDate(),
         location: vEvent.location || '',
-        calendar: 'task',
+        calendar: 'Task',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
-        completed: true,
+        completed: null,
       };
     });
 
@@ -201,6 +201,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
     res.status(200).json({ message: 'Events imported successfully' });
 
   } catch (error) {
+    console.log('dog')
     console.error('Error in proxy fetch:', error);
     res.status(500).json({ error: 'Error fetching data from the URL' });
   }
