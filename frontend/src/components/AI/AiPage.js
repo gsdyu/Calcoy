@@ -11,6 +11,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingDots from './LoadingDots';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
+import AiPromptExamples from './StartPrompt';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -21,9 +22,19 @@ const AiPage = () => {
   const [handledEvents, setHandledEvents] = useState({});
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
+  const [showPrompts, setShowPrompts] = useState(true);
 
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
+
+  const handleExampleClick = (text) => {
+    setInput(text);
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
+    }
+  };
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
@@ -65,6 +76,8 @@ const AiPage = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input) console.error();
+
+    setShowPrompts(false);
   
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
@@ -204,7 +217,12 @@ const AiPage = () => {
     <>
       <div className={styles.container}>
         <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
-        <h2 className={styles.aisubheader}>How can I help you?</h2>
+
+        <AiPromptExamples 
+          onExampleClick={handleExampleClick}
+          visible={showPrompts && messages.length === 0}
+        />
+
         <div ref={chatWindowRef} className={styles.chatWindow}>
           {messages.map((msg, index) => (
             <div 

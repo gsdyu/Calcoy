@@ -4,16 +4,11 @@
       color: rgb(102, 144, 207);
       display: inline-flex;
       align-items: center;
+      margin-bottom: 10px;
   }
 
   .ailogo {
     margin-left: 8px;
-  }
-
-  .aisubheader {
-    font-size: 25px;
-    font-weight: 600;
-    margin-bottom: 10px;
   }
 
   @keyframes growFadeIn {
@@ -194,7 +189,7 @@
     justify-content: center;
     position: sticky;
     bottom: 0;
-    background-color: rgb(203, 208, 216);
+    background-color: rgb(215, 219, 224);
     border-radius: 35px;
     border: 2px solid rgb(185, 187, 189);
     padding: 5px;
@@ -213,7 +208,7 @@
   }
   
   .textarea {
-    background-color: rgb(203, 208, 216);
+    background-color: rgb(215, 219, 224);
     width: 90%;
     flex: 1;
     padding: 15px;
@@ -412,5 +407,3 @@
   color: #e77b7b;
 }
 
-
-  
