@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
-const SetUsername = () => {
+const Username = () => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const router = useRouter();
@@ -67,4 +67,4 @@ const SetUsername = () => {
   );
 };
 
-export default SetUsername;
+export default Username;
