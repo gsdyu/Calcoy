@@ -15,6 +15,7 @@ import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
 
+
 const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
@@ -30,6 +31,8 @@ const CalendarApp = () => {
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
+  const [itemColors, setItemColors] = useState({});
+  const [visibleItems, setVisibleItems] = useState({});
 
   useEffect(() => {
     const today = new Date();
@@ -45,6 +48,38 @@ const CalendarApp = () => {
     setNotification({ message, action, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
+
+    // New function to handle instant color changes
+    const handleColorChange = async (item, color) => {
+      // Update UI immediately
+      setItemColors(prevColors => ({ ...prevColors, [item]: color }));
+      
+      // Save to server in background
+      try {
+        const response = await fetch('http://localhost:5000/profile/preferences', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ 
+            preferences: {
+              visibility: visibleItems,
+              colors: { ...itemColors, [item]: color }
+            }
+          }),
+        });
+        
+        if (!response.ok) {
+          // If save fails, revert the change
+          setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
+          throw new Error('Failed to save color preference');
+        }
+      } catch (error) {
+        console.error('Error saving color preference:', error);
+        showNotification('Failed to save color preference');
+      }
+    };
 
   const fetchEvents = async () => {
     console.log(GroupCalendars.activeCalendar)
@@ -414,6 +449,7 @@ const CalendarApp = () => {
               shiftDirection={shiftDirection}
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
+              itemColors={itemColors}
             />
           )}
           {view === 'Week' && (
@@ -426,6 +462,7 @@ const CalendarApp = () => {
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
+              itemColors={itemColors}
             />
           )}
           {view === 'Day' && (
@@ -435,6 +472,7 @@ const CalendarApp = () => {
               onDateDoubleClick={handleAddEvent}
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
+              itemColors={itemColors}
             />
           )}
         </div>
@@ -452,6 +490,8 @@ const CalendarApp = () => {
               onTaskComplete={handleTaskComplete}
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
+              itemColors={itemColors}
+              onColorChange={handleColorChange}
             />
           )}
         </div>

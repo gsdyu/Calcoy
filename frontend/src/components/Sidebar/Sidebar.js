@@ -8,7 +8,7 @@ import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 import CalendarButton from '@/components/Sidebar/CalendarButton';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar }) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange}) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -49,7 +49,10 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
         />
-        <CalendarFilter />
+        <CalendarFilter 
+        onColorChange={onColorChange}
+        itemColors={itemColors}
+        />
         <CalendarButton /> 
         <Tasks 
           events={events}

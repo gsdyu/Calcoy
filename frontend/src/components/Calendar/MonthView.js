@@ -3,19 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
-import Calendarapi from '@/components/Sidebar/CalendarFilter';
 import { Check } from 'lucide-react';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
-  const [itemColors, setItemColors] = useState({}); 
-  const [error, setError] = useState(''); 
-  const [loading, setLoading] = useState(true);
-  const [visibleItems, setVisibleItems] = useState({}); 
 
   useEffect(() => {
     const calculateDimensions = () => {
@@ -97,57 +92,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(date);
     const firstDay = getFirstDayOfMonth(date);
     return Math.ceil((daysInMonth + firstDay) / 7);
-  };
-
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No token found. Please login.');
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch('http://localhost:5000/profile', {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-  
-        const data = await response.json();
-        setEmail(data.email);
-        setItemColors(data.preferences.colors || {
-          Personal: 'bg-blue-500',
-          Family: 'bg-orange-500',
-          Work: 'bg-purple-500',
-          Holidays: 'bg-red-500',
-        }); 
-        setVisibleItems(data.preferences.visibility || {});
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Error fetching profile. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchProfile();
-  }, []);
-
-  // Function to dynamically change the color of items
-  const changeItemColor = (calendarType, color) => {
-    setItemColors((prevColors) => ({
-      ...prevColors,
-      [calendarType]: color,
-    }));
   };
 
   const isAllDayEvent = (event) => {
