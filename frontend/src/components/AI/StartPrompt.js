@@ -8,8 +8,8 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
   if (!visible) return null;
 
   const [isBoxVisible, setIsBoxVisible] = useState([false, false]);
-  const [username, setUsername] = useState('');
   const [visiblePrompts, setVisiblePrompts] = useState([]);
+  const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(true);
 
   const createEventExamples = [
@@ -50,19 +50,26 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
         });
         const data = await response.json();
         setUsername(data.username);
-
         setLoading(false);
         
         setTimeout(() => setIsBoxVisible([true, false]), 200);
         setTimeout(() => setIsBoxVisible([true, true]), 600);
-
-        const allPrompts = [...createEventExamples, ...scheduleExamples];
-        allPrompts.forEach((_, index) => {
-          setTimeout(() => {
-            setVisiblePrompts((prev) => [...prev, index]);
-          }, 700 + index * 200);
-        });
         
+        const startDelay = 900;
+        const promptDelay = 200;
+
+        createEventExamples.forEach((_, index) => {
+          setTimeout(() => {
+            setVisiblePrompts(prev => [...prev, index]);
+          }, startDelay + (index * promptDelay));
+        });
+
+        scheduleExamples.forEach((_, index) => {
+          setTimeout(() => {
+            setVisiblePrompts(prev => [...prev, index + createEventExamples.length]);
+          }, startDelay + ((index + createEventExamples.length) * promptDelay));
+        });
+
       } catch (error) {
         console.error('Error fetching profile:', error);
         setLoading(false);
@@ -85,10 +92,9 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
       </h2>
       <div className="w-full max-w-4xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
           <div
-            className={`rounded-xl shadow-md p-6 transition-opacity duration-700 ${
-              isBoxVisible[0] ? "opacity-100" : "opacity-0"
+            className={`rounded-xl shadow-md p-6 transition-all duration-500 ${
+              isBoxVisible[0] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             } ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
           >
             <h3 className={`text-xl font-bold mb-5 text-center ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -99,16 +105,15 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
                 <button
                   key={index}
                   onClick={() => onExampleClick(example.text)}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-colors text-left group ${
-                    visiblePrompts.includes(index)
-                      ? "opacity-100 transition-opacity duration-700"
-                      : "opacity-0"
-                  } ${darkMode
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left group 
+                    transition-all duration-500 ease-out
+                    ${visiblePrompts.includes(index) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
+                    ${darkMode
                       ? 'border-gray-700 hover:border-gray-600 hover:bg-gray-700 text-gray-400 hover:text-gray-300'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-700'
-                  }`}
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-600 hover:text-gray-700'
+                    }`}
                 >
-                  <span>
+                  <span className="transition-transform duration-300 ease-in-out group-hover:scale-110">
                     {example.icon}
                   </span>
                   <span className="text-sm">
@@ -120,8 +125,8 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
           </div>
 
           <div
-            className={`rounded-xl shadow-md p-6 transition-opacity duration-700 ${
-              isBoxVisible[1] ? "opacity-100" : "opacity-0"
+            className={`rounded-xl shadow-md p-6 transition-all duration-500 ${
+              isBoxVisible[1] ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
             } ${darkMode ? 'bg-gray-800' : 'bg-white'}`}
           >
             <h3 className={`text-xl font-bold mb-5 text-center ${darkMode ? 'text-gray-200' : 'text-gray-700'}`}>
@@ -132,16 +137,15 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
                 <button
                   key={index + createEventExamples.length}
                   onClick={() => onExampleClick(example.text)}
-                  className={`w-full flex items-center gap-3 p-4 rounded-xl border transition-colors text-left group ${
-                    visiblePrompts.includes(index + createEventExamples.length)
-                      ? "opacity-100 transition-opacity duration-700"
-                      : "opacity-0"
-                  } ${darkMode
+                  className={`w-full flex items-center gap-3 p-4 rounded-xl border text-left group 
+                    transition-all duration-500 ease-out
+                    ${visiblePrompts.includes(index + createEventExamples.length) ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}
+                    ${darkMode
                       ? 'border-gray-700 hover:border-gray-600 hover:bg-gray-700 text-gray-400 hover:text-gray-300'
-                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 text-gray-600 hover:text-gray-700'
-                  }`}
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-100 text-gray-600 hover:text-gray-700'
+                    }`}
                 >
-                  <span>
+                  <span className="transition-transform duration-300 ease-in-out group-hover:scale-110">
                     {example.icon}
                   </span>
                   <span className="text-sm">
