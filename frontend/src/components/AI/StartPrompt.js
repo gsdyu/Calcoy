@@ -3,12 +3,14 @@ import { CalendarPlus, Calendar, Sparkles, Clock } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const AiPromptExamples = ({ onExampleClick, visible }) => {
-const { darkMode } = useTheme();
+  const { darkMode } = useTheme();
 
   if (!visible) return null;
 
   const [isBoxVisible, setIsBoxVisible] = useState([false, false]);
+  const [username, setUsername] = useState('');
   const [visiblePrompts, setVisiblePrompts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const createEventExamples = [
     {
@@ -37,24 +39,48 @@ const { darkMode } = useTheme();
   ];
 
   useEffect(() => {
-    setTimeout(() => setIsBoxVisible([true, false]), 200);
-    setTimeout(() => setIsBoxVisible([true, true]), 600);
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/profile', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          credentials: 'include',
+        });
+        const data = await response.json();
+        setUsername(data.username);
 
-    const allPrompts = [...createEventExamples, ...scheduleExamples];
-    allPrompts.forEach((_, index) => {
-      setTimeout(() => {
-        setVisiblePrompts((prev) => [...prev, index]);
-      }, 700 + index * 200);
-    });
+        setLoading(false);
+        
+        setTimeout(() => setIsBoxVisible([true, false]), 200);
+        setTimeout(() => setIsBoxVisible([true, true]), 600);
+
+        const allPrompts = [...createEventExamples, ...scheduleExamples];
+        allPrompts.forEach((_, index) => {
+          setTimeout(() => {
+            setVisiblePrompts((prev) => [...prev, index]);
+          }, 700 + index * 200);
+        });
+        
+      } catch (error) {
+        console.error('Error fetching profile:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchUserProfile();
   }, []);
+
+  if (loading) return null;
 
   return (
     <div className="w-full h-screen flex flex-col justify-center items-center">
       <Sparkles className="w-10 h-10 mb-5" ></Sparkles>
       <h2 className={`text-3xl font-bold mb-2 text-center ${darkMode ? 'text-gray-200' : 'text-blue-600'}`}>
-        How can I help you?
+        Hi {username}, how can I help you?
       </h2>
-      <h2 className={`text-xl font-semibold mb-10 text-center ${darkMode ? 'text-gray-500' : 'text-gray-600'} animate-fade-in-delay-1`}>
+      <h2 className={`text-xl font-semibold mb-10 text-center ${darkMode ? 'text-gray-500' : 'text-gray-600'}`}>
         Use one of the most common prompts below or use your own to begin
       </h2>
       <div className="w-full max-w-4xl mx-auto">
