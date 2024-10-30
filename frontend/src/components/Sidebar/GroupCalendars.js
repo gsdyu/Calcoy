@@ -10,7 +10,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [servers, setServers] = useState([]);
-
+  const [icon, setIcon] = useState(null); 
+  const [iconPreview, setIconPreview] = useState(null);
   // Fetch servers from the backend
   useEffect(() => {
     const fetchServers = async () => {
@@ -88,8 +89,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
           >
             <Avatar className="w-10 h-10">
               {server.image_url ? (
-                <AvatarImage 
-                  src={`http://localhost:5000${server.image_url}`} // Prepend server URL if needed
+                  <AvatarImage 
+                  src={`http://localhost:5000${server.image_url}`} 
                   alt={server.name} 
                   className="object-cover w-full h-full rounded-full" 
                   onError={(e) => { e.target.style.display = 'none'; }}
@@ -115,8 +116,10 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
       {isCreateCalendarOpen && (
         <CreateCalendarModal 
           onClose={handleCloseCreateCalendarModal} 
-          onNewServer={handleNewServer} // Pass function to update servers
-        />
+          setServers  = { setServers }
+          setIcon={setIcon}
+          setIconPreview={setIconPreview}
+          />
       )}
     </div>
   );

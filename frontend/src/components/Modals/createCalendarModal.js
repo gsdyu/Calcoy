@@ -4,13 +4,12 @@
 import { useTheme } from '@/contexts/ThemeContext';
 import React, { useState, useEffect } from 'react';
 
-const CreateCalendarModal = ({ onClose }) => {
+const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) => {
   const { darkMode } = useTheme();
   const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'link, 'server'
   const [userId, setUserId] = useState(null); 
-  const [servers, setServers] = useState([]);
-  // State for the invite link
-  const [inviteLink, setInviteLink] = useState(''); 
+   // State for the invite link
+  const [inviteLink, setInviteLink] = useState('');
 
   // State for server info
   const [serverInfo, setServerInfo] = useState({
@@ -43,6 +42,8 @@ const CreateCalendarModal = ({ onClose }) => {
       icon: file,
       iconPreview: file ? URL.createObjectURL(file) : null  
     }));
+    setIcon(file);  
+    setIconPreview(file ? URL.createObjectURL(file) : null);
   };
 
   const handleServerChange = (e) => {
@@ -51,7 +52,7 @@ const CreateCalendarModal = ({ onClose }) => {
   };
   const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-  
+    
     const formData = new FormData();
     formData.append('serverName', serverInfo.serverName);
     formData.append('userId', userId);
@@ -78,7 +79,8 @@ const CreateCalendarModal = ({ onClose }) => {
       const data = await response.json();
       console.log('Server created:', data.server);
   
-       setServers(prevServers => [...prevServers, data.server]);
+      // Call handleNewServer with the new server data including image_url
+      setServers((prevServers) => [...prevServers, data.server]);
   
       if (onClose) onClose();
   
@@ -86,6 +88,7 @@ const CreateCalendarModal = ({ onClose }) => {
       console.error('Error submitting server info:', error);
     }
   };
+  
   const handleJoinServer = () => {
     if (!inviteLink) {
       alert('Please enter a valid invite link to join a server.');
@@ -99,7 +102,7 @@ const CreateCalendarModal = ({ onClose }) => {
       console.warn('onClose is not defined or not a function.');
     }
   };
-
+ 
   const handleGenerateInviteLink = () => {
     // Generates new invite link for the current calendar
     const newInviteLink = `https://timewise.com/invite/${Math.random().toString(36).substr(2, 8)}`;
@@ -139,7 +142,7 @@ const CreateCalendarModal = ({ onClose }) => {
             <X size={20} />
           </button>
         </div>
-
+      
         {currentTab === 'main' && (
           <div className="space-y-4">
             <button
