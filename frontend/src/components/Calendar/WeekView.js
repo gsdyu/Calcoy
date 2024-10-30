@@ -5,11 +5,33 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 
-const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate }) => {
+const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+
+  // Helper function for getting event colors
+  const getEventColor = (event) => {
+    const calendarType = event.calendar || 'default';
+    
+    return itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500';
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500';
+            case 'Work':
+              return 'bg-purple-500';
+            case 'Task':
+              return 'bg-gray-400';
+            default:
+              return 'bg-blue-500';
+          }
+        })();
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -212,7 +234,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
   };
 
   const renderAllDayEvent = (event) => {
-    const eventColor = event.color || 'blue';
+    const eventColor = getEventColor(event).replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
 
@@ -227,7 +249,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            bg-${eventColor}-500 text-white
+            bg-${eventColor} text-white
             hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
@@ -261,7 +283,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          bg-${eventColor}-500 text-white
+          bg-${eventColor} text-white
           hover:bg-opacity-80 transition-colors duration-200 z-40
           mr-5
         `}
@@ -503,7 +525,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   const isCrossingMidnight = isEventCrossingMidnight(event);
 
                   if (event.calendar === 'Task') {
-                    const eventColor = event.color || 'blue';
+                    const eventColor = getEventColor(event).replace('bg-', '');
                     const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                     return (
                       <div
@@ -514,7 +536,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                           absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
                           rounded
                           ${event.completed ? 'opacity-50' : ''}
-                          border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+                          border border-${eventColor} bg-${eventColor} bg-opacity-20 text-${eventColor}
                           ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
                           hover:bg-opacity-30 transition-colors duration-200
                           ${event.completed ? 'line-through' : ''}
@@ -556,14 +578,16 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     (end.getMinutes() - start.getMinutes()) :
                     ((endHours - start.getHours()) * 60) + 
                     (end.getMinutes() - start.getMinutes());
-
+                  
+                  const eventColor = getEventColor(event).replace('bg-', '');
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
                       draggable
                       onDragStart={(e) => onDragStart(e, event.id)}
-                      className={`absolute bg-blue-500 bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-blue-600 pointer-events-auto
-                        ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}
+                      className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer 
+                        hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
+                        ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}
                     >
