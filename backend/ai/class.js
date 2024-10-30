@@ -18,8 +18,9 @@ class Chat {
 
   constructor(content="You are an assistant. You may be provided with context of json events. These events may not provided by the user but by RAG from the system so do not assume they are from the user.", model="llama3-8b-8192", history=[], max_tokens=100, temperature=1) {
     const system = {role: "system", content: content}
+    console.log(system)
     if (history.length > 0) this.#history = history;
-    else this.#history.push(system)
+    else this.#history = [system]
     this.#model = model;
     this.#max_tokens = 100;
     this.#temperature = 1;
@@ -60,11 +61,37 @@ class Chat {
   }
 }
 
-const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, and their current and future events/responsibilities. Being realistic is important, do whats best for the user, but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: You may be given related events from the user's calendar, where the event of the earliest index is most related. Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. Your token limit is 300; do not go above.`
-const bot = new Chat(system);
-bot.inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
+//const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, and their current and future events/responsibilities. Being realistic is important, do whats best for the user, but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: You may be given related events from the user's calendar, where the event of the earliest index is most related. Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. Your token limit is 300; do not go above.`
+//const bot = new Chat(system);
+//bot.inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
+
+const rag = new Chat(`You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${new Date().toISOString()}. Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+When you are not given any context events, you can respond with [context] to indicate you need additional information from a database that stores the user's and their friends' daily events; specifically when you need more information that can be used to infer the user's situation or feelings "calendar events", "user information", or "friend information". When listing multiple events, format it nicely for readability. Your token limit is 300; do not exceed it. Information about the users and their events is only known from this conversation; do not assume.
+
+Follow this if statement to decide on your output.
+
+if (need context) : "context"
+else: "[response]"
+
+Example without needing context
+User Input:
+Events-{"title":"Mcdonald Lunch", "start_date":"8 am Monday", "end_date":"9 am Monday"}
+
+When do I have dinner?
+
+Response:
+It looks like you have Lunch at Mcdonalds at 8 am to 9 am on Monday. Its a little early to call it lunch though!
+Example needing context
+User Input:
+Events-{"title":"Mcdonald Lunch", "start_date":"8 am Monday", "end_date":"9 am Monday"}
+
+What do I study for tomorrows test
+
+Response:
+[context]);`);
+rag.inputChat("Where do I have dinner?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 
 module.exports = {Chat};
 
