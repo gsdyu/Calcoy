@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const CreateCalendarModal = ({ onClose }) => {
   const { darkMode } = useTheme();
-  const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'server'
+  const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'link, 'server'
 
   // State for the invite link
   const [inviteLink, setInviteLink] = useState(''); 
@@ -16,7 +16,10 @@ const CreateCalendarModal = ({ onClose }) => {
     serverName: '',
     description: ''
   });
-
+  const handleIconChange = (e) => {
+    const file = e.target.files[0];
+    setServerInfo(prev => ({ ...prev, icon: file }));
+  };
   const handleServerChange = (e) => {
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
@@ -95,13 +98,20 @@ const CreateCalendarModal = ({ onClose }) => {
               Invite My Friends
             </button>
             <button
-              onClick={() => setCurrentTab('server')}
+              onClick={() => setCurrentTab('join')}
               className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Join A Server
             </button>
+            <button
+              onClick={() => setCurrentTab('server')}
+              className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Create a Server
+            </button>
           </div>
         )}
+
 
         {currentTab === 'invite' && (
           <form>
@@ -182,7 +192,7 @@ const CreateCalendarModal = ({ onClose }) => {
           </form>
         )}  
 
-        {currentTab === 'server' && (
+        {currentTab === 'join' && (
           <form onSubmit={handleSubmitServerInfo}>
             {/* Updated placeholder for server name */}
             <input
@@ -210,12 +220,49 @@ const CreateCalendarModal = ({ onClose }) => {
                 Join Calendar {/* Renamed submit button */}
               </button>
             </div>
+    
           </form>
+        )}
+                {currentTab === 'server' && (
+          <form onSubmit={handleSubmitServerInfo}>
+            <p className="text-center mb-4">Give your new server a personality with a name and an icon. You can always change it later.</p>
+            <div className="flex flex-col items-center mb-4">
+              <label className="w-20 h-20 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer mb-2">
+                <input type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
+                <span className="text-white">UPLOAD</span>
+              </label>
+            </div>
+            <label htmlFor="serverName" className="block text-gray-400 mb-1">SERVER NAME</label>
+            <input
+              type="text"
+              id="serverName"
+              name="serverName"
+              placeholder="Enter server name"
+              value={serverInfo.serverName}
+              onChange={handleServerChange}
+              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+              required
+            />
+            <div className="text-xs text-gray-500 mb-4">
+              By creating a server, you agree to Timewise's Community Guidelines.
+            </div>
+            <div className="flex justify-between">
+              <button type="button" onClick={() => setCurrentTab('main')} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
+                Back
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Create
+              </button>
+              </div>
+              </form>
         )}
       </div>
     </div>
-  );
-};
+      );
+    };
+ 
+ 
+ 
 
 // added by seore 10/23/24
 const handleSubmitServerInfo = async (e) => {
