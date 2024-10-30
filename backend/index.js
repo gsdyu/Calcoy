@@ -40,6 +40,7 @@ app.use(session({
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
 require('./routes/profile')(app, pool);
+require('./routes/servers')(app, pool);
 
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
 	.then(() => {console.log("Vector extension ready")})
@@ -57,6 +58,18 @@ pool.query(`
     preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
+  );
+    CREATE TABLE IF NOT EXISTS servers (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      image_url VARCHAR(255),
+      created_by INT REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS user_servers (
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+      PRIMARY KEY (user_id, server_id)
   );
 `).then(() => {
   console.log("Users table is ready");

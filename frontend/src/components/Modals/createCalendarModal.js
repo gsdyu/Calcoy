@@ -1,40 +1,91 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+ import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import React, { useState, useEffect } from 'react';
 
 const CreateCalendarModal = ({ onClose }) => {
   const { darkMode } = useTheme();
   const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'link, 'server'
-
+  const [userId, setUserId] = useState(null); 
+  const [servers, setServers] = useState([]);
   // State for the invite link
   const [inviteLink, setInviteLink] = useState(''); 
 
   // State for server info
   const [serverInfo, setServerInfo] = useState({
     serverName: '',
-    description: ''
+    description: '',
+    icon: null,
+    iconPreview: null 
   });
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/user', {
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('Failed to fetch user ID');
+        
+        const data = await response.json();
+        setUserId(data.userId);
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
+      } finally {
+       }
+    };
+    fetchUserId();
+  }, []);
   const handleIconChange = (e) => {
     const file = e.target.files[0];
-    setServerInfo(prev => ({ ...prev, icon: file }));
+    setServerInfo(prev => ({
+      ...prev,
+      icon: file,
+      iconPreview: file ? URL.createObjectURL(file) : null  
+    }));
   };
+
   const handleServerChange = (e) => {
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleInviteLinkChange = (e) => {
-    setInviteLink(e.target.value);
-  };
-
-  const handleSubmitServerInfo = (e) => {
+  const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-    console.log('Server info submitted:', serverInfo);
-    if (onClose) onClose(); // Close modal after submitting server info & safely calls onClose if provided
+  
+    const formData = new FormData();
+    formData.append('serverName', serverInfo.serverName);
+    formData.append('userId', userId);
+    if (serverInfo.icon) formData.append('icon', serverInfo.icon);
+  
+    if (!userId) {
+      console.error("User ID is missing");
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/servers/create', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error response from server:', text);
+        return;
+      }
+  
+      const data = await response.json();
+      console.log('Server created:', data.server);
+  
+       setServers(prevServers => [...prevServers, data.server]);
+  
+      if (onClose) onClose();
+  
+    } catch (error) {
+      console.error('Error submitting server info:', error);
+    }
   };
-
   const handleJoinServer = () => {
     if (!inviteLink) {
       alert('Please enter a valid invite link to join a server.');
@@ -223,13 +274,18 @@ const CreateCalendarModal = ({ onClose }) => {
     
           </form>
         )}
-                {currentTab === 'server' && (
+        {currentTab === 'server' && (
           <form onSubmit={handleSubmitServerInfo}>
             <p className="text-center mb-4">Give your new server a personality with a name and an icon. You can always change it later.</p>
             <div className="flex flex-col items-center mb-4">
-              <label className="w-20 h-20 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer mb-2">
+              {/* Updated to show preview if iconPreview exists */}
+              <label className="w-20 h-20 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer mb-2 relative overflow-hidden">
                 <input type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
-                <span className="text-white">UPLOAD</span>
+                {serverInfo.iconPreview ? (
+                  <img src={serverInfo.iconPreview} alt="Icon preview" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <span className="text-white">UPLOAD</span>
+                )}
               </label>
             </div>
             <label htmlFor="serverName" className="block text-gray-400 mb-1">SERVER NAME</label>
@@ -253,8 +309,8 @@ const CreateCalendarModal = ({ onClose }) => {
               <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
                 Create
               </button>
-              </div>
-              </form>
+            </div>
+          </form>
         )}
       </div>
     </div>
