@@ -1,6 +1,8 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname,"../.env") });
+const { createEmbeddings } = require('../ai/embeddings');
+
 // if running wiht index.js, you do not need to import .env.local here; does in index
 //require ('dotenv').config({path:'../../.env.local'})
 
@@ -58,21 +60,41 @@ class Gemini_Agent {
 //inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
 
-const rag = new Gemini_Agent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${new Date().toISOString()}. Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+const jsonFormat = {
+  "type": "CreateEvent",
+	"title": "",
+	"description": "",
+	"start_time": "<event start time>",
+	"end_time": "<event end time>",
+	"location": "<event location, just put N/A if none are given>",
+	"frequency": "<event frequency, default is Do not Repeat >",
+	"calendar": "<which calendar the event is for, default is Personal unless given>",
+	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+	"date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
+  };
+
+const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const rag = new Gemini_Agent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+
+Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
+___
+Context:
 
 When you are not given any context events, you can respond with 
-[context] 
 to indicate you need additional information from a database that stores the user's and their friends' daily events; specifically when you need more information that can be used to infer the user's situation or feelings "calendar events", "user information", or "friend information". 
 You can specify context further by adding additional keywords like so
-[*keyword* context]
+{type: context, time: [*keyword*]}
+where the [*keyword*] is a placeholder to describing the time range.
 The keywords available-
 time: specify the most relevant timeframe for this query.
 [*time* context]
 *time* is general and is replaced by three timeframe, 1. anytime, 2. near, 3. past, 4. future. near consider a close distance rather than an event before or after
-[anytime context]|
-[near context]|
-[past context]|
-[future context]|
+{"type": "context", "time": "anytime"}
+{"type": "context", "time": "near"}
+{"type": "context", "time": "future"}
+{"type": "context", "time": "past"}
 Decide on using one of these
 
 When listing multiple events, format it nicely for readability. Your token limit is 300; do not exceed it. Information about the users and their events is only known from this conversation; do not assume.
@@ -102,7 +124,7 @@ Events-{"title":"Mcdonald Lunch", "start_date":"8 am Monday", "end_date":"9 am M
 What do I study for tomorrows test
 
 Response:
-[near context]);
+{"type": "context", "time": "near'}
 ---
 User Input:
 Events-{}
@@ -110,7 +132,7 @@ Events-{}
 How many times have I hung out with my friends?
 
 Response:
-[anytime context]);
+{"type": "context", "time": "anytime"}
 ---
 User Input:
 Events-{}
@@ -118,7 +140,7 @@ Events-{}
 I have a problem
 
 Response:
-[near context]);
+{"type": "context", "time": "near"}
 ---
 User Input:
 Events-{}
@@ -126,7 +148,7 @@ Events-{}
 should I go to costco
 
 Response:
-[near or future context]);
+{type: context, time: 'near'}
 ---
 Depending on the current conversation history, the same question can differ in requiring context
 ---
@@ -137,12 +159,23 @@ Example of conversation history requiring more context with same question
 Example of conversation history not requiring more context with same question
 ---
 [{role: user, content: "I need help studying for my test"}, {role: model, content: "context"}, {role: user, content: "Events - {Title: 'Trig test', Start_time: 'Friday 6 am', Description: 'Pythagorean, word problems'}}, {role: model, content: '*insert tip here*'}, {role: model, content:'Do you have any insight for me'}"}]
----
+___
+
+CreateEvent:
+
+ When asked to create new events, you will output only a JSON object with nothing else in the following format: ${JSON.stringify(jsonFormat, null, 2)}.If the end time is not specified, fill it in with the start time.
+Do not remove any attributes. Leave blank if unknown but try to answer with these suggestions.
+Always add a brief description and the fact that this event is created by ai. This description is not a continued conversation, just a description
+The current date is ${currentTime} and the timezone is ${currentTimezone}. 
+You can respond normally when not specifically ask to create a new event.
+
+
 `
 );
+
 // test stuff
-let user1 = "It it halloween yet? ";
-let user4 = "How many days till christmas? "
+let user1 = "Add Mcdonalds on next Saturday for me at 9 am";
+let user4 = "Mark wants to hang out at Mcdonalds next Saturday"
 let user2 = "Where am I? ";
 let user3 = "I need help ";
 (async () => {
