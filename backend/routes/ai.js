@@ -58,6 +58,7 @@ module.exports = (app, pool) => {
                       location: response.location || '',
                       frequency: response.frequency || '',
                       calendar: response.calendar || '',
+                      allDay: response.allDay || false,
                       time_zone: response.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
                     });
 
