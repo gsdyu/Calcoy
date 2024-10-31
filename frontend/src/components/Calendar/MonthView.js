@@ -97,9 +97,15 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const isAllDayEvent = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
-           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
-           isSameDay(startDate, endDate);
+    
+    // Check if event starts at midnight (00:00)
+    const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+    
+    // Check if event ends at midnight of the next day
+    const nextDay = new Date(startDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
   const renderEventCompact = (event) => {
