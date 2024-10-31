@@ -3,19 +3,14 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
-import Calendarapi from '@/components/Sidebar/CalendarFilter';
 import { Check } from 'lucide-react';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
-  const [itemColors, setItemColors] = useState({}); 
-  const [error, setError] = useState(''); 
-  const [loading, setLoading] = useState(true);
-  const [visibleItems, setVisibleItems] = useState({}); 
 
   useEffect(() => {
     const calculateDimensions = () => {
@@ -99,83 +94,39 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return Math.ceil((daysInMonth + firstDay) / 7);
   };
 
-  const [email, setEmail] = useState("");
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        setError('No token found. Please login.');
-        setLoading(false);
-        return;
-      }
-      try {
-        const response = await fetch('http://localhost:5000/profile', {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-        
-        });
-  
-        if (!response.ok) {
-          throw new Error('Failed to fetch profile');
-        }
-  
-        const data = await response.json();
-        setEmail(data.email);
-        setItemColors(data.preferences.colors || {
-          Personal: 'bg-blue-500',
-          Family: 'bg-orange-500',
-          Work: 'bg-purple-500',
-          Holidays: 'bg-red-500',
-        }); 
-        setVisibleItems(data.preferences.visibility || {});
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        setError('Error fetching profile. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-  
-    fetchProfile();
-  }, []);
-
-  // Function to dynamically change the color of items
-  const changeItemColor = (calendarType, color) => {
-    setItemColors((prevColors) => ({
-      ...prevColors,
-      [calendarType]: color,
-    }));
-  };
-
   const isAllDayEvent = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
-           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
-           isSameDay(startDate, endDate);
+    
+    // Check if event starts at midnight (00:00)
+    const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+    
+    // Check if event ends at midnight of the next day
+    const nextDay = new Date(startDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
   const renderEventCompact = (event) => {
     const calendarType = event.calendar || 'default';
   
-    // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500'; 
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500'; 
-            case 'Work':
-              return 'bg-purple-500'; 
-            default:
-              return 'bg-gray-400'; 
-          }
-        })();
+    ? itemColors[calendarType]
+    : (() => {
+        switch (calendarType) {
+          case 'Task':
+            return itemColors?.tasks || 'bg-red-500';  
+          case 'Personal':
+            return itemColors?.email || 'bg-blue-500'; 
+          case 'Family':
+            return itemColors?.familyBirthday || 'bg-orange-500'; 
+          case 'Work':
+            return 'bg-purple-500'; 
+          default:
+            return 'bg-gray-400'; 
+        }
+      })();
     
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
@@ -239,19 +190,21 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   
     // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500'; 
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500'; 
-            case 'Work':
-              return 'bg-purple-500'; 
-            default:
-              return 'bg-gray-400'; 
-          }
-        })();
+  ? itemColors[calendarType]
+  : (() => {
+      switch (calendarType) {
+        case 'Task':
+          return itemColors?.tasks || 'bg-red-500';  
+        case 'Personal':
+          return itemColors?.email || 'bg-blue-500'; 
+        case 'Family':
+          return itemColors?.familyBirthday || 'bg-orange-500'; 
+        case 'Work':
+          return 'bg-purple-500'; 
+        default:
+          return 'bg-gray-400'; 
+      }
+    })();
     const days = [];
     let dayCounter = 1;
     let nextMonthCounter = 1;

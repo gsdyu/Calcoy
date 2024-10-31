@@ -5,11 +5,33 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
 
-const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, itemColors }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+
+  // Add helper function for getting event colors
+  const getEventColor = (event) => {
+    const calendarType = event.calendar || 'default';
+    
+    return itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500';
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500';
+            case 'Work':
+              return 'bg-purple-500';
+            case 'Task':
+              return 'bg-gray-400';
+            default:
+              return 'bg-blue-500';
+          }
+        })();
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -52,11 +74,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const isAllDayEvent = (event) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
-           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
-           startDate.getDate() === endDate.getDate() &&
-           startDate.getMonth() === endDate.getMonth() &&
-           startDate.getFullYear() === endDate.getFullYear();
+    
+    // Check if event starts at midnight (00:00)
+    const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+    
+    // Check if event ends at midnight of the next day
+    const nextDay = new Date(startDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
   const getEventStyle = (event, isNextDay = false) => {
@@ -132,7 +158,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   ` : '';
 
   const renderAllDayEvent = (event) => {
-    const eventColor = event.color || 'blue';
+    const eventColor = getEventColor(event).replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
 
@@ -145,7 +171,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            bg-${eventColor}-500 text-white
+            bg-${eventColor} text-white
             hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
@@ -174,7 +200,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          bg-${eventColor}-500 text-white
+          bg-${eventColor} text-white
           hover:bg-opacity-80 transition-colors duration-200 z-40
           mr-5
         `}
@@ -303,7 +329,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             ))}
             {timedEvents.map(event => {
               if (event.calendar === 'Task') {
-                const eventColor = event.color || 'blue';
+                const eventColor = getEventColor(event).replace('bg-', '');
                 const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 return (
                   <div
@@ -312,7 +338,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                       absolute text-xs overflow-hidden cursor-pointer
                       rounded py-1 px-2
                       ${event.completed ? 'opacity-50' : ''}
-                      border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700
+                      border border-${eventColor} bg-${eventColor} bg-opacity-20 text-${eventColor}
                       ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
                       hover:bg-opacity-30 transition-colors duration-200
                       ${event.completed ? 'line-through' : ''}
@@ -343,12 +369,13 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               const end = new Date(event.end_time);
               const isCrossingMidnight = isEventCrossingMidnight(event);
               const isNextDay = start.getDate() !== currentDate.getDate();
+              const eventColor = getEventColor(event).replace('bg-', '');
 
               return (
                 <div
                   key={event.id}
-                  className={`absolute bg-blue-500 bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-blue-600
-                   ${darkMode ? 'text-blue-300' : 'text-blue-700'}`}
+                  className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor}
+                   ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
                   style={getEventStyle(event, isNextDay)}
                   onClick={(e) => handleEventClick(event, e)}
                 >

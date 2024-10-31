@@ -22,7 +22,7 @@ const CalendarApp = () => {
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [activeCalendar, setActiveCalendar] = useState(null); // Track the active calendar view
+  const [activeCalendar, setActiveCalendar] = useState(null);
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
   const [shiftDirection, setShiftDirection] = useState(null);
@@ -30,6 +30,50 @@ const CalendarApp = () => {
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
+  const [itemColors, setItemColors] = useState({});
+  const [visibleItems, setVisibleItems] = useState({});
+  const [preferencesLoading, setPreferencesLoading] = useState(true);
+
+  // New useEffect for loading preferences at app initialization
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const check = await fetch('http://localhost:5000/auth/check', {
+          credentials: 'include',
+        });
+        if (!check.ok) {
+          console.error('No token found. Please login.');
+          setPreferencesLoading(false);
+          return;
+        }
+
+        const response = await fetch('http://localhost:5000/profile', {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch profile');
+        }
+
+        const data = await response.json();
+        if (data.preferences?.colors) {
+          setItemColors(data.preferences.colors);
+        }
+        if (data.preferences?.visibility) {
+          setVisibleItems(data.preferences.visibility);
+        }
+      } catch (error) {
+        console.error('Error fetching preferences:', error);
+      } finally {
+        setPreferencesLoading(false);
+      }
+    };
+
+    fetchPreferences();
+  }, []);
 
   useEffect(() => {
     const today = new Date();
@@ -46,8 +90,38 @@ const CalendarApp = () => {
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
 
+  const handleColorChange = async (item, color) => {
+    // Update UI immediately
+    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
+    
+    // Save to server in background
+    try {
+      const response = await fetch('http://localhost:5000/profile/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          preferences: {
+            visibility: visibleItems,
+            colors: { ...itemColors, [item]: color }
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        // If save fails, revert the change
+        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
+        throw new Error('Failed to save color preference');
+      }
+    } catch (error) {
+      console.error('Error saving color preference:', error);
+      showNotification('Failed to save color preference');
+    }
+  };
+
   const fetchEvents = async () => {
-    console.log(GroupCalendars.activeCalendar)
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
@@ -73,7 +147,6 @@ const CalendarApp = () => {
           };
         });
         setEvents(formattedEvents);
-        console.log('Fetched events:', formattedEvents);
       } else {
         throw new Error('Failed to fetch events');
       }
@@ -129,9 +202,8 @@ const CalendarApp = () => {
     setSelectedEvent(null);
   };
 
-  // New function to handle task completion
+  // handle task completion
   const handleTaskComplete = async (taskId, completed) => {
-
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
@@ -162,13 +234,6 @@ const CalendarApp = () => {
           )
         );
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
-        // Close the modal if the task was completed
-        // tempor commented out for sprint. dont think its meant to stay open yet if not 
-        /*
-        if (completed) {
-          handleCloseEventDetails();
-        }
-        */
         handleCloseEventDetails();
       } else {
         throw new Error('Failed to update task');
@@ -222,7 +287,6 @@ const CalendarApp = () => {
           }
         });
   
-        console.log(`${isTask ? 'Task' : 'Event'} saved successfully:`, formattedEvent);
         setIsAddingEvent(false);
         setSelectedEvent(null);
         showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
@@ -248,8 +312,6 @@ const CalendarApp = () => {
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
-        headers: {
-        },
         credentials: 'include',
       });
 
@@ -257,7 +319,6 @@ const CalendarApp = () => {
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
         setIsEventDetailsOpen(false);
         setSelectedEvent(null);
-        console.log(`${isTask ? 'Task' : 'Event'} deleted successfully`);
         showNotification(`${isTask ? 'Task' : 'Event'} deleted successfully`, 'Undo');
       } else {
         throw new Error(`Failed to delete ${isTask ? 'task' : 'event'}`);
@@ -315,13 +376,12 @@ const CalendarApp = () => {
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include', 
+        credentials: 'include',
         body: JSON.stringify(updatedEvent),
       });
 
       if (response.ok) {
         const savedEvent = await response.json();
-        console.log(`${isTask ? 'Task' : 'Event'} updated successfully:`, savedEvent);
         showNotification(`${isTask ? 'Task' : 'Event'} updated`, 'Undo');
       } else {
         throw new Error(`Failed to update ${isTask ? 'task' : 'event'}`);
@@ -335,10 +395,10 @@ const CalendarApp = () => {
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {
-    const check = await fetch('http://localhost:5000/auth/check', {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials: 'include',
+      });
+      if (!check.ok) return;
 
       const isTask = lastUpdatedEvent.calendar === 'Task';
 
@@ -389,7 +449,7 @@ const CalendarApp = () => {
   };
 
   const handleChangeActiveCalendar = (calendarId) => {
-    setActiveCalendar(calendarId); // Set the active calendar based on the clicked item
+    setActiveCalendar(calendarId);
   };
 
   return (
@@ -414,6 +474,7 @@ const CalendarApp = () => {
               shiftDirection={shiftDirection}
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
+              itemColors={itemColors}
             />
           )}
           {view === 'Week' && (
@@ -426,6 +487,7 @@ const CalendarApp = () => {
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
+              itemColors={itemColors}
             />
           )}
           {view === 'Day' && (
@@ -435,13 +497,14 @@ const CalendarApp = () => {
               onDateDoubleClick={handleAddEvent}
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
+              itemColors={itemColors}
             />
           )}
         </div>
       </div>
       <div className="flex">
         <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
-          {isSidebarOpen && (
+          {isSidebarOpen && !preferencesLoading && (
             <Sidebar 
               onDateSelect={handleMiniCalendarDateSelect}
               currentView={view}
@@ -452,6 +515,8 @@ const CalendarApp = () => {
               onTaskComplete={handleTaskComplete}
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
+              itemColors={itemColors}
+              onColorChange={handleColorChange}
             />
           )}
         </div>
