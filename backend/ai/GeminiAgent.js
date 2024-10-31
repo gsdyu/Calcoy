@@ -54,6 +54,19 @@ class Gemini_Agent {
 
 }
 
+ function handleContext(request) {
+  if (typeof request === "string") {
+    try {
+    json_request = JSON.parse(json_input)
+    } catch (error) {
+      console.error("Error: Invalid Json string", error);
+      return;
+    }
+  } else json_request = request;
+  // placeholder
+  return json_request
+}
+
 //const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, and their current and future events/responsibilities. Being realistic is important, do whats best for the user, but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: You may be given related events from the user's calendar, where the event of the earliest index is most related. Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. Your token limit is 300; do not go above.`
 //const bot = new Chat(system);
 //bot.inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
@@ -176,15 +189,9 @@ You can respond normally when not specifically ask to create a new event.
 );
 
 // test stuff
-let user1 = "Add Mcdonalds on next Saturday for me at 9 am";
-let user4 = "Mark wants to hang out at Mcdonalds next Saturday"
-let user2 = "Where am I? ";
 let user3 = "I need help ";
 (async () => {
-  rag.inputChat(user1).then(value=>console.log(user1,value)).catch(reason=>console.log(reason));
-  rag.inputChat(user2).then(value=>console.log(user2,value)).catch(reason=>console.log(reason));
-  rag.inputChat(user3).then(value=>console.log(user3,value)).catch(reason=>console.log(reason));
-  rag.inputChat(user4).then(value=>console.log(user4,value)).catch(reason=>console.log(reason));
+  rag.inputChat(user3).then(value=>(console.log(handleContext(JSON.parse(value))))).catch(reason=>console.log(reason));
 
 })();
 
