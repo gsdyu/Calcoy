@@ -26,7 +26,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             case 'Work':
               return 'bg-purple-500';
             case 'Task':
-              return 'bg-gray-400';
+              return itemColors?.tasks || 'bg-red-500';
             default:
               return 'bg-blue-500';
           }
