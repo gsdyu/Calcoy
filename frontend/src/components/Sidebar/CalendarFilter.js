@@ -9,15 +9,13 @@ const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-
 const CalendarFilter = ({ onColorChange, itemColors }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showDetails, setShowDetails] = useState(false);
+  const [showMyCalendars, setShowMyCalendars] = useState(true);
+  const [showOtherCalendars, setShowOtherCalendars] = useState(true);
   const [popupVisible, setPopupVisible] = useState({});
   const [visibleItems, setVisibleItems] = useState({});
-
-  const familyBirthday = 'Family';
-  const birthdays = 'Birthdays';
-  const holidays = 'Holidays in United States';
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -43,6 +41,7 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
 
         const data = await response.json();
         setEmail(data.email);
+        setUsername(data.username || 'My Calendar');
         setVisibleItems(data.preferences.visibility || {});
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -104,84 +103,78 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
     return <p>Loading...</p>;
   }
 
+  const renderCalendarItem = (key, label, color, showEyeIcon = true) => (
+    <div
+      key={key}
+      className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
+        visibleItems[key] ? '' : 'opacity-50'
+      }`}
+      onClick={(e) => {
+        e.preventDefault();
+        toggleVisibility(key, e);
+      }}
+      onContextMenu={(e) => togglePopup(key, e)}
+    >
+      <div className="flex items-center">
+        <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors?.[key] || 'bg-gray-400'}`}></div>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{label}</p>
+      </div>
+      {showEyeIcon && (
+        <button
+          className="p-2 hover:bg-gray-500/20 rounded"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleVisibility(key, e);
+          }}
+        >
+          {visibleItems[key] ? <FiEye /> : <FiEyeOff />}
+        </button>
+      )}
+      {popupVisible[key] && (
+        <ColorPicker item={key} colors={colorOptions} onSelectColor={changeColor} />
+      )}
+    </div>
+  );
+
   return (
-    <div className={`p-4 border-t relative ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}>
-      <div
-        className="flex items-center justify-between cursor-pointer"
-        onClick={() => setShowDetails(!showDetails)}
-      >
-        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          {email}
-        </p>
-        {showDetails ? (
-          <FiChevronUp className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-        ) : (
-          <FiChevronDown className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
+    <div className={`p-4 space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      {/* My Calendars Section */}
+      <div className="space-y-2">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setShowMyCalendars(!showMyCalendars)}
+        >
+          <h3 className="font-medium">My calendars</h3>
+          {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
+        </div>
+        
+        {showMyCalendars && (
+          <div className="space-y-1 pl-2">
+            {renderCalendarItem('email', username, itemColors?.email || 'bg-blue-500')}
+            {renderCalendarItem('tasks', 'Tasks', 'bg-red-500')}
+            {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
+            {renderCalendarItem('family', 'Family', 'bg-gray-400')}
+          </div>
         )}
       </div>
 
-      {showDetails && (
-        <div className="mt-2">
-          {/* Email */}
-          <div
-            className={`flex items-center justify-between mb-2 p-2 rounded transition-all duration-200 relative ${
-              visibleItems.email ? '' : 'opacity-50'
-            }`}
-            onClick={() => toggleVisibility('email')}
-            onContextMenu={(e) => togglePopup('email', e)}
-          >
-            <div className="flex items-center">
-              <div className={`w-3 h-3 rounded-full mr-2 ${itemColors?.email || 'bg-blue-500'}`}></div>
-              <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
-            </div>
-            <button
-              className="p-2 hover:bg-gray-500/20 rounded"
-              onClick={(e) => {
-                e.stopPropagation();
-                toggleVisibility('email', e);
-              }}
-            >
-              {visibleItems.email ? <FiEye /> : <FiEyeOff />}
-            </button>
-            {popupVisible.email && (
-              <ColorPicker item="email" colors={colorOptions} onSelectColor={changeColor} />
-            )}
-          </div>
-
-          {/* Family, Birthdays, and Holidays */}
-          {[
-            { key: 'familyBirthday', label: familyBirthday },
-            { key: 'birthdays', label: birthdays },
-            { key: 'holidays', label: holidays }
-          ].map(({ key, label }) => (
-            <div
-              key={key}
-              className={`flex items-center justify-between mb-2 p-2 rounded transition-all duration-200 relative ${
-                visibleItems[key] ? '' : 'opacity-50'
-              }`}
-              onClick={() => toggleVisibility(key)}
-              onContextMenu={(e) => togglePopup(key, e)}
-            >
-              <div className="flex items-center">
-                <div className={`w-3 h-3 rounded-full mr-2 ${itemColors?.[key] || 'bg-gray-400'}`}></div>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{label}</p>
-              </div>
-              <button
-                className="p-2 hover:bg-gray-500/20 rounded"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  toggleVisibility(key, e);
-                }}
-              >
-                {visibleItems[key] ? <FiEye /> : <FiEyeOff />}
-              </button>
-              {popupVisible[key] && (
-                <ColorPicker item={key} colors={colorOptions} onSelectColor={changeColor} />
-              )}
-            </div>
-          ))}
+      {/* Other Calendars Section */}
+      <div className="space-y-2">
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => setShowOtherCalendars(!showOtherCalendars)}
+        >
+          <h3 className="font-medium">Other calendars</h3>
+          {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
         </div>
-      )}
+        
+        {showOtherCalendars && (
+          <div className="space-y-1 pl-2">
+            {renderCalendarItem('google', email, 'bg-blue-500')}
+            {renderCalendarItem('holidays', 'Holidays in United States', 'bg-yellow-500')}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
