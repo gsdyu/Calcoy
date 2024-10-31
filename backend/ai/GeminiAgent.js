@@ -6,7 +6,7 @@ require('dotenv').config({ path: path.join(__dirname,"../.env") });
 
 
 
-class Chat {
+class Gemini_Agent {
   #genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   #client
   //parameters for groq
@@ -58,7 +58,7 @@ class Chat {
 //inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
 
-const rag = new Chat(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${new Date().toISOString()}. Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+const rag = new Gemini_Agent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${new Date().toISOString()}. Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
 
 When you are not given any context events, you can respond with 
 [context] 
@@ -153,7 +153,7 @@ let user3 = "I need help ";
 
 })();
 
-module.exports = {Chat};
+module.exports = {Gemini_Agent};
 
 
 

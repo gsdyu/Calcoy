@@ -1,5 +1,6 @@
 const { authenticateToken } = require('../authMiddleware');
 const { inputChat, initChat, clearChat, giveContext } = require('../ai/chat');
+const { GeminiAgent } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
 
 module.exports = (app, pool) => {
@@ -44,7 +45,6 @@ module.exports = (app, pool) => {
               giveContext(JSON.stringify(formattedContext));
               const response = inputChat(userInput, userId)
                 .then(response => {
-                  //optional console.log to show groq llm response. the formatting of the 
                   //response here is currently more accurate syntax-wise than displayed on 
                   //frontend chatbot. Oct 13, 24
 
