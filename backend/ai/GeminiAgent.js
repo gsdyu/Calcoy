@@ -163,6 +163,8 @@ ___
 
 CreateEvent:
 
+// this part is just placeholder for CreateEvent prompt. feel free to replace
+
  When asked to create new events, you will output only a JSON object with nothing else in the following format: ${JSON.stringify(jsonFormat, null, 2)}.If the end time is not specified, fill it in with the start time.
 Do not remove any attributes. Leave blank if unknown but try to answer with these suggestions.
 Always add a brief description and the fact that this event is created by ai. This description is not a continued conversation, just a description
