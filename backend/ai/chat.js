@@ -36,8 +36,6 @@ async function inputChat(input, user_Id) {
 	const result = await pool.query('SELECT * FROM users WHERE id = $1', [user_Id]);
 	const user = result.rows[0];
 
-	const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-
   if (history.length === 2) {
     history.push({role: "user", content: `'${user.username}': `+input});
   } else {
@@ -68,14 +66,14 @@ async function inputChat(input, user_Id) {
 	}
   
 	const body = {
-	  title: eventDetails.title,
+	  title: eventDetails.title || "(No title)",
 	  description: eventDetails.description || '',
 	  start_time: startDateTime.toISOString(),
 	  end_time: endDateTime.toISOString(),
 	  location: eventDetails.location || '',
-	  frequency: eventDetails.frequency,
-	  calendar: eventDetails.calendar,
-	  allDay: eventDetails.allDay,
+	  frequency: eventDetails.frequency || "Does not repeat",
+	  calendar: eventDetails.calendar || "Personal",
+	  allDay: eventDetails.allDay || false,
 	  time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	};
 
