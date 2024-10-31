@@ -9,7 +9,7 @@ import { CirclePlus } from 'lucide-react';
 import { CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
-import LoadingDots from './LoadingDots';
+import LoadingCircle from './LoadingCircle';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
 
@@ -256,7 +256,7 @@ const AiPage = () => {
                 <Sparkles size={16} className={styles.botIcon} />
               </div>
               <div className={styles.messageContent}>
-                <LoadingDots />
+                <LoadingCircle />
               </div>
             </div>
           )}
