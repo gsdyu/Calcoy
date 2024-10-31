@@ -75,6 +75,7 @@ async function inputChat(input, user_Id) {
 	  location: eventDetails.location || '',
 	  frequency: eventDetails.frequency,
 	  calendar: eventDetails.calendar,
+	  allDay: eventDetails.allDay,
 	  time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	};
 
@@ -109,6 +110,7 @@ const jsonFormat = {
 	"location": "<event location, just put N/A if none are given>",
 	"frequency": "<how many times the event should be scheduled, default is Do not Repeat but the choices (Do not Repeat, Daily, Weekly, Monthly, Yearly)>",
 	"calendar": "<which calendar the event is for, default is Personal but the choices (Personal, Work, Family)>",
+	"allDay": "is the event all day? boolean (true, false)",
 	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
 	"date": "<date scheduled>"
   };
@@ -127,7 +129,7 @@ and their current and future events/responsibilities.
 	 - Always include all fields, using "N/A" or defaults for missing information
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
-	 - Never include explanatory text before or after the JSON
+	 - Never include explanatory text or information before or after the JSON
 	 - Always verify the JSON is complete with all closing brackets
 
 	2. FOR ALL OTHER QUERIES:
@@ -149,6 +151,7 @@ Example event creation response:
   "location": "Conference Room A",
   "frequency": "Weekly",
   "calendar": "Work",
+  "allDay": false,
   "time_zone": "${currentTimezone}"
 }
 
