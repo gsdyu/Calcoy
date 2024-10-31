@@ -151,7 +151,7 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
         {showMyCalendars && (
           <div className="space-y-1 pl-2">
             {renderCalendarItem('email', username, itemColors?.email || 'bg-blue-500')}
-            {renderCalendarItem('tasks', 'Tasks', 'bg-red-500')}
+            {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
             {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
             {renderCalendarItem('family', 'Family', 'bg-gray-400')}
           </div>

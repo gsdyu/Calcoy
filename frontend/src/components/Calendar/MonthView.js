@@ -111,21 +111,22 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const renderEventCompact = (event) => {
     const calendarType = event.calendar || 'default';
   
-    // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500'; 
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500'; 
-            case 'Work':
-              return 'bg-purple-500'; 
-            default:
-              return 'bg-gray-400'; 
-          }
-        })();
+    ? itemColors[calendarType]
+    : (() => {
+        switch (calendarType) {
+          case 'Task':
+            return itemColors?.tasks || 'bg-red-500';  
+          case 'Personal':
+            return itemColors?.email || 'bg-blue-500'; 
+          case 'Family':
+            return itemColors?.familyBirthday || 'bg-orange-500'; 
+          case 'Work':
+            return 'bg-purple-500'; 
+          default:
+            return 'bg-gray-400'; 
+        }
+      })();
     
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
@@ -189,19 +190,21 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   
     // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500'; 
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500'; 
-            case 'Work':
-              return 'bg-purple-500'; 
-            default:
-              return 'bg-gray-400'; 
-          }
-        })();
+  ? itemColors[calendarType]
+  : (() => {
+      switch (calendarType) {
+        case 'Task':
+          return itemColors?.tasks || 'bg-red-500';  
+        case 'Personal':
+          return itemColors?.email || 'bg-blue-500'; 
+        case 'Family':
+          return itemColors?.familyBirthday || 'bg-orange-500'; 
+        case 'Work':
+          return 'bg-purple-500'; 
+        default:
+          return 'bg-gray-400'; 
+      }
+    })();
     const days = [];
     let dayCounter = 1;
     let nextMonthCounter = 1;
