@@ -1,17 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Calendar, Plus, ChevronRight, ChevronLeft, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleChangeActiveCalendar }) => {
+const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, handleChangeActiveCalendar }) => {
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [servers, setServers] = useState([]);
   const [icon, setIcon] = useState(null); 
   const [iconPreview, setIconPreview] = useState(null);
+  const [hoveredServer, setHoveredServer] = useState(null); // State to track hovered server
+  
   // Fetch servers from the backend
   useEffect(() => {
     const fetchServers = async () => {
@@ -82,26 +84,51 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
 
         {/* Servers (Group Calendars) */}
         {servers.map((server) => (
-          <button 
-            key={server.id} 
-            onClick={() => handleChangeActiveCalendar(server.id)} 
-            className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center ${activeCalendar === server.id ? 'border-2 border-blue-500' : ''}`}
-          >
-            <Avatar className="w-10 h-10">
-              {server.image_url ? (
+          <div key={server.id} className="relative" onMouseEnter={() => setHoveredServer(server.id)} onMouseLeave={() => setHoveredServer(null)}>
+            <button 
+              onClick={() => handleChangeActiveCalendar(server.id)} 
+              className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center relative`}
+            >
+              <Avatar className="w-10 h-10">
+                {server.image_url ? (
                   <AvatarImage 
-                  src={`http://localhost:5000${server.image_url}`} 
-                  alt={server.name} 
-                  className="object-cover w-full h-full rounded-full" 
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              ) : (
-                <AvatarFallback>
-                  {getInitials(server.name)}
-                </AvatarFallback>
-              )}
-            </Avatar>
-          </button>
+                    src={`http://localhost:5000${server.image_url}`} 
+                    alt={server.name} 
+                    className="object-cover w-full h-full rounded-full" 
+                    onError={(e) => { e.target.style.display = 'none'; }}
+                  />
+                ) : (
+                  <AvatarFallback>
+                    {getInitials(server.name)}
+                  </AvatarFallback>
+                )}
+              </Avatar>
+
+              {/* Right Border Effect */}
+              <div
+                className={`absolute right-0 top-1/2 transform -translate-y-1/2 transition-all duration-200 origin-center ${
+                  activeCalendar === server.id
+                    ? 'bg-white w-1 h-full scale-y-100' 
+                    : hoveredServer === server.id
+                    ? 'bg-white w-1 h-4 scale-y-125' 
+                    : 'w-0 h-1'  
+                }`}
+              />
+            </button>
+
+            {/* Tooltip on Hover */}
+            {hoveredServer === server.id && (
+              <div className="absolute -left-full top-1/2 transform -translate-x-full -translate-y-1/2 p-2 bg-gray-800 text-white rounded-lg shadow-lg flex items-center space-x-2" style={{ minWidth: '150px' }}>
+                {/* Tooltip Pointer */}
+                <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
+                  <div className="w-2 h-2 bg-gray-800 transform rotate-45" />
+                </div>
+                <div>
+                  <div className="font-semibold">{server.name}</div>
+                </div>
+              </div>
+            )}
+          </div>
         ))}
 
         {/* Add New Calendar Button */}
@@ -116,10 +143,10 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, handleCh
       {isCreateCalendarOpen && (
         <CreateCalendarModal 
           onClose={handleCloseCreateCalendarModal} 
-          setServers  = { setServers }
+          setServers={setServers}
           setIcon={setIcon}
           setIconPreview={setIconPreview}
-          />
+        />
       )}
     </div>
   );
