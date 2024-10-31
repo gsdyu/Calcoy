@@ -75,6 +75,7 @@ const AiPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
+    if (!input.trim()) return;
     if (!input) console.error();
 
     setShowPrompts(false);
