@@ -229,22 +229,34 @@ const AiPage = () => {
               key={index} 
               className={`${styles.message} ${msg.sender === 'user' ? (darkMode ? styles.userDark : styles.user) : (darkMode ? styles.botDark : styles.bot)}`}
             >
-              {msg.text}
-              {msg.eventDetails && (
-                <EventDetailsBox
-                  eventDetails={msg.eventDetails}
-                  onConfirm={handleConfirm}
-                  onDeny={handleDeny}
-                  onEdit={handleEdit}
-                  isHandled={handledEvents[msg.eventDetails.id]}
-                  darkMode={darkMode}
-                />
+              {msg.sender === 'bot' && (
+                <div className={`${styles.botIconContainer} ${darkMode ? styles.botIconContainerDark : ''}`}>
+                  <Sparkles size={16} className={styles.botIcon} />
+                </div>
               )}
+              <div className={styles.messageContent}>
+                {msg.text}
+                {msg.eventDetails && (
+                  <EventDetailsBox
+                    eventDetails={msg.eventDetails}
+                    onConfirm={handleConfirm}
+                    onDeny={handleDeny}
+                    onEdit={handleEdit}
+                    isHandled={handledEvents[msg.eventDetails.id]}
+                    darkMode={darkMode}
+                  />
+                )}
+              </div>
             </div>
           ))}
           {isLoading && (
             <div className={`${styles.message} ${darkMode ? styles.botDark : styles.bot}`}>
-              <LoadingDots />
+              <div className={`${styles.botIconContainer} ${darkMode ? styles.botIconContainerDark : ''}`}>
+                <Sparkles size={16} className={styles.botIcon} />
+              </div>
+              <div className={styles.messageContent}>
+                <LoadingDots />
+              </div>
             </div>
           )}
         </div>
