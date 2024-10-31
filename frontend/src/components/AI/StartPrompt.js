@@ -11,6 +11,7 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
   const [visiblePrompts, setVisiblePrompts] = useState([]);
   const [username, setUsername] = useState('');
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState('');
 
   const createEventExamples = [
     {
@@ -38,6 +39,17 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
     }
   ];
 
+  const getTimeOfDayGreeting = () => {
+    const currentHour = new Date().getHours();
+    if (currentHour < 12) {
+      return 'Good morning';
+    } else if (currentHour < 18) {
+      return 'Good afternoon';
+    } else {
+      return 'Good evening';
+    }
+  };
+
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -51,6 +63,8 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
         const data = await response.json();
         setUsername(data.username);
         setLoading(false);
+
+        setGreeting(getTimeOfDayGreeting());
         
         setTimeout(() => setIsBoxVisible([true, false]), 200);
         setTimeout(() => setIsBoxVisible([true, true]), 600);
@@ -85,9 +99,9 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
     <div className="w-full h-screen flex flex-col justify-center items-center">
       <Sparkles className="w-10 h-10 mb-5" ></Sparkles>
       <h2 className={`text-3xl font-bold mb-2 text-center ${darkMode ? 'text-gray-200' : 'text-blue-600'}`}>
-        Hi {username}, how can I help you?
+        {greeting}, {username}, how can I help you?
       </h2>
-      <h2 className={`text-xl font-semibold mb-10 text-center ${darkMode ? 'text-gray-500' : 'text-gray-600'}`}>
+      <h2 className={`text-xl font-semibold mb-20 text-center ${darkMode ? 'text-gray-500' : 'text-gray-600'}`}>
         Use one of the most common prompts below or use your own to begin
       </h2>
       <div className="w-full max-w-4xl mx-auto">
