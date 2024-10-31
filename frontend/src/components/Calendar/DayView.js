@@ -26,7 +26,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             case 'Work':
               return 'bg-purple-500';
             case 'Task':
-              return 'bg-gray-400';
+              return itemColors?.tasks || 'bg-red-500';
             default:
               return 'bg-blue-500';
           }
