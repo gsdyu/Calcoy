@@ -171,13 +171,14 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         eventData = {
           title: newTask.title.trim() || "(No title)",
           start_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate()).toISOString(),
-          end_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate(), 23, 59, 59).toISOString(),
+          end_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate() + 1).toISOString(), // Only change is here: added + 1
           location: '',
           frequency: newTask.frequency,
           calendar: 'Task',
           allDay: true,
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         };
+      
       } else {
         // Task with specific time
         const [hours, minutes] = newTask.time.split(':');
@@ -201,7 +202,9 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
       
       if (newEvent.allDay) {
         startDateTime = new Date(`${newEvent.date}T00:00:00`);
-        endDateTime = new Date(`${newEvent.date}T23:59:59`);
+        const nextDay = new Date(startDateTime);
+        nextDay.setDate(nextDay.getDate() + 1);
+        endDateTime = nextDay;
       } else {
         startDateTime = new Date(`${newEvent.date}T${newEvent.startTime}`);
         endDateTime = new Date(`${newEvent.date}T${newEvent.endTime}`);
