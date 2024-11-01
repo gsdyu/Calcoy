@@ -17,7 +17,6 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
   };
 
-  // Updated to match MonthView's all-day event check (12am-12am)
   const isAllDayEvent = (event) => {
     if (!event?.start_time || !event?.end_time) return false;
     

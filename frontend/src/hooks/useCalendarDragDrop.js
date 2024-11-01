@@ -1,4 +1,3 @@
-// hooks/useCalendarDragDrop.js
 import { useState } from 'react';
 
 export const useCalendarDragDrop = ({ 
@@ -6,19 +5,43 @@ export const useCalendarDragDrop = ({
   darkMode = false,
   view = 'month',
   cellHeight = 60,
+  emptyImage
 }) => {
   const [draggedEvent, setDraggedEvent] = useState(null);
   const [dragOverColumn, setDragOverColumn] = useState(null);
   const [dropPreview, setDropPreview] = useState(null);  
 
-  const handleDragStart = (e, event) => {  // Changed to accept full event
+  const getTimePosition = (y, dayElement) => {
+    if (!dayElement || view !== 'week') return null;
+    
+    const rect = dayElement.getBoundingClientRect();
+    const timeGridOffset = dayElement.closest('.time-grid-container')?.getBoundingClientRect()?.top || rect.top;
+    const headerOffset = 40; // Height of the header
+    
+    // Calculate relative Y considering the time grid offset and header
+    const relativeY = y - timeGridOffset - headerOffset;
+    
+    // Using cellHeight (60px) per hour
+    const totalMinutes = Math.round((relativeY / cellHeight) * 60);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = Math.round((totalMinutes % 60) / 15) * 15; // Snap to 15-min intervals
+    
+    // Clamp hours between 0 and 23
+    return {
+      hours: Math.max(0, Math.min(hours, 23)),
+      minutes: Math.max(0, Math.min(minutes, 59))
+    };
+  };
+
+  const handleDragStart = (e, event) => {
     setDraggedEvent(event);
     
-    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId: event.id }));
+    e.dataTransfer.setData('text/plain', JSON.stringify({ 
+      eventId: event.id,
+      isAllDay: event.isAllDay
+    }));
     e.currentTarget.style.opacity = '0.4';
-    // Use empty image to hide the drag ghost
-    const emptyImage = new Image();
-    emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+    
     e.dataTransfer.setDragImage(emptyImage, 0, 0);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -26,11 +49,35 @@ export const useCalendarDragDrop = ({
   const handleDragOver = (e, columnIndex, date) => {
     e.preventDefault();
     
-    if (draggedEvent) {
+    if (!draggedEvent) return;
+
+    if (view === 'week' && !draggedEvent.isAllDay) {
+      const timePosition = getTimePosition(e.clientY, e.currentTarget);
+      if (timePosition) {
+        const { hours, minutes } = timePosition;
+        const newDate = new Date(date);
+        newDate.setHours(hours, minutes);
+
+        // Preserve event duration
+        const duration = draggedEvent.duration || 
+          (new Date(draggedEvent.end_time) - new Date(draggedEvent.start_time)) / (1000 * 60);
+
+        let endDate = new Date(newDate);
+        endDate.setMinutes(endDate.getMinutes() + duration);
+
+        setDropPreview({
+          ...draggedEvent,
+          start_time: newDate.toISOString(),
+          end_time: endDate.toISOString(),
+          columnIndex
+        });
+      }
+    } else {
+      // Month view or all-day event behavior
       setDropPreview({
         ...draggedEvent,
-        day: columnIndex,
-        date: date
+        date: date,
+        columnIndex
       });
     }
     
@@ -59,13 +106,23 @@ export const useCalendarDragDrop = ({
 
   const handleDrop = (e, date, hour = null) => {
     e.preventDefault();
-    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const { eventId, isAllDay } = JSON.parse(e.dataTransfer.getData('text/plain'));
     
     const dropTarget = e.currentTarget;
     dropTarget.style.backgroundColor = '';
     
     let newDate = new Date(date);
-    if (hour !== null) {
+
+    if (view === 'week' && !isAllDay) {
+      const timePosition = getTimePosition(e.clientY, e.currentTarget);
+      if (timePosition) {
+        const { hours, minutes } = timePosition;
+        newDate.setHours(hours, minutes);
+      } else if (hour !== null) {
+        newDate.setHours(hour);
+      }
+    } else if (hour !== null) {
+      // For month view or all-day events, use provided hour if available
       newDate.setHours(hour);
     }
     
@@ -84,14 +141,12 @@ export const useCalendarDragDrop = ({
     setDropPreview(null);
   };
 
-  // Props for draggable elements
-  const getDragHandleProps = (event) => ({  // Changed to accept full event
+  const getDragHandleProps = (event) => ({
     draggable: true,
     onDragStart: (e) => handleDragStart(e, event),
     onDragEnd: handleDragEnd,
   });
 
-  // Props for drop target elements
   const getDropTargetProps = (date, columnIndex = null, hour = null) => ({
     onDragOver: (e) => handleDragOver(e, columnIndex, date),
     onDragLeave: handleDragLeave,

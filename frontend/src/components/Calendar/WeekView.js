@@ -4,12 +4,31 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
+
+// Create a transparent 1x1 pixel image once, outside the component
+const emptyImage = new Image();
+emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
-  const [dragOverColumn, setDragOverColumn] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+
+  // Initialize the enhanced drag and drop hook
+  const { 
+    draggedEvent,
+    dragOverColumn,
+    dropPreview,
+    getDragHandleProps,
+    getDropTargetProps,
+  } = useCalendarDragDrop({ 
+    onEventUpdate, 
+    darkMode,
+    view: 'week',
+    cellHeight: 60,
+    emptyImage
+  });
 
   // Helper function for getting event colors
   const getEventColor = (event) => {
@@ -211,28 +230,6 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     onEventClick(event);
   };
 
-  const onDragStart = (e, eventId) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
-  };
-
-  const onDragOver = (e, dayIndex) => {
-    e.preventDefault();
-    setDragOverColumn(dayIndex);
-  };
-
-  const onDragLeave = () => {
-    setDragOverColumn(null);
-  };
-
-  const onDrop = (e, date, hour) => {
-    e.preventDefault();
-    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
-    const newDate = new Date(date);
-    newDate.setHours(hour);
-    onEventUpdate(eventId, newDate);
-    setDragOverColumn(null);
-  };
-
   const toggleAllDayExpansion = () => {
     setIsAllDayExpanded(prev => !prev);
   };
@@ -241,13 +238,16 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     const eventColor = getEventColor(event).replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
+    const augmentedEvent = {
+      ...event,
+      isAllDay: true
+    };
 
     if (isTask) {
       return (
         <div
           key={event.id}
-          draggable
-          onDragStart={(e) => onDragStart(e, event.id)}
+          {...getDragHandleProps(augmentedEvent)}
           className={`
             flex justify-between items-center
             text-xs mb-1 truncate cursor-pointer
@@ -281,8 +281,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     return (
       <div
         key={event.id}
-        draggable
-        onDragStart={(e) => onDragStart(e, event.id)}
+        {...getDragHandleProps(augmentedEvent)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
@@ -405,6 +404,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
           return (
             <div
               key={`all-day-${dayIndex}`}
+              {...getDropTargetProps(day, dayIndex)}
               className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative p-1
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                 ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
@@ -415,14 +415,17 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                 clickedDate.setHours(0, 0, 0, 0);
                 onDateDoubleClick(clickedDate, true);
               }}
-              onDragOver={(e) => onDragOver(e, dayIndex)}
-              onDragLeave={onDragLeave}
-              onDrop={(e) => onDrop(e, day, 0)}
             >
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
               )}
               {renderAllDayEvents(allDayEvents)}
+              {/* Drop Preview for All-day events */}
+              {dropPreview && dropPreview.isAllDay && dropPreview.columnIndex === dayIndex && (
+                <div className="opacity-50">
+                  {renderAllDayEvent(dropPreview)}
+                </div>
+              )}
             </div>
           );
         })}
@@ -458,6 +461,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                 return (
                   <div
                     key={`${hour}-${dayIndex}`}
+                    {...getDropTargetProps(day, dayIndex)}
                     className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
                       ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                       ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
@@ -469,9 +473,6 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                       clickedDate.setHours(hour);
                       onDateDoubleClick(clickedDate, false);
                     }}
-                    onDragOver={(e) => onDragOver(e, dayIndex)}
-                    onDragLeave={onDragLeave}
-                    onDrop={(e) => onDrop(e, day, hour)}
                   >
                     {isSelected && (
                       <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
@@ -519,7 +520,6 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   const eventStart = new Date(event.start_time);
                   const eventEnd = new Date(event.end_time);
                   
-                  // Determine if this is a next day portion by comparing calendar dates
                   const currentDate = new Date(day);
                   currentDate.setHours(0, 0, 0, 0);
                   const eventStartDate = new Date(eventStart);
@@ -527,6 +527,12 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   
                   const isNextDay = currentDate.getTime() > eventStartDate.getTime();
                   const isCrossingMidnight = isEventCrossingMidnight(event);
+                  const augmentedEvent = {
+                    ...event,
+                    isAllDay: false,
+                    isNextDay,
+                    isCrossingMidnight
+                  };
 
                   if (event.calendar === 'Task') {
                     const eventColor = getEventColor(event).replace('bg-', '');
@@ -534,8 +540,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     return (
                       <div
                         key={event.id}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, event.id)}
+                        {...getDragHandleProps(augmentedEvent)}
                         className={`
                           absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
                           rounded
@@ -587,8 +592,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, event.id)}
+                      {...getDragHandleProps(augmentedEvent)}
                       className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer 
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
                         ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
@@ -616,6 +620,21 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   );
                 })
               }
+            
+            {/* Drop Preview for Regular Events */}
+            {dropPreview && !dropPreview.isAllDay && dropPreview.columnIndex === dayIndex && (
+              <div
+                className="absolute bg-blue-300 text-white rounded pointer-events-none opacity-50"
+                style={getEventStyle(dropPreview)}
+              >
+                <div className="w-full h-full p-1.5 flex flex-col">
+                  <div className="font-bold truncate text-sm">{dropPreview.title}</div>
+                  <div className="text-xs whitespace-nowrap">
+                    {formatEventTime(dropPreview, dropPreview.isNextDay)}
+                  </div>
+                </div>
+              </div>
+            )}
             </div>
           ))}
         </div>
