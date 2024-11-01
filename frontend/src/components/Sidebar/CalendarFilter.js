@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff } from 'react-icons/fi';
+import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiPlus } from 'react-icons/fi';
+import CalendarPopup from '../Modals/CalendarPopup';
 
 const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-gray-400'];
 
@@ -16,6 +17,7 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
   const [showOtherCalendars, setShowOtherCalendars] = useState(true);
   const [popupVisible, setPopupVisible] = useState({});
   const [visibleItems, setVisibleItems] = useState({});
+  const [showImportPopup, setShowImportPopup] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -165,8 +167,21 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
           onClick={() => setShowOtherCalendars(!showOtherCalendars)}
         >
           <h3 className="font-medium">Other calendars</h3>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowImportPopup(true);
+            }}
+            className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
+              darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            <FiPlus className="w-4 h-4" />
+          </button>
           {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
         </div>
+      </div>
         
         {showOtherCalendars && (
           <div className="space-y-1 pl-2">
@@ -175,6 +190,8 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
           </div>
         )}
       </div>
+
+      {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
     </div>
   );
 };
