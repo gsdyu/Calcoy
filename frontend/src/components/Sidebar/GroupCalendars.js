@@ -106,9 +106,9 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
               {/* Right Border Effect */}
               <div
                 className={`absolute right-0 top-1/2 transform -translate-y-1/2 transition-all duration-200 origin-center ${
-                  activeCalendar.id === server.id
+                  activeCalendar === server.id
                     ? 'bg-white w-1 h-full scale-y-100' 
-                    : hoveredServer.id === server.id
+                    : hoveredServer === server.id
                     ? 'bg-white w-1 h-4 scale-y-125' 
                     : 'w-0 h-1'  
                 }`}
