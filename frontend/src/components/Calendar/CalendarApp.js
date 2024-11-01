@@ -507,6 +507,7 @@ const CalendarApp = () => {
               onDateDoubleClick={handleAddEvent}
               onEventClick={handleEventClick}
               shiftDirection={shiftDirection}
+              onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
             />
           )}

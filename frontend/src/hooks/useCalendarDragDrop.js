@@ -12,7 +12,7 @@ export const useCalendarDragDrop = ({
   const [dropPreview, setDropPreview] = useState(null);  
 
   const getTimePosition = (y, dayElement) => {
-    if (!dayElement || view !== 'week') return null;
+    if (!dayElement || (view !== 'week' && view !== 'day')) return null;
     
     const rect = dayElement.getBoundingClientRect();
     const gridContainer = dayElement.closest('.time-grid-container');
@@ -64,7 +64,7 @@ export const useCalendarDragDrop = ({
     
     if (!draggedEvent) return;
 
-    if (view === 'week' && !draggedEvent.isAllDay) {
+    if ((view === 'week' || view === 'day') && !draggedEvent.isAllDay) {
       const timePosition = getTimePosition(e.clientY, e.currentTarget);
       if (timePosition) {
         const { hours, minutes } = timePosition;
@@ -94,13 +94,16 @@ export const useCalendarDragDrop = ({
       });
     }
     
-    setDragOverColumn(columnIndex);
-    
-    const dropTarget = e.currentTarget;
-    dropTarget.style.transition = 'background-color 0.2s';
-    dropTarget.style.backgroundColor = darkMode 
-      ? 'rgba(59, 130, 246, 0.2)' 
-      : 'rgba(59, 130, 246, 0.1)';
+    // Only set dragOverColumn and background color for week and month views
+    if (view !== 'day') {
+      setDragOverColumn(columnIndex);
+      
+      const dropTarget = e.currentTarget;
+      dropTarget.style.transition = 'background-color 0.2s';
+      dropTarget.style.backgroundColor = darkMode 
+        ? 'rgba(59, 130, 246, 0.2)' 
+        : 'rgba(59, 130, 246, 0.1)';
+    }
   };
 
   const handleDragLeave = (e) => {
@@ -126,23 +129,35 @@ export const useCalendarDragDrop = ({
     
     let newDate = new Date(date);
 
-    if (view === 'week' && !isAllDay) {
+    // Handle both week and day views for time-based events
+    if ((view === 'week' || view === 'day') && !isAllDay) {
       const timePosition = getTimePosition(e.clientY, e.currentTarget);
       if (timePosition) {
         const { hours, minutes } = timePosition;
         newDate.setHours(hours, minutes);
         
-        // Pass the time position to onEventUpdate
-        onEventUpdate(eventId, newDate, timePosition);
+        // Calculate event duration and maintain it
+        const originalEvent = draggedEvent;
+        const duration = (new Date(originalEvent.end_time) - new Date(originalEvent.start_time));
+        
+        // Create new end time maintaining the same duration
+        const newEndDate = new Date(newDate.getTime() + duration);
+        
+        // Pass both start and end times
+        onEventUpdate(eventId, newDate, {
+          start_time: newDate,
+          end_time: newEndDate,
+          hours,
+          minutes
+        });
       } else if (hour !== null) {
         newDate.setHours(hour);
         onEventUpdate(eventId, newDate);
       }
-    } else if (hour !== null) {
-      // For month view or all-day events, use provided hour if available
-      newDate.setHours(hour);
-      onEventUpdate(eventId, newDate);
     } else {
+      if (hour !== null) {
+        newDate.setHours(hour);
+      }
       onEventUpdate(eventId, newDate);
     }
 

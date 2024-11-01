@@ -4,12 +4,31 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
+import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 
-const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, itemColors }) => {
+// Create a transparent 1x1 pixel image once, outside the component
+const emptyImage = new Image();
+emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+
+  // Initialize drag and drop hook
+  const { 
+    draggedEvent,
+    dropPreview,
+    getDragHandleProps,
+    getDropTargetProps,
+  } = useCalendarDragDrop({ 
+    onEventUpdate, 
+    darkMode,
+    view: 'day',
+    cellHeight: 60,
+    emptyImage
+  });
 
   // Add helper function for getting event colors
   const getEventColor = (event) => {
@@ -291,7 +310,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       </div>
 
       {/* Time slots */}
-      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
+      <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
         <div className="flex" style={{ height: '1440px' }}>
           {/* Time column */}
           <div className="w-16 flex-shrink-0 relative">
@@ -314,7 +333,11 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           <div className={`w-px ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}`} style={{ height: '1440px' }}></div>
 
           {/* Events area */}
-          <div className="flex-grow relative" style={{ height: '1440px' }}>
+          <div 
+            className="flex-grow relative" 
+            style={{ height: '1440px' }}
+            {...getDropTargetProps(currentDate)}
+          >
             {hours.map((hour, index) => (
               <div 
                 key={hour} 
@@ -334,6 +357,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 return (
                   <div
                     key={event.id}
+                    {...getDragHandleProps(event)}
                     className={`
                       absolute text-xs overflow-hidden cursor-pointer
                       rounded py-1 px-2
@@ -374,6 +398,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               return (
                 <div
                   key={event.id}
+                  {...getDragHandleProps(event)}
                   className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor}
                    ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
                   style={getEventStyle(event, isNextDay)}
@@ -413,6 +438,37 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 </div>
               );
             })}
+
+            {/* Drop Preview */}
+            {dropPreview && (
+              <div
+                className={`absolute pointer-events-none opacity-50 ${(() => {
+                  const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                  return `
+                    bg-${eventColor} bg-opacity-20 
+                    text-xs overflow-hidden rounded
+                    border border-${eventColor}
+                    ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                  `;
+                })()}`}
+                style={getEventStyle({
+                  ...dropPreview,
+                  start_time: dropPreview.start_time,
+                  end_time: dropPreview.end_time
+                })}
+              >
+                <div className="w-full h-full p-1.5 flex flex-col">
+                  <div className="font-bold truncate">{dropPreview.title}</div>
+                  <div className="text-xs">
+                    {new Date(dropPreview.start_time).toLocaleTimeString([], { 
+                      hour: '2-digit', 
+                      minute: '2-digit' 
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
