@@ -329,7 +329,7 @@ const CalendarApp = () => {
     }
   };
 
-  const handleEventUpdate = async (eventId, newDate) => {
+  const handleEventUpdate = async (eventId, newDate, newTime) => {
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
@@ -348,8 +348,18 @@ const CalendarApp = () => {
       const endTime = new Date(eventToUpdate.end_time);
       const duration = endTime - startTime;
 
+      // Create new start time with the dropped time
       const newStartTime = new Date(newDate);
-      newStartTime.setHours(startTime.getHours(), startTime.getMinutes(), startTime.getSeconds());
+      if (newTime) {
+        // If we have specific time info (from vertical drag)
+        newStartTime.setHours(newTime.hours);
+        newStartTime.setMinutes(newTime.minutes);
+      } else {
+        // Otherwise keep the original time (horizontal drag)
+        newStartTime.setHours(startTime.getHours(), startTime.getMinutes());
+      }
+      
+      // Calculate new end time preserving duration
       const newEndTime = new Date(newStartTime.getTime() + duration);
 
       const updatedEvent = {

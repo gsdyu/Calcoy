@@ -432,7 +432,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
       </div>
 
       {/* Time slots */}
-      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
+      <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
         <div className="absolute top-0 left-0 w-16 h-full">
           {hours.map((hour, index) => (
             <div 
@@ -461,7 +461,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                 return (
                   <div
                     key={`${hour}-${dayIndex}`}
-                    {...getDropTargetProps(day, dayIndex)}
+                    {...getDropTargetProps(day, dayIndex, hour)} 
                     className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
                       ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                       ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
@@ -624,8 +624,22 @@ const getEventStyle = (event, isNextDayPortion = false) => {
             {/* Drop Preview for Regular Events */}
             {dropPreview && !dropPreview.isAllDay && dropPreview.columnIndex === dayIndex && (
               <div
-                className="absolute bg-blue-300 text-white rounded pointer-events-none opacity-50"
-                style={getEventStyle(dropPreview)}
+                className={`absolute 
+                  ${(() => {
+                    const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                    return `
+                      bg-${eventColor} bg-opacity-20 
+                      text-xs overflow-hidden rounded cursor-pointer
+                      border border-${eventColor} pointer-events-none opacity-50
+                      ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                    `;
+                  })()}
+                `}
+                style={getEventStyle({
+                  ...dropPreview,
+                  start_time: dropPreview.start_time,
+                  end_time: dropPreview.end_time
+                })}
               >
                 <div className="w-full h-full p-1.5 flex flex-col">
                   <div className="font-bold truncate text-sm">{dropPreview.title}</div>

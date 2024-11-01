@@ -15,21 +15,34 @@ export const useCalendarDragDrop = ({
     if (!dayElement || view !== 'week') return null;
     
     const rect = dayElement.getBoundingClientRect();
-    const timeGridOffset = dayElement.closest('.time-grid-container')?.getBoundingClientRect()?.top || rect.top;
-    const headerOffset = 40; // Height of the header
+    const gridContainer = dayElement.closest('.time-grid-container');
+    const scrollTop = gridContainer?.scrollTop || 0;
     
-    // Calculate relative Y considering the time grid offset and header
-    const relativeY = y - timeGridOffset - headerOffset;
+    const containerTop = gridContainer?.getBoundingClientRect().top || 0;
+    const relativeY = y - containerTop + scrollTop - 40;
     
-    // Using cellHeight (60px) per hour
-    const totalMinutes = Math.round((relativeY / cellHeight) * 60);
+    // Calculate total minutes more precisely
+    const totalMinutes = (relativeY / cellHeight) * 60;
+    
+    // Round hours down to get the base hour
     const hours = Math.floor(totalMinutes / 60);
-    const minutes = Math.round((totalMinutes % 60) / 15) * 15; // Snap to 15-min intervals
     
-    // Clamp hours between 0 and 23
+    // Calculate minutes and snap to nearest 15
+    const rawMinutes = totalMinutes % 60;
+    // This will snap to 0, 15, 30, or 45
+    const minutes = Math.round(rawMinutes / 15) * 15;
+    
+    // If minutes is 60, we need to increment the hour
+    if (minutes === 60) {
+      return {
+        hours: Math.min(hours + 1, 23),
+        minutes: 0
+      };
+    }
+    
     return {
       hours: Math.max(0, Math.min(hours, 23)),
-      minutes: Math.max(0, Math.min(minutes, 59))
+      minutes: minutes
     };
   };
 
@@ -118,15 +131,20 @@ export const useCalendarDragDrop = ({
       if (timePosition) {
         const { hours, minutes } = timePosition;
         newDate.setHours(hours, minutes);
+        
+        // Pass the time position to onEventUpdate
+        onEventUpdate(eventId, newDate, timePosition);
       } else if (hour !== null) {
         newDate.setHours(hour);
+        onEventUpdate(eventId, newDate);
       }
     } else if (hour !== null) {
       // For month view or all-day events, use provided hour if available
       newDate.setHours(hour);
+      onEventUpdate(eventId, newDate);
+    } else {
+      onEventUpdate(eventId, newDate);
     }
-    
-    onEventUpdate(eventId, newDate);
 
     dropTarget.style.transition = 'background-color 0.3s';
     dropTarget.style.backgroundColor = darkMode 
