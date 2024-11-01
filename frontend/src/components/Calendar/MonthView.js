@@ -332,6 +332,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
               onEventClick={onEventClick}
               onViewChange={onViewChange}
               onDateSelect={onDateClick}
+              itemColors={itemColors}
             />
           )}
         </div>
