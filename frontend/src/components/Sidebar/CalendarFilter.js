@@ -143,7 +143,7 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
       {/* My Calendars Section */}
       <div className="space-y-2">
         <div
-          className="flex items-center justify-between cursor-pointer"
+          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
           onClick={() => setShowMyCalendars(!showMyCalendars)}
         >
           <h3 className="font-medium">My calendars</h3>
@@ -163,25 +163,25 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
       {/* Other Calendars Section */}
       <div className="space-y-2">
         <div
-          className="flex items-center justify-between cursor-pointer"
+          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
           onClick={() => setShowOtherCalendars(!showOtherCalendars)}
         >
           <h3 className="font-medium">Other calendars</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowImportPopup(true);
-            }}
-            className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
-              darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            <FiPlus className="w-4 h-4" />
-          </button>
-          {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowImportPopup(true);
+              }}
+              className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
+                darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
+              }`}
+            >
+              <FiPlus className="w-4 h-4" />
+            </button>
+            {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
+          </div>
         </div>
-      </div>
         
         {showOtherCalendars && (
           <div className="space-y-1 pl-2">
