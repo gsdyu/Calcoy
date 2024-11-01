@@ -6,6 +6,10 @@ import DayEventPopover from '@/components/Modals/DayEventPopover';
 import { Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 
+// Create empty transparent image once, at component level
+const emptyImage = new Image();
+emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
@@ -16,7 +20,8 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const { getDragHandleProps, getDropTargetProps, dropPreview } = useCalendarDragDrop({
     onEventUpdate,
     darkMode,
-    view: 'month'
+    view: 'month',
+    emptyImage // Pass the empty image to the hook
   });
 
   useEffect(() => {
@@ -119,15 +124,23 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
     const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-
-    // Augment event with calculated styles before passing to drag handler
+  
+    // Augment event with calculated styles and custom drag start handler
     const augmentedEvent = {
       ...event,
       eventColor,
       isAllDay,
       isTask,
       isCompleted,
-      eventTime
+      eventTime,
+      onDragStart: (e) => {
+        // Ensure the empty image is used and ghost is removed
+        e.dataTransfer.setDragImage(emptyImage, 0, 0);
+        // Additional handling if needed
+        setTimeout(() => {
+          e.dataTransfer.setDragImage(emptyImage, 0, 0);
+        }, 0);
+      }
     };
   
     return (
