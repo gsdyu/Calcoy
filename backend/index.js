@@ -85,11 +85,15 @@ pool.query(`
       frequency VARCHAR(50),
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
+      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+
       embedding vector(128),
       CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
       completed BOOLEAN,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS server_id INT REFERENCES servers(id) ON DELETE CASCADE;
+
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));

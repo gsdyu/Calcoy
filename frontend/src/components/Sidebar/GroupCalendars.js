@@ -6,7 +6,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, handleChangeActiveCalendar }) => {
+const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents }) => {
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [servers, setServers] = useState([]);
@@ -54,6 +54,11 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     return name.charAt(0).toUpperCase(); // Use the first character of the server name
   };
 
+   const handleCalendarChange = (serverId) => {
+    setActiveCalendar(serverId);  
+    fetchEvents(serverId);  
+  };
+
   return (
     <div className={`w-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} flex flex-col items-center py-4 h-screen relative z-40`}>
       <button 
@@ -67,14 +72,14 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         {/* Main Calendar Button */}
         <button 
           className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center" 
-          onClick={() => handleChangeActiveCalendar(null)}
+          onClick={() => handleCalendarChange(null)} // Pass null for default calendar
         >
           <Calendar size={24} className="text-white" />
         </button>
         
         {/* Shared Calendar Button */}
         <button 
-          onClick={() => handleChangeActiveCalendar(0)} 
+          onClick={() => handleCalendarChange(0)} 
           className={`w-12 h-12 rounded-full bg-green-600 flex items-center justify-center ${activeCalendar === 0 ? 'border-2 border-blue-500' : ''}`}
         >
           <Calendar size={24} className="text-white" />
@@ -86,7 +91,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         {servers.map((server) => (
           <div key={server.id} className="relative" onMouseEnter={() => setHoveredServer(server.id)} onMouseLeave={() => setHoveredServer(null)}>
             <button 
-              onClick={() => handleChangeActiveCalendar(server.id)} 
+              onClick={() => handleCalendarChange(server.id)} 
               className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center relative`}
             >
               <Avatar className="w-10 h-10">
