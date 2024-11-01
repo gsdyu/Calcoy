@@ -85,7 +85,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         {servers.map((server) => (
           <div key={server.id} className="relative" onMouseEnter={() => setHoveredServer(server.id)} onMouseLeave={() => setHoveredServer(null)}>
             <button 
-              onClick={() => handleCalendarChange(server.id)} 
+              onClick={() => handleCalendarChange(server)} 
               className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center relative`}
             >
               <Avatar className="w-10 h-10">

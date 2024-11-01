@@ -55,7 +55,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
     try {
       const url = activeCalendar !== null 
-        ? `http://localhost:5000/events?server_id=${activeCalendar}` 
+        ? `http://localhost:5000/events?server_id=${activeCalendar.id}` 
         : 'http://localhost:5000/events';
       
       const response = await fetch(url, {
@@ -202,7 +202,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       // Include the activeCalendar/server_id in the event data if available
       const eventData = {
         ...event,
-        server_id: activeCalendar || null, // Use `null` for global calendar if no activeCalendar
+        server_id: activeCalendar.id || null, // Use `null` for global calendar if no activeCalendar
       };
   
       const response = await fetch(url, {
@@ -404,8 +404,8 @@ import { useTheme } from '@/contexts/ThemeContext';
     setSelectedDate(date);
   };
 
-  const handleChangeActiveCalendar = (calendarId) => {
-    setActiveCalendar(calendarId); // Set the active calendar based on the clicked item
+  const handleChangeActiveCalendar = (server) => {
+    setActiveCalendar(server); // Set the active calendar based on the clicked item
   };
 
   return (
