@@ -202,7 +202,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       // Include the activeCalendar/server_id in the event data if available
       const eventData = {
         ...event,
-        server_id: activeCalendar.id || null, // Use `null` for global calendar if no activeCalendar
+        server_id: activeCalendar?.id || null, // activeCalendar? can be null for main|Use `null` for global calendar if no activeCalendar
       };
   
       const response = await fetch(url, {
