@@ -78,13 +78,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         </button>
         
         {/* Shared Calendar Button */}
-        <button 
-          onClick={() => handleCalendarChange(0)} 
-          className={`w-12 h-12 rounded-full bg-green-600 flex items-center justify-center ${activeCalendar === 0 ? 'border-2 border-blue-500' : ''}`}
-        >
-          <Calendar size={24} className="text-white" />
-        </button>
-
+     
         <div className="w-8 h-0.5 bg-gray-600 my-2"></div>
 
         {/* Servers (Group Calendars) */}
