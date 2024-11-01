@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
 import { Check } from 'lucide-react';
+import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
@@ -11,6 +12,12 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
+
+  const { getDragHandleProps, getDropTargetProps, dropPreview } = useCalendarDragDrop({
+    onEventUpdate,
+    darkMode,
+    view: 'month'
+  });
 
   useEffect(() => {
     const calculateDimensions = () => {
@@ -39,28 +46,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     return () => window.removeEventListener('resize', calculateDimensions);
   }, [currentDate]);
 
-  const onDragStart = (e, eventId) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
-  };
-
-  const onDragOver = (e) => {
-    e.preventDefault();
-  };
-
-  const onDrop = (e, date) => {
-    e.preventDefault();
-    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
-    onEventUpdate(eventId, date);
-
-    // Visual feedback
-    const dropTarget = e.currentTarget;
-    dropTarget.style.transition = 'background-color 0.3s';
-    dropTarget.style.backgroundColor = darkMode ? 'rgba(59, 130, 246, 0.5)' : 'rgba(59, 130, 246, 0.2)';
-    setTimeout(() => {
-      dropTarget.style.backgroundColor = '';
-    }, 300);
-  };
-
+  // Helper functions for date calculations
   const isToday = (date) => {
     const today = new Date();
     return date.getDate() === today.getDate() &&
@@ -111,6 +97,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const renderEventCompact = (event) => {
     const calendarType = event.calendar || 'default';
   
+    // Use optional chaining and provide fallback color
     const eventColor = itemColors?.[calendarType] 
     ? itemColors[calendarType]
     : (() => {
@@ -132,12 +119,21 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
     const eventTime = isAllDay ? 'All day' : new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    // Augment event with calculated styles before passing to drag handler
+    const augmentedEvent = {
+      ...event,
+      eventColor,
+      isAllDay,
+      isTask,
+      isCompleted,
+      eventTime
+    };
   
     return (
       <div
         key={event.id}
-        draggable
-        onDragStart={(e) => onDragStart(e, event.id)}
+        {...getDragHandleProps(augmentedEvent)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
@@ -186,25 +182,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const daysInMonth = getDaysInMonth(currentDate);
     const firstDay = getFirstDayOfMonth(currentDate);
     const daysInPrevMonth = getDaysInMonth(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-    const calendarType = 'default';
-  
-    // Use optional chaining and provide fallback color
-    const eventColor = itemColors?.[calendarType] 
-  ? itemColors[calendarType]
-  : (() => {
-      switch (calendarType) {
-        case 'Task':
-          return itemColors?.tasks || 'bg-red-500';  
-        case 'Personal':
-          return itemColors?.email || 'bg-blue-500'; 
-        case 'Family':
-          return itemColors?.familyBirthday || 'bg-orange-500'; 
-        case 'Work':
-          return 'bg-purple-500'; 
-        default:
-          return 'bg-gray-400'; 
-      }
-    })();
+    
     const days = [];
     let dayCounter = 1;
     let nextMonthCounter = 1;
@@ -249,14 +227,13 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       days.push(
         <div
           key={i}
+          {...getDropTargetProps(date, i)}
           className={`border-r border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} ${
             isCurrentMonth ? darkMode ? 'bg-gray-800' : 'bg-white' : darkMode ? 'bg-gray-900' : 'bg-gray-100'
           } ${isWeekendDay ? darkMode ? 'bg-opacity-90' : 'bg-opacity-95' : ''} p-1 relative overflow-hidden`}
           style={{ height: `${cellHeight}px` }}
           onClick={() => isCurrentMonth && onDateClick(date)}
           onDoubleClick={() => isCurrentMonth && onDateDoubleClick(date)}
-          onDragOver={onDragOver}
-          onDrop={(e) => onDrop(e, date)}
         >
           <span
             className={`inline-flex items-center justify-center w-6 h-6 text-sm 
@@ -284,6 +261,51 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
               >
                 {`+${additionalEventsCount} more`}
               </button>
+            )}
+            
+            {/* Drop Preview */}
+            {dropPreview && isSameDay(date, new Date(dropPreview.date)) && (
+              <div 
+                className={`
+                  flex justify-between items-center
+                  text-xs mb-1 truncate pointer-events-none
+                  rounded-full py-1 px-2
+                  ${dropPreview.isCompleted ? 'opacity-50' : ''}
+                  ${dropPreview.isAllDay 
+                    ? `${dropPreview.eventColor} text-white` 
+                    : `border border-${dropPreview.eventColor.replace('bg-', '')} bg-opacity-20 text-${dropPreview.eventColor.replace('bg-', '')}`
+                  }
+                  ${darkMode && !dropPreview.isAllDay 
+                    ? `border-${dropPreview.eventColor.replace('bg-', '')}-400 text-${dropPreview.eventColor.replace('bg-', '')}-300` 
+                    : ''}
+                  ${dropPreview.isTask && dropPreview.isCompleted ? 'line-through' : ''}
+                  opacity-70
+                `}
+              >
+                <div className="flex items-center overflow-hidden">
+                  {dropPreview.isTask ? (
+                    <Check 
+                      className={`w-3 h-3 mr-1 flex-shrink-0
+                        ${dropPreview.isCompleted ? 'opacity-50' : ''} 
+                        ${dropPreview.isAllDay 
+                          ? 'text-white' 
+                          : darkMode 
+                            ? `text-${dropPreview.eventColor.replace('bg-', '')}-400` 
+                            : `text-${dropPreview.eventColor.replace('bg-', '')}-500`
+                        }`} 
+                    />
+                  ) : (
+                    !dropPreview.isAllDay && 
+                    <span className={`inline-block w-2 h-2 rounded-full bg-${dropPreview.eventColor.replace('bg-', '')}-500 mr-1 flex-shrink-0`} />
+                  )}
+                  <span className={`truncate ${dropPreview.isTask && dropPreview.isCompleted ? 'line-through' : ''}`}>
+                    {dropPreview.title}
+                  </span>
+                </div>
+                <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${dropPreview.isCompleted ? 'opacity-50' : ''}`}>
+                  {dropPreview.eventTime}
+                </span>
+              </div>
             )}
           </div>
           {openPopover && isSameDay(openPopover, date) && (
