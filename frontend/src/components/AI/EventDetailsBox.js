@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { CirclePlus, CircleX, Edit2, Save, X, Check } from 'lucide-react';
+import { CirclePlus, CircleX, Edit2, X, Check } from 'lucide-react';
 import styles from './AiPage.module.css';
+import MiniCalendar from '../Sidebar/MiniCalendar';
 
 const EventDetailsBox = ({ 
   eventDetails, 
@@ -10,12 +11,11 @@ const EventDetailsBox = ({
   isHandled: initialIsHandled,
   darkMode 
 }) => {
-  // Separate state for handling animation
   const [isHandled, setIsHandled] = useState(initialIsHandled);
   const [isVisible, setIsVisible] = useState(true);
   const [status, setStatus] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(new Date(eventDetails.start_time));
   
-  // Update local state when prop changes
   useEffect(() => {
     setIsHandled(initialIsHandled);
     setIsVisible(!initialIsHandled);
@@ -61,13 +61,8 @@ const EventDetailsBox = ({
     description: eventDetails.description
   });
 
-  const handleActionWithAnimation = async (action, id) => {
-    setIsVisible(false);
-  
-    await new Promise(resolve => setTimeout(resolve, 300));
-    
-    action(id);
-    setIsHandled(true);
+  const handleDateSelect = (date) => {
+    setSelectedDate(date);
   };
 
   const handleConfirm = async (id) => {
@@ -130,66 +125,71 @@ const EventDetailsBox = ({
     }));
   };
 
-  useEffect(() => {
-    setEditedDetails({
-      ...eventDetails,
-      start_time: formatDateForInput(eventDetails.start_time),
-      end_time: formatDateForInput(eventDetails.end_time)
-    });
-  }, [eventDetails]);
-
   if (isEditing) {
     return (
       <div className={styles.eventDetailsBox}>
-        <div className={styles.contentSection}>
-          <div className={styles.formGroup}>
-            <label className={styles.editLabel}>Event name</label>
-            <input
-              type="text"
-              name="title"
-              value={editedDetails.title}
-              onChange={handleInputChange}
-              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
-            />
+        <div className="grid grid-cols-2 gap-4">
+          <div className={styles.contentSection}>
+            <div className={styles.formGroup}>
+              <label className={styles.editLabel}>Event name</label>
+              <input
+                type="text"
+                name="title"
+                value={editedDetails.title}
+                onChange={handleInputChange}
+                className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+              />
+            </div>
+    
+            <div className={styles.dateTimeInputGroup}>
+              <label className={styles.editLabel}>Start Time</label>
+              <input
+                type="datetime-local"
+                name="start_time"
+                value={editedDetails.start_time}
+                onChange={handleInputChange}
+                className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+              />
+            </div>
+    
+            <div className={styles.dateTimeInputGroup}>
+              <label className={styles.editLabel}>End Time</label>
+              <input
+                type="datetime-local"
+                name="end_time"
+                value={editedDetails.end_time}
+                onChange={handleInputChange}
+                className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+              />
+            </div>
+    
+            <div className={styles.formGroup}>
+              <label className={styles.editLabel}>Description</label>
+              <textarea
+                name="description"
+                value={editedDetails.description}
+                onChange={handleInputChange}
+                className={`${styles.editTextarea} ${darkMode ? styles.editTextareaDark : ''}`}
+              />
+            </div>
           </div>
-  
-          <div className={styles.dateTimeInputGroup}>
-            <label className={styles.editLabel}>Start Time</label>
-            <input
-              type="datetime-local"
-              name="start_time"
-              value={editedDetails.start_time}
-              onChange={handleInputChange}
-              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
+
+
+          <div className={`relative rounded-lg overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
+            <MiniCalendar
+              onDateSelect={handleDateSelect}
+              selectedDate={selectedDate}
+              mainCalendarDate={new Date(editedDetails.start_time)}
+              darkMode={darkMode}
             />
-          </div>
-  
-          <div className={styles.dateTimeInputGroup}>
-            <label className={styles.editLabel}>End Time</label>
-            <input
-              type="datetime-local"
-              name="end_time"
-              value={editedDetails.end_time}
-              onChange={handleInputChange}
-              className={`${styles.editInput} ${darkMode ? styles.editInputDark : ''}`}
-            />
-          </div>
-  
-          <div className={styles.formGroup}>
-            <label className={styles.editLabel}>Description</label>
-            <textarea
-              name="description"
-              value={editedDetails.description}
-              onChange={handleInputChange}
-              className={`${styles.editTextarea} ${darkMode ? styles.editTextareaDark : ''}`}
-            />
+            <div className={`absolute inset-0 pointer-events-none`} />
           </div>
         </div>
   
         <div className={styles.buttonSection}>
           <div className={styles.buttonContainer}>
             <button onClick={handleSave} className={styles.confirmButton}>
-              <Save /> Save
+              <Check /> Save
             </button>
             <button onClick={handleCancel} className={styles.denyButton}>
               <X /> Cancel
@@ -205,34 +205,48 @@ const EventDetailsBox = ({
 
   return (
     <div className={styles.eventDetailsBox}>
-      <div className={styles.contentSection}>
-        <div className={styles.titleRow}>
-          <h1 className={styles.eventTitle}>{eventDetails.title}</h1>
-          {!isHandled ? (
-            <button onClick={handleEdit} className={styles.editButton}>
-              <Edit2 className="w-4 h-4" /> Edit
-            </button>
-          ) : (
-            <div className={`${styles.statusIcon} ${styles[status]}`}>
-              {status === 'confirmed' ? (
-                <>
-                  <Check size={18} />
-                  Confirmed
-                </>
+      <div className="grid grid-cols-2 gap-4">
+        <div className={styles.contentSection}>
+          <div className={`${styles.titleRow} flex flex-col space-y-2`}>
+            <div className="flex items-start justify-between w-full gap-2">
+              <h1 className={`${styles.eventTitle} leading-tight break-words flex-1`}>{eventDetails.title}</h1>
+              {!isHandled ? (
+                <button onClick={handleEdit} className={`${styles.editButton} flex-shrink-0 mt-1`}>
+                  <Edit2 className="w-4 h-4" /> Edit
+                </button>
               ) : (
-                <>
-                  <X size={18} />
-                  Discarded
-                </>
+                <div className={`${styles.statusIcon} ${styles[status]} flex-shrink-0`}>
+                  {status === 'confirmed' ? (
+                    <>
+                      <Check size={18} />
+                      Confirmed
+                    </>
+                  ) : (
+                    <>
+                      <X size={18} />
+                      Discarded
+                    </>
+                  )}
+                </div>
               )}
             </div>
-          )}
+          </div>
+          <p>{startDateTime.date}</p>
+          <p className={styles.eventTime}>
+            {startDateTime.time} - {endDateTime.time}
+          </p>
+          <p className={styles.eventDescription}>{eventDetails.description}</p>
         </div>
-        <p>{startDateTime.date}</p>
-        <p className={styles.eventTime}>
-          {startDateTime.time} - {endDateTime.time}
-        </p>
-        <p className={styles.eventDescription}>{eventDetails.description}</p>
+
+        <div className="relative">
+          <MiniCalendar
+            onDateSelect={handleDateSelect}
+            selectedDate={selectedDate}
+            mainCalendarDate={new Date(eventDetails.start_time)}
+            darkMode={darkMode}
+          />
+          <div className={`absolute inset-0 pointer-events-none`} />
+        </div>
       </div>
       
       {!isHandled && (
@@ -248,7 +262,7 @@ const EventDetailsBox = ({
         </div>
       )}
     </div>
-);
+  );
 };
 
 export default EventDetailsBox;
