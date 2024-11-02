@@ -238,7 +238,7 @@ const EventDetailsBox = ({
           <p className={styles.eventDescription}>{eventDetails.description}</p>
         </div>
 
-        <div className="relative">
+        <div className={`relative rounded-lg overflow-hidden ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
           <MiniCalendar
             onDateSelect={handleDateSelect}
             selectedDate={selectedDate}
