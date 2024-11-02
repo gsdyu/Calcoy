@@ -8,29 +8,44 @@ class GeminiAgent {
   #client
   //parameters for groq
   #system_message
+  #config
   #model
   #history;
   #maxOutputTokens;
   #temperature;
 
-  constructor(content="You are an assistant. You may be provided with context of json events. These events may not provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1) {
+  constructor(content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", config={candidateCount:1, maxOutputTokens:100, temperature:1 }, model="gemini-1.5-flash", history=[]) {
     this.#system_message = content
     const system = {role: "user", parts: [{text: this.#system_message}]}
     if (history.length > 0) this.#history = history;
     else this.#history = [system]
     this.#model = model;
+    this.#config=config;
     this.#maxOutputTokens = 100;
     this.#temperature = 1;
 
     this.#client = this.#genAI.getGenerativeModel({ 
       model: this.#model,
-      generationConfig: {
-        candidateCount: 1,
-        maxOutputTokens: this.#maxOutputTokens,
-        temperature: this.#temperature,
-      },
+      generationConfig: this.#config,
     });
     return 1;
+  }
+
+  getHistorySystem() {
+    return this.#history;
+  }
+
+  getHistory() {
+    return this.#history;
+  }
+
+  getSystem() {
+    return this.#system_message;
+  }
+
+  changeSystem(content) {
+    this.#history[0].parts[0].text=String(content);
+    return this.#history[0].parts[0].text;
   }
 
   async inputChat(input, context, maxOutputTokens, temperature ) {
@@ -39,10 +54,7 @@ class GeminiAgent {
     this.#history.push({role: "user", parts: [{text: real_input}]});
     var result = await this.#client.generateContent({
       contents: this.#history,
-      generationConfig: {
-        maxOutputTokens: this.#maxOutputTokens,
-        temperature: this.#temperature,
-      }
+      generationConfig: this.#config
     });
     var message = result.response.text(); 
     this.#history.push({role: "model", parts: [{text: message}]});
@@ -114,7 +126,7 @@ const jsonFormat = {
 
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-/**
+
 const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
 
 Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
@@ -214,15 +226,26 @@ You can respond normally when not specifically ask to create a new event.
 `
 );
 
+console.log(rag.getHistory('you are a bad assistant'))
+
 // test stuff
 let user3 = "I need help ";
 let user1 = "{content: 'context', time: 'past'}";
 let user2 = "When is Christmas";
 
+genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
 (async () => {
-  //rag.inputChat(user1).then(value=>(console.log(handleContext(value)))).catch(reason=>console.log(reason));
+//  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
+  const model = genAI.getGenerativeModel({
+    model: "gemini-1.5-flash",
+    systemInstruction: `You will respond as a music historian, demonstrating comprehensive knowledge across diverse musical genres and providing relevant examples. Your tone will be upbeat and enthusiastic, spreading the joy of music. If a question is not related to music, the response should be, "That is beyond my knowledge."`
+  })
+  const response = await model.generateContent("If a person was born in the sixties, what was the most popular music genre being played? List five songs by bullet points")
+  const res = await response.response.text()
+  console.log(res)
 })();
-*/
+
 module.exports = {GeminiAgent, handleContext};
 
 
