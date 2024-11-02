@@ -1,5 +1,4 @@
 const { authenticateToken } = require('../authMiddleware');
-const { inputChat, initChat, clearChat, giveContext } = require('../ai/chat');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
 
@@ -26,7 +25,7 @@ module.exports = (app, pool) => {
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+      const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. 
 
       Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
       ___
@@ -65,11 +64,7 @@ module.exports = (app, pool) => {
       Use these events to help you answer the original user input, do not simply mention them. You help the user not just with reminders but insight and feedback     
 
       Events that are scheduled from 12:00 AM to 11:59 PM are considered all-day events. Do not mention the time here.
-      __
-
-
-
-
+      ___
 
       Follow this if statement to decide on your output.
 
@@ -140,20 +135,51 @@ module.exports = (app, pool) => {
       ___
 
       CreateEvent:
-
-      // this part is just placeholder for CreateEvent prompt. feel free to replace
-
-       When asked to create new events, you will output only a JSON object with nothing else in the following format: ${JSON.stringify(jsonFormat, null, 2)}.If the end time is not specified, fill it in with the start time.
-      Do not remove any attributes. Leave blank if unknown but try to answer with these suggestions.
-      Always add a brief description and the fact that this event is created by ai. This description is not a continued conversation, just a description
-      The current date is ${currentTime} and the timezone is ${currentTimezone}. 
-      You can respond normally when not specifically ask to create a new event.
+	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
+	 - Always start with { and end with }
+	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+	 - Always include all fields, using "N/A" or defaults for missing information
+	 - Ensure dates are in YYYY-MM-DD format
+	 - Ensure times are in HH:MM format (24-hour)
+	 - Never include explanatory text or information before or after the JSON
+	 - Always verify the JSON is complete with all closing brackets
       ___
+example event creation response:
+{
+  "title": "team meeting",
+  "description": "weekly sync with engineering team",
+  "date": "2024-10-30",
+  "start_time": "14:00",
+  "end_time": "15:00",
+  "location": "conference room a",
+  "frequency": "weekly",
+  "calendar": "work",
+  "allday": false,
+  "time_zone": "${currentTimezone}"
+}
+---
+example of incomplete/bad event creation response (no closing brackets):
+{
+  "type": "CreateEvent",
+  "title": "Burger King Lunch",
+  "description": "N/A",
+  "start_time": "13:00",
+  "end_time": "16:00",
+  "location": "N/A",
+  "frequency": "Do not Repeat",
+  "calendar": "Personal",
+  "time_zone": "${currentTimezone}"
 
-      When listing multiple events, format it nicely for readability. Your token limit is 300; do not exceed it. Information about the users and their events is only known from this conversation; do not assume.
-
+____
+	FOR ALL OTHER QUERIES:
+	- Provide helpful insight and feedback to the user based on their wants and their current and future events/responsibilities.
+	- Provide calendar management advice
+	- Discuss existing events and scheduling
+	- Keep responses under 300 tokens
       `
       );
+      console.log(JSON.stringify(jsonFormat, null, 2)
+)
       // gives embedding context of todays date
       const userInput = req.body.message;
       const userId = req.user.userId;

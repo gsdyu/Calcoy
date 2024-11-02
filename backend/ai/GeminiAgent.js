@@ -114,7 +114,7 @@ const jsonFormat = {
 
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
+/**
 const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
 
 Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
@@ -222,7 +222,7 @@ let user2 = "When is Christmas";
 (async () => {
   //rag.inputChat(user1).then(value=>(console.log(handleContext(value)))).catch(reason=>console.log(reason));
 })();
-
+*/
 module.exports = {GeminiAgent, handleContext};
 
 
