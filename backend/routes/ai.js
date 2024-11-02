@@ -137,16 +137,18 @@ module.exports = (app, pool) => {
       CreateEvent:
 	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
 	 - Always start with { and end with }
-	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+	 - Use exactly this format: ${JSON.stringify(jsonFormat)}
 	 - Always include all fields, using "N/A" or defaults for missing information
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
+   - if a start_time is provided, but not an end_time, make the end_time = start_time
 	 - Never include explanatory text or information before or after the JSON
 	 - Always verify the JSON is complete with all closing brackets
+   - REMINDER AGAIN DO NOT FORGOT THE CLOSING BRACKET
       ___
-example event creation response:
-{
-  "title": "team meeting",
+example event creation response, everything in the quotations '':
+'
+{"title": "team meeting",
   "description": "weekly sync with engineering team",
   "date": "2024-10-30",
   "start_time": "14:00",
@@ -155,8 +157,8 @@ example event creation response:
   "frequency": "weekly",
   "calendar": "work",
   "allday": false,
-  "time_zone": "${currentTimezone}"
-}
+  "time_zone": "${currentTimezone}"}
+'
 ---
 example of incomplete/bad event creation response (no closing brackets):
 {
@@ -178,7 +180,7 @@ ____
 	- Keep responses under 300 tokens
       `
       );
-      console.log(JSON.stringify(jsonFormat, null, 2)
+      console.log(JSON.stringify(jsonFormat)
 )
       // gives embedding context of todays date
       const userInput = req.body.message;
