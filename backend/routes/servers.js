@@ -14,6 +14,29 @@ module.exports = (app, pool) => {
       res.status(401).json({ error: 'User not authenticated' });
     }
   });
+    // Route to leave a server
+    app.delete('/api/servers/:serverId/leave', authenticateToken, async (req, res) => {
+      const userId = req.user.userId;
+      const { serverId } = req.params;
+  
+      try {
+        // Delete the association between the user and the server
+        const result = await pool.query(
+          `DELETE FROM user_servers WHERE user_id = $1 AND server_id = $2 RETURNING *`,
+          [userId, serverId]
+        );
+  
+        if (result.rowCount === 0) {
+          return res.status(404).json({ error: 'Server not found or user not a member' });
+        }
+  
+        res.json({ message: 'Successfully left the server' });
+      } catch (err) {
+        console.error('Error leaving server:', err);
+        res.status(500).json({ error: 'Error leaving server' });
+      }
+    });
+  
   // Route to create a new server
   app.post('/api/servers/create', authenticateToken, upload.single('icon'), async (req, res) => {
     const { serverName } = req.body;

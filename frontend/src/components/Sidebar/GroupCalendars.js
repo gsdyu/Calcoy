@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, ChevronRight, ChevronLeft, Check } from 'lucide-react';
+import { Calendar, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -9,11 +9,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents }) => {
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
-  const [servers, setServers] = useState([]);
-  const [icon, setIcon] = useState(null); 
+  const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
-  const [hoveredServer, setHoveredServer] = useState(null); // State to track hovered server
-  
+  const [servers, setServers] = useState([]);
+  const [hoveredServer, setHoveredServer] = useState(null);
+
   // Fetch servers from the backend
   useEffect(() => {
     const fetchServers = async () => {
@@ -54,9 +54,27 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     return name.charAt(0).toUpperCase(); // Use the first character of the server name
   };
 
-   const handleCalendarChange = (server) => {
-    setActiveCalendar(server);  
-    fetchEvents(server);  
+  const handleCalendarChange = (server) => {
+    setActiveCalendar(server);
+    fetchEvents(server);
+  };
+
+  const leaveServer = async (serverId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/servers/${serverId}/leave`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        setServers((prev) => prev.filter((server) => server.id !== serverId));
+        setActiveCalendar(null); // Set to null or default calendar after leaving
+      } else {
+        console.error('Failed to leave server');
+      }
+    } catch (error) {
+      console.error('Error leaving server:', error);
+    }
   };
 
   return (
@@ -76,9 +94,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         >
           <Calendar size={24} className="text-white" />
         </button>
-        
-        {/* Shared Calendar Button */}
-     
+
         <div className="w-8 h-0.5 bg-gray-600 my-2"></div>
 
         {/* Servers (Group Calendars) */}

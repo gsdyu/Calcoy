@@ -10,7 +10,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
   const [userId, setUserId] = useState(null); 
    // State for the invite link
   const [inviteLink, setInviteLink] = useState('');
-  const [showEventPopup, setShowEventPopup] = useState(false);
+  const [showEventPopup, setShowEventPopup, handleInviteLinkChange] = useState(false);
   const [eventDisplayOption, setEventDisplayOption] = useState('dont_show'); // Default option
 
   // State for server info
@@ -64,6 +64,9 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       console.error("User ID is missing");
       return;
     }
+    const handleInviteLinkChange = (e) => {
+      setInviteLink(e.target.value);
+    };
   
     try {
       const response = await fetch('http://localhost:5000/api/servers/create', {
