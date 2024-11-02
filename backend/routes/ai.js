@@ -10,15 +10,16 @@ module.exports = (app, pool) => {
   app.post('/ai', authenticateToken, async (req, res) => {
     try {
       const jsonFormat = {
-        "type": "createEvent",
-        "title": "<event title>",
-        "description": "<event description>",
+        "title": "",
+        "description": "",
         "start_time": "<event start time>",
         "end_time": "<event end time>",
         "location": "<event location, just put N/A if none are given>",
-        "frequency": "<event frequency, default is Do not Repeat >",
-        "calendar": "<which calendar the event is for, default is Personal unless given>",
-        "time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone
+        "frequency": "<how many times the event should be scheduled, default is Do not Repeat but the choices (Do not Repeat, Daily, Weekly, Monthly, Yearly)>",
+        "calendar": "<which calendar the event is for, default is Personal but the choices (Personal, Work, Family)>",
+        "allDay": "is the event all day? boolean (true, false)",
+        "time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+        "date": "<date scheduled>"
         };
 
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -142,7 +143,6 @@ module.exports = (app, pool) => {
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
    - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if no time is provided, make it an all-day event: start_time: "00:00", end_time: "23:59"
 	 - Never include explanatory text or information before or after the JSON
 	 - Always verify the JSON is complete with all closing brackets
    - REMINDER AGAIN DO NOT FORGOT THE CLOSING BRACKET
@@ -158,8 +158,8 @@ example event creation response, everything in the quotations '':
   "end_time": "15:00",
   "location": "conference room a",
   "frequency": "weekly",
-  "calendar": "work",
-  "allday": false,
+  "calendar": "Work",
+  "allDay": false,
   "time_zone": "${currentTimezone}"
   }
 '
@@ -174,6 +174,7 @@ example of incomplete/bad event creation response (no closing brackets):
   "location": "N/A",
   "frequency": "Do not Repeat",
   "calendar": "Personal",
+  "allDay": false
   "time_zone": "${currentTimezone}"
 
 ____
