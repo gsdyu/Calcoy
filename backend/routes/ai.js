@@ -11,7 +11,7 @@ module.exports = (app, pool) => {
     try {
       const jsonFormat = {
         "title": "",
-        "description": "",
+        "description": "<event description, try to give a brief description and mention at the end briefly that this is created with ai>",
         "start_time": "<event start time>",
         "end_time": "<event end time>",
         "location": "<event location, just put N/A if none are given>",
@@ -133,22 +133,26 @@ module.exports = (app, pool) => {
       ---
       [{role: user, content: "I need help studying for my test"}, {role: model, content: "context"}, {role: user, content: "Events - {Title: 'Trig test', Start_time: 'Friday 6 am', Description: 'Pythagorean, word problems'}}, {role: model, content: '*insert tip here*'}, {role: model, content:'Do you have any insight for me'}"}]
       ___
-
+//i cant get eventCreation to close the brackets. might need to try another agent designated for creating events so it always outputs json. 
+//(use gemini config of "response_mime_type": "application/json" and response_schema )
       createEvent:
 	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
 	 - Always start with { and end with }
 	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+   - Do not use Markdown
    - Ensure that the property "type": "createEvent" is made
+   - give a brief description based on the event detail
 	 - Always include all fields, using "N/A" or defaults for missing information
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
    - if a start_time is provided, but not an end_time, make the end_time = start_time
+   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allDay: "true" with start_time: "00:00"and end_time: "23:59".
 	 - Never include explanatory text or information before or after the JSON
 	 - Always verify the JSON is complete with all closing brackets
    - REMINDER AGAIN DO NOT FORGOT THE CLOSING BRACKET
       ___
-example event creation response, everything in the quotations '':
-'
+example events creation response: 
+
 {
   "type": "createEvent"
   "title": "team meeting",
@@ -162,9 +166,7 @@ example event creation response, everything in the quotations '':
   "allDay": false,
   "time_zone": "${currentTimezone}"
   }
-'
 ---
-example of incomplete/bad event creation response (no closing brackets):
 {
   "type": "createEvent",
   "title": "Burger King Lunch",
@@ -176,6 +178,7 @@ example of incomplete/bad event creation response (no closing brackets):
   "calendar": "Personal",
   "allDay": false
   "time_zone": "${currentTimezone}"
+}
 
 ____
 	FOR ALL OTHER QUERIES:
