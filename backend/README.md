@@ -38,9 +38,12 @@
 - have "JWT_SECRET" environment variable and set it to my_key. (JWT_SECRET=my_key)
 
 ## to get access to chatbot you need an api_key
-- current chatbot being used is groq 
+- current chatbot being used is gemini 
+  - website: https://aistudio.google.com/app/apikey
+  - "GEMINI_API_KEY" will be the enviroment variable
+- groq is also set up
 	- website: https://console.groq.com/playground 
-	- "GROQ_API_KEY" will be the environment variable; assign your key in .env file
+	- "GROQ_API_KEY" will be the environment variable
 
 ## run the server
 

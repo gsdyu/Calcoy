@@ -10,16 +10,15 @@ module.exports = (app, pool) => {
   app.post('/ai', authenticateToken, async (req, res) => {
     try {
       const jsonFormat = {
-        "type": "CreateEvent",
-        "title": "",
-        "description": "",
+        "type": "createEvent",
+        "title": "<event title>",
+        "description": "<event description>",
         "start_time": "<event start time>",
         "end_time": "<event end time>",
         "location": "<event location, just put N/A if none are given>",
         "frequency": "<event frequency, default is Do not Repeat >",
         "calendar": "<which calendar the event is for, default is Personal unless given>",
-        "time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
-        "date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
+        "time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone
         };
 
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -27,9 +26,9 @@ module.exports = (app, pool) => {
 
       const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. 
 
-      Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
+      Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and createEvent, which creates an event for the user.
       ___
-      Context:
+      context:
 
       When you are not given any context events, you can respond with 
       to indicate you need additional information from a database that stores the user's and their friends' daily events; specifically when you need more information that can be used to infer the user's situation or feelings "calendar events", "user information", or "friend information". 
@@ -134,10 +133,11 @@ module.exports = (app, pool) => {
       [{role: user, content: "I need help studying for my test"}, {role: model, content: "context"}, {role: user, content: "Events - {Title: 'Trig test', Start_time: 'Friday 6 am', Description: 'Pythagorean, word problems'}}, {role: model, content: '*insert tip here*'}, {role: model, content:'Do you have any insight for me'}"}]
       ___
 
-      CreateEvent:
+      createEvent:
 	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
 	 - Always start with { and end with }
-	 - Use exactly this format: ${JSON.stringify(jsonFormat)}
+	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+   - Ensure that the property "type": "createEvent" is made
 	 - Always include all fields, using "N/A" or defaults for missing information
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
@@ -148,7 +148,9 @@ module.exports = (app, pool) => {
       ___
 example event creation response, everything in the quotations '':
 '
-{"title": "team meeting",
+{
+  "type": "createEvent"
+  "title": "team meeting",
   "description": "weekly sync with engineering team",
   "date": "2024-10-30",
   "start_time": "14:00",
@@ -157,12 +159,13 @@ example event creation response, everything in the quotations '':
   "frequency": "weekly",
   "calendar": "work",
   "allday": false,
-  "time_zone": "${currentTimezone}"}
+  "time_zone": "${currentTimezone}"
+  }
 '
 ---
 example of incomplete/bad event creation response (no closing brackets):
 {
-  "type": "CreateEvent",
+  "type": "createEvent",
   "title": "Burger King Lunch",
   "description": "N/A",
   "start_time": "13:00",
@@ -180,7 +183,7 @@ ____
 	- Keep responses under 300 tokens
       `
       );
-      console.log(JSON.stringify(jsonFormat)
+      console.log(JSON.stringify(jsonFormat, null, 2)
 )
       // gives embedding context of todays date
       const userInput = req.body.message;
