@@ -1,24 +1,21 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname,"../.env") });
-const { createEmbeddings } = require('../ai/embeddings');
+const {createEmbeddings} = require('../ai/embeddings');
 
-// if running wiht index.js, you do not need to import .env.local here; does in index
-//require ('dotenv').config({path:'../../.env.local'})
-
-
-
-class Gemini_Agent {
+class GeminiAgent {
   #genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   #client
   //parameters for groq
+  #system_message
   #model
   #history;
   #maxOutputTokens;
   #temperature;
 
   constructor(content="You are an assistant. You may be provided with context of json events. These events may not provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1) {
-    const system = {role: "user", parts: [{text: content}]}
+    this.#system_message = content
+    const system = {role: "user", parts: [{text: this.#system_message}]}
     if (history.length > 0) this.#history = history;
     else this.#history = [system]
     this.#model = model;
@@ -48,23 +45,52 @@ class Gemini_Agent {
       }
     });
     var message = result.response.text(); 
-    this.#history.push({role: "model", content: message});
+    this.#history.push({role: "model", parts: [{text: message}]});
     return message;
+  }
+
+  async clearChat() {
+    this.#system_message = content
+    const system = {role: "user", parts: [{text: this.#system_message}]}
+    if (history.length > 0) this.#history = history;
+    else this.#history = [system]
   }
 
 }
 
  function handleContext(request) {
+  // handles context type request 
   if (typeof request === "string") {
     try {
-    json_request = JSON.parse(json_input)
+    json_request = JSON.parse(request)
     } catch (error) {
       console.error("Error: Invalid Json string", error);
       return;
     }
   } else json_request = request;
   // placeholder
-  return json_request
+  if (json_request.type != "context") {
+    console.error(`Context Error: Given a ${json_request.type} for a context function`)
+    return
+  }
+  let query = ``
+  switch (json_request.time) {
+    case 'anytime':
+      query += "True"
+      break
+    case 'near':
+      query += "start_time between NOW() - INTERVAL '7 days' AND NOW() + INTERVAL '7 days'"
+      break
+    case 'future':
+      query += "start_time >= NOW()"
+      break
+    case 'past':
+      query += "start_time <= NOW()"
+      break
+    default:
+      console.error(`Context Error: Given an invalid time. ${json_request.time}`)
+  }
+  return query 
 }
 
 //const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, and their current and future events/responsibilities. Being realistic is important, do whats best for the user, but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: You may be given related events from the user's calendar, where the event of the earliest index is most related. Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. Your token limit is 300; do not go above.`
@@ -89,7 +115,7 @@ const jsonFormat = {
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const rag = new Gemini_Agent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
+const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
 
 Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
 ___
@@ -190,12 +216,14 @@ You can respond normally when not specifically ask to create a new event.
 
 // test stuff
 let user3 = "I need help ";
-(async () => {
-  rag.inputChat(user3).then(value=>(console.log(handleContext(JSON.parse(value))))).catch(reason=>console.log(reason));
+let user1 = "{content: 'context', time: 'past'}";
+let user2 = "When is Christmas";
 
+(async () => {
+  //rag.inputChat(user1).then(value=>(console.log(handleContext(value)))).catch(reason=>console.log(reason));
 })();
 
-module.exports = {Gemini_Agent};
+module.exports = {GeminiAgent, handleContext};
 
 
 
