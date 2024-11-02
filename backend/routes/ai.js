@@ -142,6 +142,7 @@ module.exports = (app, pool) => {
 	 - Ensure dates are in YYYY-MM-DD format
 	 - Ensure times are in HH:MM format (24-hour)
    - if a start_time is provided, but not an end_time, make the end_time = start_time
+   - if no time is provided, make it an all-day event: start_time: "00:00", end_time: "23:59"
 	 - Never include explanatory text or information before or after the JSON
 	 - Always verify the JSON is complete with all closing brackets
    - REMINDER AGAIN DO NOT FORGOT THE CLOSING BRACKET
@@ -241,17 +242,19 @@ ____
         })
       } else if (ai_func?.type === 'createEvent'){
         // starts workflow for chatbot creating an event
+        console.log(ai_func.calendar)
         const eventDetailsString = JSON.stringify({
-          title: response.title,
-          description: response.description || '',
-          start_time: response.start_time,
-          end_time: response.end_time,
-          location: response.location || '',
-          frequency: response.frequency || '',
-          calendar: response.calendar || '',
-          allDay: response.allDay || false,
-          time_zone: response.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
+          title: ai_func.title,
+          description: ai_func.description || '',
+          start_time: ai_func.start_time,
+          end_time: ai_func.end_time,
+          location: ai_func.location || '',
+          frequency: ai_func.frequency || '',
+          calendar: ai_func.calendar || '',
+          allDay: ai_func.allDay || false,
+          time_zone: ai_func.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
         });
+        console.log(eventDetailsString)
         return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`})
       } else {
         return res.send({message: response})
