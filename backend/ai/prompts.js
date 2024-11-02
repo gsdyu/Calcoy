@@ -126,25 +126,25 @@ const chatAll = `you provide helpful insight and feedback to the user based on t
       ___
 //i cant get eventCreation to close the brackets. might need to try another agent designated for creating events so it always outputs json. 
 //(use gemini config of "response_mime_type": "application/json" and response_schema )
-      createEvent:
-	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
-	 - Always start with { and end with }
-	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
-   - Do not use Markdown
-   - Ensure that the property "type": "createEvent" is made
+      createevent:
+	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
+	 - always start with { and end with }
+	 - use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+   - do not use markdown
+   - ensure that the property "type": "createevent" is made
    - give a brief description based on the event detail
-	 - Always include all fields, using "N/A" or defaults for missing information
-	 - Ensure dates are in YYYY-MM-DD format
-	 - Ensure times are in HH:MM format (24-hour)
+	 - always include all fields, using "n/a" or defaults for missing information
+	 - ensure dates are in yyyy-mm-dd format
+	 - ensure times are in hh:mm format (24-hour)
    - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allDay: "true" with start_time: "00:00"and end_time: "23:59".
-	 - Never include explanatory text or information before or after the JSON
-	 - Always verify the JSON is complete with all closing brackets
+   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
+	 - never include explanatory text or information before or after the json
+	 - always verify the json is complete with all closing brackets
       ___
 example events creation response: 
 
 {
-  "type": "createEvent"
+  "type": "createevent"
   "title": "team meeting",
   "description": "weekly sync with engineering team",
   "date": "2024-10-30",
@@ -152,21 +152,21 @@ example events creation response:
   "end_time": "15:00",
   "location": "conference room a",
   "frequency": "weekly",
-  "calendar": "Work",
-  "allDay": false,
+  "calendar": "work",
+  "allday": false,
   "time_zone": "${currentTimezone}"
   }
 ---
 {
-  "type": "createEvent",
-  "title": "Burger King Lunch",
-  "description": "N/A",
+  "type": "createevent",
+  "title": "burger king lunch",
+  "description": "n/a",
   "start_time": "13:00",
   "end_time": "16:00",
-  "location": "N/A",
-  "frequency": "Do not Repeat",
-  "calendar": "Personal",
-  "allDay": false
+  "location": "n/a",
+  "frequency": "do not repeat",
+  "calendar": "personal",
+  "allday": false
   "time_zone": "${currentTimezone}"
 }
 
@@ -177,7 +177,52 @@ ____
 	- Discuss existing events and scheduling
 	- Keep responses under 300 tokens
       `
+const chat_createEvent = `createevent:
+   - todays date is ${new Date()}. make events relative to this date
+	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
+	 - always start with { and end with }
+	 - use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+   - do not use markdown
+   - ensure that the property "type": "createevent" is made
+   - give a brief description based on the event detail
+	 - always include all fields, using "n/a" or defaults for missing information
+	 - ensure dates are in yyyy-mm-dd format
+	 - ensure times are in hh:mm format (24-hour)
+   - if a start_time is provided, but not an end_time, make the end_time = start_time
+   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
+	 - never include explanatory text or information before or after the json
+	 - always verify the json is complete with all closing brackets
+      ___
+example events creation response: 
 
-module.exports = {chatAll};
+{
+  "type": "createevent"
+  "title": "team meeting",
+  "description": "weekly sync with engineering team",
+  "date": "2024-10-30",
+  "start_time": "14:00",
+  "end_time": "15:00",
+  "location": "conference room a",
+  "frequency": "weekly",
+  "calendar": "work",
+  "allday": false,
+  "time_zone": "${currentTimezone}"
+  }
+---
+{
+  "type": "createevent",
+  "title": "burger king lunch",
+  "description": "n/a",
+  "start_time": "13:00",
+  "end_time": "16:00",
+  "location": "n/a",
+  "frequency": "do not repeat",
+  "calendar": "personal",
+  "allday": false
+  "time_zone": "${currentTimezone}"
+}
+`
+
+module.exports = {chatAll, chat_createEvent};
 
 

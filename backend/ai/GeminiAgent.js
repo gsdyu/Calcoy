@@ -2,6 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const {createEmbeddings} = require('../ai/embeddings');
+const {chatAll, chat_createEvent} = require('./prompts')
 
 class GeminiAgent {
   #genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -11,28 +12,26 @@ class GeminiAgent {
   #config
   #model
   #history;
-  #maxOutputTokens;
-  #temperature;
 
-  constructor(content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", config={candidateCount:1, maxOutputTokens:100, temperature:1 }, model="gemini-1.5-flash", history=[]) {
+  constructor(content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema="") {
+
     this.#system_message = content
-    const system = {role: "user", parts: [{text: this.#system_message}]}
     if (history.length > 0) this.#history = history;
-    else this.#history = [system]
+    else this.#history = []
     this.#model = model;
-    this.#config=config;
-    this.#maxOutputTokens = 100;
-    this.#temperature = 1;
+    this.#config = {
+      candidateCount: candidateCount,
+      maxOutputTokens: maxOutputTokens,
+      temperature: temperature,
+      response_mime_type: responseMimeType,
+    }
 
     this.#client = this.#genAI.getGenerativeModel({ 
       model: this.#model,
-      generationConfig: this.#config,
+      systemInstruction: this.#system_message,
+      generationConfig: this.#config
     });
     return 1;
-  }
-
-  getHistorySystem() {
-    return this.#history;
   }
 
   getHistory() {
@@ -41,11 +40,6 @@ class GeminiAgent {
 
   getSystem() {
     return this.#system_message;
-  }
-
-  changeSystem(content) {
-    this.#history[0].parts[0].text=String(content);
-    return this.#history[0].parts[0].text;
   }
 
   async inputChat(input, context, maxOutputTokens, temperature ) {
@@ -127,107 +121,6 @@ const jsonFormat = {
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const rag = new GeminiAgent(content = `You provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. Being realistic is important; do what's best for the user while considering what's possible. The current date is ${currentTime} and the timezone is ${currentTimezone}.  Do not mention the following to the user: You may be given context in events from the user's calendar, where the event of the earliest index is most relevant. Act like an oracle that knows the events without assuming you have the list. Information about the users and their events is only known from this conversation; do not assume.
-
-Rather than give a response, you have the option to output a json file that can be preprocessed by the server to satisfy a general function. The two general function available are Context, to get more information about a user's query through a database, and CreateEvent, which creates an event for the user.
-___
-Context:
-
-When you are not given any context events, you can respond with 
-to indicate you need additional information from a database that stores the user's and their friends' daily events; specifically when you need more information that can be used to infer the user's situation or feelings "calendar events", "user information", or "friend information". 
-You can specify context further by adding additional keywords like so
-{type: context, time: [*keyword*]}
-where the [*keyword*] is a placeholder to describing the time range.
-The keywords available-
-time: specify the most relevant timeframe for this query.
-[*time* context]
-*time* is general and is replaced by three timeframe, 1. anytime, 2. near, 3. past, 4. future. near consider a close distance rather than an event before or after
-{"type": "context", "time": "anytime"}
-{"type": "context", "time": "near"}
-{"type": "context", "time": "future"}
-{"type": "context", "time": "past"}
-Decide on using one of these
-
-When listing multiple events, format it nicely for readability. Your token limit is 300; do not exceed it. Information about the users and their events is only known from this conversation; do not assume.
-
-
-
-Follow this if statement to decide on your output.
-
-if (need context) : "*keyword* context"
-else: "[response]"
----
-Example without needing context
----
-User Input:
-Events-{"title":"Mcdonald Lunch", "start_date":"8 am Monday", "end_date":"9 am Monday"}
-
-When do I have dinner?
-
-Response:
-It looks like you have Lunch at Mcdonalds at 8 am to 9 am on Monday. Its a little early to call it lunch though!
----
-Examples needing context
----
-User Input:
-Events-{"title":"Mcdonald Lunch", "start_date":"8 am Monday", "end_date":"9 am Monday"}
-
-What do I study for tomorrows test
-
-Response:
-{"type": "context", "time": "near'}
----
-User Input:
-Events-{}
-
-How many times have I hung out with my friends?
-
-Response:
-{"type": "context", "time": "anytime"}
----
-User Input:
-Events-{}
-
-I have a problem
-
-Response:
-{"type": "context", "time": "near"}
----
-User Input:
-Events-{}
-
-should I go to costco
-
-Response:
-{type: context, time: 'near'}
----
-Depending on the current conversation history, the same question can differ in requiring context
----
-Example of conversation history requiring more context with same question
----
-[{role: user, content: "Do you have any insight for me?"}]
----
-Example of conversation history not requiring more context with same question
----
-[{role: user, content: "I need help studying for my test"}, {role: model, content: "context"}, {role: user, content: "Events - {Title: 'Trig test', Start_time: 'Friday 6 am', Description: 'Pythagorean, word problems'}}, {role: model, content: '*insert tip here*'}, {role: model, content:'Do you have any insight for me'}"}]
-___
-
-CreateEvent:
-
-// this part is just placeholder for CreateEvent prompt. feel free to replace
-
- When asked to create new events, you will output only a JSON object with nothing else in the following format: ${JSON.stringify(jsonFormat, null, 2)}.If the end time is not specified, fill it in with the start time.
-Do not remove any attributes. Leave blank if unknown but try to answer with these suggestions.
-Always add a brief description and the fact that this event is created by ai. This description is not a continued conversation, just a description
-The current date is ${currentTime} and the timezone is ${currentTimezone}. 
-You can respond normally when not specifically ask to create a new event.
-
-
-`
-);
-
-console.log(rag.getHistory('you are a bad assistant'))
-
 // test stuff
 let user3 = "I need help ";
 let user1 = "{content: 'context', time: 'past'}";
@@ -235,8 +128,32 @@ let user2 = "When is Christmas";
 
 genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
+schema = {
+  "type": "ARRAY",
+  "items": {
+    "type": "OBJECT",
+    "properties": {
+      "type": {"type": "STRING"},
+      "title": {"type": "STRING"},
+      "description": {"type": "STRING"},
+      "date": {"type": "STRING"},
+      "start_time": {"type": "STRING"},
+      "end_time": {"type": "STRING"},
+      "frequency": {"type": "STRING"},
+      "location": {"type": "STRING"},
+      "calendar": {"type": "STRING"},
+      "allday": {"type": "BOOLEAN"},
+      "time_zone": {"type": "STRING"}
+    },
+    "required": ["type", "title", "date", "start_time", "end_time", "allday", "calendar", "frequency"]
+  }
+}
+
+const test = new GeminiAgent(content=chat_createEvent);
 (async () => {
+  console.log(await test.inputChat("i want to eat burgerkign on friday"))
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
+  /*
   const model = genAI.getGenerativeModel({
     model: "gemini-1.5-flash",
     systemInstruction: `You will respond as a music historian, demonstrating comprehensive knowledge across diverse musical genres and providing relevant examples. Your tone will be upbeat and enthusiastic, spreading the joy of music. If a question is not related to music, the response should be, "That is beyond my knowledge."`
@@ -244,7 +161,9 @@ genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   const response = await model.generateContent("If a person was born in the sixties, what was the most popular music genre being played? List five songs by bullet points")
   const res = await response.response.text()
   console.log(res)
+  */
 })();
+
 
 module.exports = {GeminiAgent, handleContext};
 

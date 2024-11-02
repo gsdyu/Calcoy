@@ -14,6 +14,7 @@ module.exports = (app, pool) => {
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+      // system prompt is in chatAll
       const rag = new GeminiAgent(content = chatAll);
       // gives embedding context of todays date
       const userInput = req.body.message;
@@ -65,6 +66,7 @@ module.exports = (app, pool) => {
                 end_time: endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
               }
             })
+            console.log(formattedContext)
             const context_response = await rag.inputChat(userInput, JSON.stringify(formattedContext))
             return res.send({message: context_response})
           })
