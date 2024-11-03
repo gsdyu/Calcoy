@@ -74,16 +74,18 @@ module.exports = (app, pool) => {
         })
       } else if (ai_func?.type === 'createEvent'){
         // starts workflow for chatbot creating an event
-        let create_response = JSON.parse(await createAgent.inputChat(userInput)) 
+        const create_response = await createAgent.inputChat(userInput)
+        console.log(create_response)
+        let create_json = JSON.parse(await createAgent.inputChat(userInput)) 
         const eventDetailsString = JSON.stringify({
-          title: create_response.title,
-          description: create_response.description || '',
-          start_time: create_response.start_time,
-          end_time: create_response.end_time,
-          location: create_response.location || 'N/A',
-          frequency: create_response.frequency || 'Do not Repeat',
-          calendar: create_response.calendar || 'Personal',
-          allDay: create_response.allDay || false,
+          title: create_json.title,
+          description: create_json.description || '',
+          start_time: create_json.start_time,
+          end_time: create_json.end_time,
+          location: create_json.location || 'N/A',
+          frequency: create_json.frequency || 'Do not Repeat',
+          calendar: create_json.calendar || 'Personal',
+          allDay: create_json.allDay || false,
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         console.log(eventDetailsString)

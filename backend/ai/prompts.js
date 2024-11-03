@@ -174,7 +174,7 @@ example events creation response:
   "description": "weekly sync with engineering team",
   "start_time": "14:00",
   "end_time": "15:00",
-  "location": "conference room a",
+  "location": "Conference Room a",
   "frequency": "weekly",
   "calendar": "work",
   "allday": false,
@@ -182,11 +182,11 @@ example events creation response:
 ---
 {
   "title": "burger king lunch",
-  "description": "n/a",
+  "description": "maybe getting a whopper with coke",
   "date": "2022-02-21",
   "start_time": "13:00",
   "end_time": "13:30",
-  "location": "burger king",
+  "location": "Burger King",
   "frequency": "do not repeat",
   "calendar": "personal",
   "allday": false
@@ -195,7 +195,7 @@ example events creation response:
 user input: "middle school day starting at 6am (end_time not given but assume generally 8 hour day, location not given, assume general location schooll)"
 {
   "title": "school day",
-  "description": "n/a",
+  "description": "should sleep early to wake up early",
   "date": "2024-11-04",
   "start_time": "6:00",
   "end_time": "14:00",
