@@ -13,7 +13,7 @@ class GeminiAgent {
   #model
   #history;
 
-  constructor(content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema="") {
+  constructor({content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema=undefined}) {
 
     this.#system_message = content
     if (history.length > 0) this.#history = history;
@@ -149,7 +149,7 @@ schema = {
   }
 }
 
-const test = new GeminiAgent(content=chat_createEvent);
+const test = new GeminiAgent(content=chat_createEvent, responseSchema=schema);
 (async () => {
   console.log(await test.inputChat("i want to eat burgerkign on friday"))
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
