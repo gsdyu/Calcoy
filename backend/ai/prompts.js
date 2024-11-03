@@ -3,17 +3,6 @@
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-const jsonFormat = {
-  "title": "",
-  "description": "<event description, try to give a brief description and mention at the end briefly that this is created with ai>",
-  "start_time": "<event start time>",
-  "end_time": "<event end time>",
-  "location": "<event location, just put N/A if none are given>",
-  "frequency": "<how many times the event should be scheduled, default is Do not Repeat but the choices (Do not Repeat, Daily, Weekly, Monthly, Yearly)>",
-  "calendar": "<which calendar the event is for, default is Personal but the choices (Personal, Work, Family)>",
-  "allDay": "is the event all day? boolean (true, false)",
-  "date": "<date scheduled>"
-  };
 
 const chatAll = `you provide helpful insight and feedback to the user based on their wants and current and future events/responsibilities. 
 
@@ -136,12 +125,24 @@ ____
 	- Discuss existing events and scheduling
 	- Keep responses under 300 tokens
       `
+const jsonEvent = {
+	"title": "",
+	"description": "",
+	"start_time": "<event start time>",
+	"end_time": "<event end time>",
+	"location": "<event location, if none are given, assume a general location. N/A otherwise>",
+	"frequency": "<event frequency, default is Do not Repeat >",
+	"calendar": "<which calendar the event is for, default is Personal unless given>",
+  "allDay": "<if events is all day or not. boolean (true or false)>",
+	"date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
+  };
+
 const chat_createEvent = `createevent:
    you are a secretary that is in charge of scheduling events for the boss. the boss tells you what events he has coming up in plain language.
 
    Your response must be a JSON object that will help in actually putting the event in a calendar. The schema is:
 
-   * title: title of the event
+   * title: title of the event, always add a title
    * description: description of the event
    * start_time: event start time
    * end_time: event end time
@@ -154,20 +155,18 @@ const chat_createEvent = `createevent:
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
 	 - always start with { and end with }
    - do not use markdown
-   - ensure that the property "type": "createevent" is made
    - give a brief description based on the event detail
 	 - always include all fields, using "n/a" or defaults for missing information
 	 - ensure dates are in yyyy-mm-dd format
 	 - ensure times are in hh:mm format (24-hour)
    - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
+   - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
 	 - never include explanatory text or information before or after the json
 	 - always verify the json is complete with all closing brackets
       ___
 example events creation response: 
 
 {
-  "type": "createevent"
   "title": "team meeting",
   "description": "weekly sync with engineering team",
   "date": "2024-10-30",
@@ -180,19 +179,31 @@ example events creation response:
   }
 ---
 {
-  "type": "createevent",
   "title": "burger king lunch",
   "description": "n/a",
   "date": "2022-02-21",
   "start_time": "13:00",
-  "end_time": "16:00",
-  "location": "n/a",
+  "end_time": "13:30",
+  "location": "burger king",
   "frequency": "do not repeat",
+  "calendar": "personal",
+  "allday": false
+}
+
+user input: "middle school day starting at 6am (end_time not given but assume generally 8 hour day, location not given, assume general location schooll)"
+{
+  "title": "school day",
+  "description": "n/a",
+  "date": "2024-11-04",
+  "start_time": "6:00",
+  "end_time": "14:00",
+  "location": "school",
+  "frequency": "Weekly",
   "calendar": "personal",
   "allday": false
 }
 `
 
-module.exports = {chatAll, chat_createEvent};
+module.exports = {chatAll, chat_createEvent, jsonEvent};
 
 

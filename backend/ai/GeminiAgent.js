@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const {createEmbeddings} = require('../ai/embeddings');
-const {chatAll, chat_createEvent} = require('./prompts')
+const {chatAll, chat_createEvent, jsonEvent} = require('./prompts')
 
 class GeminiAgent {
   #genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -100,22 +100,8 @@ class GeminiAgent {
   return query 
 }
 
-//const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, and their current and future events/responsibilities. Being realistic is important, do whats best for the user, but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: You may be given related events from the user's calendar, where the event of the earliest index is most related. Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. Your token limit is 300; do not go above.`
-//const bot = new Chat(system);
-//bot.inputChat("Is your name Frankenstein or Frankeinstein's monster?").then(value=>console.log(value)).catch(reason=>console.log(reason));
-//inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
-//inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
+// testing stuff at the bottom, not necessary
 
-const jsonEvent = {
-	"title": "",
-	"description": "",
-	"start_time": "<event start time>",
-	"end_time": "<event end time>",
-	"location": "<event location, just put N/A if none are given>",
-	"frequency": "<event frequency, default is Do not Repeat >",
-	"calendar": "<which calendar the event is for, default is Personal unless given>",
-	"date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
-  };
 
 console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -148,11 +134,13 @@ schema = {
   }
 }
 
-//const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent});
+const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent});
 //const chatAgent = new GeminiAgent({content:chatAll});
 
-//(async () => {
+(async () => {
+  console.log(await createAgent.inputChat("mcdonald lunch tomorrow at 9pm"))
 
+  
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
   /*
   const model = genAI.getGenerativeModel({
@@ -163,7 +151,7 @@ schema = {
   const res = await response.response.text()
   console.log(res)
   */
-//})();
+})();
 
 
 module.exports = {GeminiAgent, handleContext, jsonEvent};

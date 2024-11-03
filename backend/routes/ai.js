@@ -74,8 +74,7 @@ module.exports = (app, pool) => {
         })
       } else if (ai_func?.type === 'createEvent'){
         // starts workflow for chatbot creating an event
-        create_response = await createAgent.inputChat(userInput) 
-        console.log(ai_func.type)
+        let create_response = JSON.parse(await createAgent.inputChat(userInput)) 
         const eventDetailsString = JSON.stringify({
           title: create_response.title,
           description: create_response.description || '',
