@@ -2,6 +2,7 @@ const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
 const { chatAll, chat_createEvent, jsonEvent } = require('../ai/prompts');
+const fs = require('fs');
 
 module.exports = (app, pool) => {
   // Create event route
@@ -67,7 +68,12 @@ module.exports = (app, pool) => {
                 end_time: endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
               }
             })
-            console.log(formattedContext)
+            const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
+            // you can use a fileReader to read the context
+            fs.writeFile('scripts/logs/context.txt',textContext.join('\n'), (err) => { if (err) {
+                console.error("Error writing file: ", err);
+              }
+            })
             const context_response = await chatAgent.inputChat(userInput, JSON.stringify(formattedContext))
             return res.send({message: context_response})
           })
