@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
+import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();
@@ -343,11 +344,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 key={hour} 
                 className={`absolute w-full ${index < hours.length - 1 ? `border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}` : ''}`} 
                 style={{ top: `${hour * 60}px`, height: '60px' }}
-                onDoubleClick={(e) => {
-                  const clickedDate = new Date(currentDate);
-                  clickedDate.setHours(hour);
-                  handleDateDoubleClick(clickedDate, false, e);
-                }}
+                onDoubleClick={(e) => handleTimeSlotDoubleClick(e, currentDate, hour, onDateDoubleClick)}
               ></div>
             ))}
             {timedEvents.map(event => {
