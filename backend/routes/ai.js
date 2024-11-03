@@ -78,6 +78,7 @@ module.exports = (app, pool) => {
         const eventDetailsString = JSON.stringify({
           title: create_response.title,
           description: create_response.description || '',
+          date: create_response.date,
           start_time: create_response.start_time,
           end_time: create_response.end_time,
           location: create_response.location || 'N/A',

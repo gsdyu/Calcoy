@@ -149,7 +149,7 @@ const chat_createEvent = `createevent:
    * location: event location, just put N/A if none are given
    * frequency: event frequency, default is Do not Repeat
    * calendar: which calendar event is for, default is Personal unless given
-   * date: date event is schedules like '01/01/24', or 'unknown', if not sure
+   * date: date event is schedules like '01/01/24', always give a date 
 
    - todays date is ${new Date()}. make events relative to this date
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
