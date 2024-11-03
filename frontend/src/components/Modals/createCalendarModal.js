@@ -61,12 +61,9 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     if (serverInfo.icon) formData.append('icon', serverInfo.icon);
   
     if (!userId) {
-      console.error("User ID is missing");
+      console.error('User ID is missing');
       return;
     }
-    const handleInviteLinkChange = (e) => {
-      setInviteLink(e.target.value);
-    };
   
     try {
       const response = await fetch('http://localhost:5000/api/servers/create', {
@@ -84,21 +81,52 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       const data = await response.json();
       console.log('Server created:', data.server);
   
-      // Call handleNewServer with the new server data including image_url
+      // Store the new server ID
+      setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
+  
+      // Add the new server to the server list
       setServers((prevServers) => [...prevServers, data.server]);
-
-      // Open event display options popup
+  
+      // Open the event display options popup
       setShowEventPopup(true);
-
     } catch (error) {
       console.error('Error submitting server info:', error);
     }
   };
-  const handleEventOptionSelect = (option) => {
-    setEventDisplayOption(option);  
-    setShowEventPopup(false); 
-    if (onClose) onClose();
-    };
+ 
+const handleEventOptionSelect = async (option) => {
+  setEventDisplayOption(option);
+  setShowEventPopup(false);
+
+  // Use the newly created server ID for importing events
+  const newServerId = serverInfo.serverId;
+
+  if (option !== 'dont_show') {
+    try {
+      const response = await fetch('http://localhost:5000/events/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          server_id: newServerId, // Pass the correct server ID here
+          displayOption: option,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Events imported successfully');
+      } else {
+        console.error('Failed to import events');
+      }
+    } catch (error) {
+      console.error('Error importing events:', error);
+    }
+  }
+
+  if (onClose) onClose();
+};
 
   const handleJoinServer = () => {
     if (!inviteLink) {
@@ -367,33 +395,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
  
  
 
-// added by seore 10/23/24
-const handleSubmitServerInfo = async (e) => {
-  e.preventDefault();
-
-  try {
-      // Make an API call to create the group
-      const response = await fetch('/api/groups/create', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(serverInfo), // Send server info (name, description, etc.)
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-          console.log('Server info submitted:', serverInfo);
-          // Redirect the user to the shared calendar page of the new group
-          window.location.href = `/shared-calendar/${data.groupId}`;
-      } else {
-          console.error('Error creating group:', data.error);
-      }
-
-      if (onClose) onClose(); // Close modal after submitting server info & safely calls onClose if provided
-  } catch (error) {
-      console.error('Error submitting server info:', error);
-  }
-};
+ 
 
 export default CreateCalendarModal;
