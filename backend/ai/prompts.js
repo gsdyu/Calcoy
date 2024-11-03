@@ -12,7 +12,6 @@ const jsonFormat = {
   "frequency": "<how many times the event should be scheduled, default is Do not Repeat but the choices (Do not Repeat, Daily, Weekly, Monthly, Yearly)>",
   "calendar": "<which calendar the event is for, default is Personal but the choices (Personal, Work, Family)>",
   "allDay": "is the event all day? boolean (true, false)",
-  "time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
   "date": "<date scheduled>"
   };
 
@@ -124,52 +123,12 @@ const chatAll = `you provide helpful insight and feedback to the user based on t
       ---
       [{role: user, content: "I need help studying for my test"}, {role: model, content: "context"}, {role: user, content: "Events - {Title: 'Trig test', Start_time: 'Friday 6 am', Description: 'Pythagorean, word problems'}}, {role: model, content: '*insert tip here*'}, {role: model, content:'Do you have any insight for me'}"}]
       ___
-//i cant get eventCreation to close the brackets. might need to try another agent designated for creating events so it always outputs json. 
-//(use gemini config of "response_mime_type": "application/json" and response_schema )
-      createevent:
-	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
-	 - always start with { and end with }
-	 - use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
-   - do not use markdown
-   - ensure that the property "type": "createevent" is made
-   - give a brief description based on the event detail
-	 - always include all fields, using "n/a" or defaults for missing information
-	 - ensure dates are in yyyy-mm-dd format
-	 - ensure times are in hh:mm format (24-hour)
-   - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if a time is not provided, assume the time based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
-	 - never include explanatory text or information before or after the json
-	 - always verify the json is complete with all closing brackets
-      ___
-example events creation response: 
 
-{
-  "type": "createevent"
-  "title": "team meeting",
-  "description": "weekly sync with engineering team",
-  "date": "2024-10-30",
-  "start_time": "14:00",
-  "end_time": "15:00",
-  "location": "conference room a",
-  "frequency": "weekly",
-  "calendar": "work",
-  "allday": false,
-  "time_zone": "${currentTimezone}"
-  }
----
-{
-  "type": "createevent",
-  "title": "burger king lunch",
-  "description": "n/a",
-  "start_time": "13:00",
-  "end_time": "16:00",
-  "location": "n/a",
-  "frequency": "do not repeat",
-  "calendar": "personal",
-  "allday": false
-  "time_zone": "${currentTimezone}"
-}
+      createEvent:
 
+      if a user seems to request for an event, output the following json:
+
+      {type: createEvent}
 ____
 	FOR ALL OTHER QUERIES:
 	- Provide helpful insight and feedback to the user based on their wants and their current and future events/responsibilities.
@@ -178,10 +137,22 @@ ____
 	- Keep responses under 300 tokens
       `
 const chat_createEvent = `createevent:
+   you are a secretary that is in charge of scheduling events for the boss. the boss tells you what events he has coming up in plain language.
+
+   Your response must be a JSON object that will help in actually putting the event in a calendar. The schema is:
+
+   * title: title of the event
+   * description: description of the event
+   * start_time: event start time
+   * end_time: event end time
+   * location: event location, just put N/A if none are given
+   * frequency: event frequency, default is Do not Repeat
+   * calendar: which calendar event is for, default is Personal unless given
+   * date: date event is schedules like '01/01/24', or 'unknown', if not sure
+
    - todays date is ${new Date()}. make events relative to this date
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
 	 - always start with { and end with }
-	 - use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
    - do not use markdown
    - ensure that the property "type": "createevent" is made
    - give a brief description based on the event detail
@@ -206,20 +177,19 @@ example events creation response:
   "frequency": "weekly",
   "calendar": "work",
   "allday": false,
-  "time_zone": "${currentTimezone}"
   }
 ---
 {
   "type": "createevent",
   "title": "burger king lunch",
   "description": "n/a",
+  "date": "2022-02-21",
   "start_time": "13:00",
   "end_time": "16:00",
   "location": "n/a",
   "frequency": "do not repeat",
   "calendar": "personal",
   "allday": false
-  "time_zone": "${currentTimezone}"
 }
 `
 

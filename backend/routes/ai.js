@@ -1,7 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
-const { chatAll } = require('../ai/prompts');
+const { chatAll, chat_createEvent, jsonEvent } = require('../ai/prompts');
 
 module.exports = (app, pool) => {
   // Create event route
@@ -15,7 +15,8 @@ module.exports = (app, pool) => {
       const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
       // system prompt is in chatAll
-      const rag = new GeminiAgent(content = chatAll);
+      const chatAgent = new GeminiAgent({content: chatAll});
+      const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent})
       // gives embedding context of todays date
       const userInput = req.body.message;
       const userId = req.user.userId;
@@ -32,7 +33,7 @@ module.exports = (app, pool) => {
       } 
       catch {
       }
-      let response = await rag.inputChat(userInput)
+      let response = await chatAgent.inputChat(userInput)
       console.log(response)
       let ai_func 
       try {
@@ -67,23 +68,24 @@ module.exports = (app, pool) => {
               }
             })
             console.log(formattedContext)
-            const context_response = await rag.inputChat(userInput, JSON.stringify(formattedContext))
+            const context_response = await chatAgent.inputChat(userInput, JSON.stringify(formattedContext))
             return res.send({message: context_response})
           })
         })
       } else if (ai_func?.type === 'createEvent'){
         // starts workflow for chatbot creating an event
-        console.log(ai_func.calendar)
+        create_response = await createAgent.inputChat(userInput) 
+        console.log(ai_func.type)
         const eventDetailsString = JSON.stringify({
-          title: ai_func.title,
-          description: ai_func.description || '',
-          start_time: ai_func.start_time,
-          end_time: ai_func.end_time,
-          location: ai_func.location || '',
-          frequency: ai_func.frequency || '',
-          calendar: ai_func.calendar || '',
-          allDay: ai_func.allDay || false,
-          time_zone: ai_func.time_zone || Intl.DateTimeFormat().resolvedOptions().timeZone
+          title: create_response.title,
+          description: create_response.description || '',
+          start_time: create_response.start_time,
+          end_time: create_response.end_time,
+          location: create_response.location || 'N/A',
+          frequency: create_response.frequency || 'Do not Repeat',
+          calendar: create_response.calendar || 'Personal',
+          allDay: create_response.allDay || false,
+          time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         console.log(eventDetailsString)
         return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`})

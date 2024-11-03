@@ -13,7 +13,7 @@ class GeminiAgent {
   #model
   #history;
 
-  constructor({content="You are an assistant. You may be provided with context of json events. These events may not be provided by the user but by RAG from the system so do not assume they are from the user.", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema=undefined}) {
+  constructor({content="You are frankenstein monster as an assistant", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema=undefined} = {}) {
 
     this.#system_message = content
     if (history.length > 0) this.#history = history;
@@ -25,6 +25,7 @@ class GeminiAgent {
       temperature: temperature,
       response_mime_type: responseMimeType,
     }
+    console.log(temperature)
 
     this.#client = this.#genAI.getGenerativeModel({ 
       model: this.#model,
@@ -105,8 +106,7 @@ class GeminiAgent {
 //inputChat("oh what is your real name?").then(value=>console.log(value)).catch(reason=>console.log(reason));
 //inputChat("do you know my name").then(value=>console.log(value)).catch(reason=>console.log(reason));
 
-const jsonFormat = {
-  "type": "CreateEvent",
+const jsonEvent = {
 	"title": "",
 	"description": "",
 	"start_time": "<event start time>",
@@ -114,10 +114,10 @@ const jsonFormat = {
 	"location": "<event location, just put N/A if none are given>",
 	"frequency": "<event frequency, default is Do not Repeat >",
 	"calendar": "<which calendar the event is for, default is Personal unless given>",
-	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
 	"date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
   };
 
+console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -132,8 +132,8 @@ schema = {
   "type": "ARRAY",
   "items": {
     "type": "OBJECT",
+    "description": "Properties of events needed to be saved on a calendar",
     "properties": {
-      "type": {"type": "STRING"},
       "title": {"type": "STRING"},
       "description": {"type": "STRING"},
       "date": {"type": "STRING"},
@@ -143,15 +143,16 @@ schema = {
       "location": {"type": "STRING"},
       "calendar": {"type": "STRING"},
       "allday": {"type": "BOOLEAN"},
-      "time_zone": {"type": "STRING"}
     },
     "required": ["type", "title", "date", "start_time", "end_time", "allday", "calendar", "frequency"]
   }
 }
 
-const test = new GeminiAgent(content=chat_createEvent, responseSchema=schema);
-(async () => {
-  console.log(await test.inputChat("i want to eat burgerkign on friday"))
+//const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent});
+//const chatAgent = new GeminiAgent({content:chatAll});
+
+//(async () => {
+
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
   /*
   const model = genAI.getGenerativeModel({
@@ -162,10 +163,10 @@ const test = new GeminiAgent(content=chat_createEvent, responseSchema=schema);
   const res = await response.response.text()
   console.log(res)
   */
-})();
+//})();
 
 
-module.exports = {GeminiAgent, handleContext};
+module.exports = {GeminiAgent, handleContext, jsonEvent};
 
 
 
