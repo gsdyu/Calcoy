@@ -49,12 +49,15 @@ app.get('/events', authenticateToken, async (req, res) => {
   }
 });
 
-
 app.post('/events/import', authenticateToken, async (req, res) => {
   const { server_id, displayOption } = req.body;
   const userId = req.user.userId;
 
   try {
+    // Fetch the username of the user
+    const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+    const username = userResult.rows[0]?.username || 'User';
+
     let query, events;
 
     if (displayOption === 'full') {
@@ -70,7 +73,11 @@ app.post('/events/import', authenticateToken, async (req, res) => {
     }
 
     const importedEvents = await Promise.all(events.rows.map(async (event) => {
-      // Check if the event already exists in the target server based on the unique constraint
+      // Use the username as the title if the displayOption is "limited"
+      const title = displayOption === 'full' ? event.title : username;
+      const description = displayOption === 'full' ? event.description : null;
+      const location = displayOption === 'full' ? event.location : null;
+
       const existingEventQuery = `
         SELECT 1 FROM events 
         WHERE user_id = $1 AND title = $2 AND start_time = $3 AND end_time = $4 
@@ -78,39 +85,35 @@ app.post('/events/import', authenticateToken, async (req, res) => {
       `;
       const existingEvent = await pool.query(existingEventQuery, [
         event.user_id,
-        event.title || '', // Handle null titles
+        title,
         event.start_time,
         event.end_time,
-        event.location || '', // Handle null locations
+        location || '', 
         server_id,
       ]);
+ 
 
-      if (existingEvent.rows.length > 0) {
-        console.log(`Skipping duplicate event: ${event.title} on ${event.start_time}`);
-        return null; // Skip duplicate
-      }
-
-      // Insert the event based on the display option
       const insertQuery = displayOption === 'full'
         ? `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id)
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`
-        : `INSERT INTO events (user_id, start_time, end_time, server_id)
-           VALUES ($1, $2, $3, $4) RETURNING *`;
+        : `INSERT INTO events (user_id, title, start_time, end_time, server_id)
+           VALUES ($1, $2, $3, $4, $5) RETURNING *`;
 
       const params = displayOption === 'full'
-        ? [event.user_id, event.title, event.description, event.start_time, event.end_time, event.location, event.frequency, event.calendar, event.time_zone, event.completed, server_id]
-        : [event.user_id, event.start_time, event.end_time, server_id];
+        ? [event.user_id, title, description, event.start_time, event.end_time, location, event.frequency, event.calendar, event.time_zone, event.completed, server_id]
+        : [event.user_id, title, event.start_time, event.end_time, server_id];
 
       return pool.query(insertQuery, params);
     }));
 
-    const results = importedEvents.filter(Boolean); // Filter out null results (skipped duplicates)
+    const results = importedEvents.filter(Boolean);
     res.status(200).json({ message: 'Events imported successfully', importedCount: results.length });
   } catch (error) {
     console.error('Event import error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
   // Update event route
   app.put('/events/:eventId', authenticateToken, async (req, res) => {
