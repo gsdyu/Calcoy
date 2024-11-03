@@ -88,7 +88,6 @@ pool.query(`
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
 
       embedding vector(128),
-      CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
       completed BOOLEAN,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
