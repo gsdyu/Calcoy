@@ -134,7 +134,6 @@ const jsonEvent = {
 	"frequency": "<event frequency, default is Do not Repeat >",
 	"calendar": "<which calendar the event is for, default is Personal unless given>",
   "allDay": "<if events is all day or not. boolean (true or false)>",
-	"date": "<date scheduled like '01/01/24', or 'unknown', if not sure>"
   };
 
 const chat_createEvent = `createevent:
@@ -149,7 +148,6 @@ const chat_createEvent = `createevent:
    * location: event location, just put N/A if none are given
    * frequency: event frequency, default is Do not Repeat
    * calendar: which calendar event is for, default is Personal unless given
-   * date: date event is schedules like '01/01/24', always give a date 
 
    - todays date is ${new Date()}. make events relative to this date
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
@@ -159,17 +157,23 @@ const chat_createEvent = `createevent:
 	 - always include all fields, using "n/a" or defaults for missing information
 	 - ensure dates are in yyyy-mm-dd format
 	 - ensure times are in hh:mm format (24-hour)
+   - end_time and start_time should show both the day and time
    - if a start_time is provided, but not an end_time, make the end_time = start_time
    - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
 	 - never include explanatory text or information before or after the json
 	 - always verify the json is complete with all closing brackets
+ 
+
+ 
+Current time: ${currentTime}
+Timezone: ${currentTimezone}
+
       ___
 example events creation response: 
 
 {
   "title": "team meeting",
   "description": "weekly sync with engineering team",
-  "date": "2024-10-30",
   "start_time": "14:00",
   "end_time": "15:00",
   "location": "conference room a",
