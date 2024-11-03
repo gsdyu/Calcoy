@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
+import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();
@@ -468,11 +469,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     `}
                     style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
                     onClick={() => handleDateClick(day)}
-                    onDoubleClick={() => {
-                      const clickedDate = new Date(day);
-                      clickedDate.setHours(hour);
-                      onDateDoubleClick(clickedDate, false);
-                    }}
+                    onDoubleClick={(e) => handleTimeSlotDoubleClick(e, day, hour, onDateDoubleClick)}
                   >
                     {isSelected && (
                       <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
