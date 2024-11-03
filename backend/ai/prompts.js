@@ -127,7 +127,7 @@ ____
       `
 const jsonEvent = {
 	"title": "",
-	"description": "",
+  "description": "<extra event details/description. can also provide useful notes, insight, or suggestions>",
 	"start_time": "<event start time>",
 	"end_time": "<event end time>",
 	"location": "<event location, if none are given, assume a general location. N/A otherwise>",
@@ -142,7 +142,7 @@ const chat_createEvent = `createevent:
    Your response must be a JSON object that will help in actually putting the event in a calendar. The schema is:
 
    * title: title of the event, always add a title
-   * description: description of the event
+   * description: description of the event, always add a brief description, useful notes, or suggestions
    * start_time: event start time
    * end_time: event end time
    * location: event location, just put N/A if none are given
@@ -153,15 +153,13 @@ const chat_createEvent = `createevent:
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
 	 - always start with { and end with }
    - do not use markdown
-   - give a brief description based on the event detail
+   - always give a brief description based on the event detail
 	 - always include all fields, using "n/a" or defaults for missing information
 	 - ensure dates are in yyyy-mm-dd format
 	 - ensure times are in hh:mm format (24-hour)
-   - end_time and start_time should show both the day and time
+   - end_time and start_time must be in ISO 8601 format, which shows both date and time 
    - if a start_time is provided, but not an end_time, make the end_time = start_time
    - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
-	 - never include explanatory text or information before or after the json
-	 - always verify the json is complete with all closing brackets
  
 
  
