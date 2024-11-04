@@ -14,11 +14,11 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
-
-const CalendarApp = () => {
+ const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
+  
   const [events, setEvents] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -83,7 +83,7 @@ const CalendarApp = () => {
     setSelectedDate(today);
 
     fetchEvents();
-  }, [displayName]);
+  }, [displayName, activeCalendar]); 
 
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
@@ -122,18 +122,24 @@ const CalendarApp = () => {
   };
 
   const fetchEvents = async () => {
+    console.log('Current active calendar:', activeCalendar);
+
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
     if (!check.ok) return;
-  
+
     try {
-      const response = await fetch('http://localhost:5000/events', {
+      const url = activeCalendar !== null 
+        ? `http://localhost:5000/events?server_id=${activeCalendar.id}` 
+        : 'http://localhost:5000/events';
+      
+      const response = await fetch(url, {
         credentials: 'include',
       });
+
       if (response.ok) {
         const data = await response.json();
-  
         const formattedEvents = data.map(event => {
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
@@ -143,9 +149,11 @@ const CalendarApp = () => {
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isTask: event.calendar === 'Task',
-            completed: event.completed || false
+            completed: event.completed || false,
+            server_id: event.server_id
           };
         });
+
         setEvents(formattedEvents);
       } else {
         throw new Error('Failed to fetch events');
@@ -155,7 +163,7 @@ const CalendarApp = () => {
       showNotification('Failed to fetch events');
     }
   };
-
+  
   const handleDateChange = (date, direction) => {
     setShiftDirection(direction);
     if (view === 'Week') {
@@ -243,19 +251,26 @@ const CalendarApp = () => {
       showNotification('Failed to update task');
     }
   };
-
   const handleSaveEvent = async (event) => {
+    // First, check authentication status
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
     if (!check.ok) return;
-
+  
     const isTask = event.calendar === 'Task';
     showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
-
+  
     try {
+      // Determine if we're creating a new event or updating an existing one
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
+  
+      // Include the activeCalendar/server_id in the event data if available
+      const eventData = {
+        ...event,
+        server_id: activeCalendar?.id || null, // activeCalendar? can be null for main|Use `null` for global calendar if no activeCalendar
+      };
   
       const response = await fetch(url, {
         method,
@@ -263,7 +278,7 @@ const CalendarApp = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify(event),
+        body: JSON.stringify(eventData),
       });
   
       if (response.ok) {
@@ -276,9 +291,11 @@ const CalendarApp = () => {
           startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           isTask: event.calendar === 'Task',
-          completed: event.completed || false
+          completed: event.completed || false,
+          server_id: event.server_id,
         };
   
+        // Update events list based on whether this was an update or new creation
         setEvents((prevEvents) => {
           if (event.id) {
             return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
@@ -298,6 +315,7 @@ const CalendarApp = () => {
       showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
     }
   };
+  
 
   const handleDeleteEvent = async (eventId) => {
     const check = await fetch('http://localhost:5000/auth/check', {
@@ -458,8 +476,8 @@ const CalendarApp = () => {
     setSelectedDate(date);
   };
 
-  const handleChangeActiveCalendar = (calendarId) => {
-    setActiveCalendar(calendarId);
+  const handleChangeActiveCalendar = (server) => {
+    setActiveCalendar(server); // Set the active calendar based on the clicked item
   };
 
   return (
@@ -537,9 +555,12 @@ const CalendarApp = () => {
           profileImage={profileImage}
           toggleSidebar={toggleSidebar}
           isSidebarOpen={isSidebarOpen}
+          fetchEvents={fetchEvents}
           activeCalendar={activeCalendar}
+          setActiveCalendar={setActiveCalendar} 
           handleChangeActiveCalendar={handleChangeActiveCalendar}
         />
+        
       </div>
       {isEventDetailsOpen && (
         <EventDetailsModal

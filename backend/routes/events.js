@@ -4,10 +4,11 @@ const { createEmbeddings } = require('../ai/embeddings');
 module.exports = (app, pool) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
     const userId = req.user.userId;
 
-    // Convert start_time and end_time to Date objects
+    const serverId = server_id !== undefined && server_id !== null ? parseInt(server_id) : null;
+
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
 
@@ -16,12 +17,12 @@ module.exports = (app, pool) => {
     }
 
     try {
-      console.log(req.body)
       const embed = await createEmbeddings(JSON.stringify(req.body));
       const result = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, completed) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false]
-      )
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false, serverId]
+      );
       res.status(201).json({ message: 'Event created', event: result.rows[0] });
     } catch (error) {
       console.error('Create event error:', error);
@@ -30,24 +31,96 @@ module.exports = (app, pool) => {
   });
 
   // Get events route
-  app.get('/events', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    try {
-      const result = await pool.query('SELECT * FROM events WHERE user_id = $1 ORDER BY start_time', [userId]);
-      res.json(result.rows)
-    } catch (error) {
-      console.error('Get events error:', error);
-      res.status(500).json({ error: 'Internal server error' });
+// Get events route (with optional server_id filter)
+app.get('/events', authenticateToken, async (req, res) => {
+  const userId = req.user.userId;
+  const server_id = req.query.server_id ? parseInt(req.query.server_id) : null;
+
+  try {
+    const query = server_id !== null 
+      ? `SELECT * FROM events WHERE user_id = $1 AND server_id = $2 ORDER BY start_time`
+      : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+    
+    const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Get events error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.post('/events/import', authenticateToken, async (req, res) => {
+  const { server_id, displayOption } = req.body;
+  const userId = req.user.userId;
+
+  try {
+    // Fetch the username of the user
+    const userResult = await pool.query('SELECT username FROM users WHERE id = $1', [userId]);
+    const username = userResult.rows[0]?.username || 'User';
+
+    let query, events;
+
+    if (displayOption === 'full') {
+      // Import all details from null calendar events
+      query = `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL`;
+      events = await pool.query(query, [userId]);
+    } else if (displayOption === 'limited') {
+      // Import only specific fields from null calendar events
+      query = `SELECT id, user_id, start_time, end_time FROM events WHERE user_id = $1 AND server_id IS NULL`;
+      events = await pool.query(query, [userId]);
+    } else {
+      return res.status(400).json({ error: 'Invalid display option' });
     }
-  });
+
+    const importedEvents = await Promise.all(events.rows.map(async (event) => {
+      // Use the username as the title if the displayOption is "limited"
+      const title = displayOption === 'full' ? event.title : username;
+      const description = displayOption === 'full' ? event.description : null;
+      const location = displayOption === 'full' ? event.location : null;
+
+      const existingEventQuery = `
+        SELECT 1 FROM events 
+        WHERE user_id = $1 AND title = $2 AND start_time = $3 AND end_time = $4 
+        AND COALESCE(location, '') = COALESCE($5, '') AND server_id = $6
+      `;
+      const existingEvent = await pool.query(existingEventQuery, [
+        event.user_id,
+        title,
+        event.start_time,
+        event.end_time,
+        location || '', 
+        server_id,
+      ]);
+ 
+
+      const insertQuery = displayOption === 'full'
+        ? `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`
+        : `INSERT INTO events (user_id, title, start_time, end_time, server_id)
+           VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+
+      const params = displayOption === 'full'
+        ? [event.user_id, title, description, event.start_time, event.end_time, location, event.frequency, event.calendar, event.time_zone, event.completed, server_id]
+        : [event.user_id, title, event.start_time, event.end_time, server_id];
+
+      return pool.query(insertQuery, params);
+    }));
+
+    const results = importedEvents.filter(Boolean);
+    res.status(200).json({ message: 'Events imported successfully', importedCount: results.length });
+  } catch (error) {
+    console.error('Event import error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 
   // Update event route
   app.put('/events/:eventId', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
     const userId = req.user.userId;
     const eventId = req.params.eventId;
 
-    // Convert start_time and end_time to Date objects
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
 
@@ -56,17 +129,17 @@ module.exports = (app, pool) => {
     }
 
     try {
-      // First, check if the event belongs to the authenticated user
       const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
       
       if (checkResult.rows.length === 0) {
         return res.status(404).json({ error: 'Event not found or you do not have permission to update this event' });
       }
 
-      // If the event exists and belongs to the user, update it including completed status
       const updateResult = await pool.query(
-        'UPDATE events SET title = $1, description = $2, start_time = $3, end_time = $4, location = $5, frequency = $6, calendar = $7, time_zone = $8, completed = $9 WHERE id = $10 RETURNING *',
-        [title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false, eventId]
+        `UPDATE events 
+         SET title = $1, description = $2, start_time = $3, end_time = $4, location = $5, frequency = $6, calendar = $7, time_zone = $8, completed = $9, server_id = $10 
+         WHERE id = $11 RETURNING *`,
+        [title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, completed || false, server_id || null, eventId]
       );
       
       if (updateResult.rowCount > 0) {
@@ -87,14 +160,12 @@ module.exports = (app, pool) => {
     const eventId = req.params.eventId;
 
     try {
-      // Check if the event belongs to the authenticated user
       const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
       
       if (checkResult.rows.length === 0) {
         return res.status(404).json({ error: 'Task not found or you do not have permission to update this task' });
       }
 
-      // Update only the completed status
       const updateResult = await pool.query(
         'UPDATE events SET completed = $1 WHERE id = $2 RETURNING *',
         [completed, eventId]
@@ -117,14 +188,12 @@ module.exports = (app, pool) => {
     const eventId = req.params.eventId;
 
     try {
-      // First, check if the event belongs to the authenticated user
       const checkResult = await pool.query('SELECT * FROM events WHERE id = $1 AND user_id = $2', [eventId, userId]);
       
       if (checkResult.rows.length === 0) {
         return res.status(404).json({ error: 'Event not found or you do not have permission to delete this event' });
       }
 
-      // If the event exists and belongs to the user, delete it
       const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
       
       if (deleteResult.rowCount > 0) {

@@ -1,36 +1,132 @@
 'use client';
 
-import React, { useState } from 'react';
-import { X } from 'lucide-react';
+ import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import React, { useState, useEffect } from 'react';
 
-const CreateCalendarModal = ({ onClose }) => {
+const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) => {
   const { darkMode } = useTheme();
-  const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'server'
-
-  // State for the invite link
-  const [inviteLink, setInviteLink] = useState(''); 
+  const [currentTab, setCurrentTab] = useState('main'); // 'main', 'invite', 'link, 'server'
+  const [userId, setUserId] = useState(null); 
+   // State for the invite link
+  const [inviteLink, setInviteLink] = useState('');
+  const [showEventPopup, setShowEventPopup, handleInviteLinkChange] = useState(false);
+  const [eventDisplayOption, setEventDisplayOption] = useState('dont_show'); // Default option
 
   // State for server info
   const [serverInfo, setServerInfo] = useState({
     serverName: '',
-    description: ''
+    description: '',
+    icon: null,
+    iconPreview: null 
   });
+  useEffect(() => {
+    const fetchUserId = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/user', {
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('Failed to fetch user ID');
+        
+        const data = await response.json();
+        setUserId(data.userId);
+      } catch (error) {
+        console.error('Error fetching user ID:', error);
+      } finally {
+       }
+    };
+    fetchUserId();
+  }, []);
+  const handleIconChange = (e) => {
+    const file = e.target.files[0];
+    setServerInfo(prev => ({
+      ...prev,
+      icon: file,
+      iconPreview: file ? URL.createObjectURL(file) : null  
+    }));
+    setIcon(file);  
+    setIconPreview(file ? URL.createObjectURL(file) : null);
+  };
 
   const handleServerChange = (e) => {
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
   };
-
-  const handleInviteLinkChange = (e) => {
-    setInviteLink(e.target.value);
-  };
-
-  const handleSubmitServerInfo = (e) => {
+  const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-    console.log('Server info submitted:', serverInfo);
-    if (onClose) onClose(); // Close modal after submitting server info & safely calls onClose if provided
+    
+    const formData = new FormData();
+    formData.append('serverName', serverInfo.serverName);
+    formData.append('userId', userId);
+    if (serverInfo.icon) formData.append('icon', serverInfo.icon);
+  
+    if (!userId) {
+      console.error('User ID is missing');
+      return;
+    }
+  
+    try {
+      const response = await fetch('http://localhost:5000/api/servers/create', {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+  
+      if (!response.ok) {
+        const text = await response.text();
+        console.error('Error response from server:', text);
+        return;
+      }
+  
+      const data = await response.json();
+      console.log('Server created:', data.server);
+  
+      // Store the new server ID
+      setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
+  
+      // Add the new server to the server list
+      setServers((prevServers) => [...prevServers, data.server]);
+  
+      // Open the event display options popup
+      setShowEventPopup(true);
+    } catch (error) {
+      console.error('Error submitting server info:', error);
+    }
   };
+ 
+const handleEventOptionSelect = async (option) => {
+  setEventDisplayOption(option);
+  setShowEventPopup(false);
+
+  // Use the newly created server ID for importing events
+  const newServerId = serverInfo.serverId;
+
+  if (option !== 'dont_show') {
+    try {
+      const response = await fetch('http://localhost:5000/events/import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          server_id: newServerId, // Pass the correct server ID here
+          displayOption: option,
+        }),
+      });
+
+      if (response.ok) {
+        console.log('Events imported successfully');
+      } else {
+        console.error('Failed to import events');
+      }
+    } catch (error) {
+      console.error('Error importing events:', error);
+    }
+  }
+
+  if (onClose) onClose();
+};
 
   const handleJoinServer = () => {
     if (!inviteLink) {
@@ -45,7 +141,7 @@ const CreateCalendarModal = ({ onClose }) => {
       console.warn('onClose is not defined or not a function.');
     }
   };
-
+ 
   const handleGenerateInviteLink = () => {
     // Generates new invite link for the current calendar
     const newInviteLink = `https://timewise.com/invite/${Math.random().toString(36).substr(2, 8)}`;
@@ -85,7 +181,7 @@ const CreateCalendarModal = ({ onClose }) => {
             <X size={20} />
           </button>
         </div>
-
+      
         {currentTab === 'main' && (
           <div className="space-y-4">
             <button
@@ -95,13 +191,20 @@ const CreateCalendarModal = ({ onClose }) => {
               Invite My Friends
             </button>
             <button
-              onClick={() => setCurrentTab('server')}
+              onClick={() => setCurrentTab('join')}
               className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               Join A Server
             </button>
+            <button
+              onClick={() => setCurrentTab('server')}
+              className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
+            >
+              Create a Server
+            </button>
           </div>
         )}
+
 
         {currentTab === 'invite' && (
           <form>
@@ -182,7 +285,7 @@ const CreateCalendarModal = ({ onClose }) => {
           </form>
         )}  
 
-        {currentTab === 'server' && (
+        {currentTab === 'join' && (
           <form onSubmit={handleSubmitServerInfo}>
             {/* Updated placeholder for server name */}
             <input
@@ -210,40 +313,88 @@ const CreateCalendarModal = ({ onClose }) => {
                 Join Calendar {/* Renamed submit button */}
               </button>
             </div>
+    
           </form>
+        )}
+        {currentTab === 'server' && (
+          <form onSubmit={handleSubmitServerInfo}>
+            <p className="text-center mb-4">Give your new server a personality with a name and an icon. You can always change it later.</p>
+            <div className="flex flex-col items-center mb-4">
+              {/* Updated to show preview if iconPreview exists */}
+              <label className="w-20 h-20 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer mb-2 relative overflow-hidden">
+                <input type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
+                {serverInfo.iconPreview ? (
+                  <img src={serverInfo.iconPreview} alt="Icon preview" className="w-full h-full object-cover rounded-full" />
+                ) : (
+                  <span className="text-white">UPLOAD</span>
+                )}
+              </label>
+            </div>
+            <label htmlFor="serverName" className="block text-gray-400 mb-1">SERVER NAME</label>
+            <input
+              type="text"
+              id="serverName"
+              name="serverName"
+              placeholder="Enter server name"
+              value={serverInfo.serverName}
+              onChange={handleServerChange}
+              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
+              required
+            />
+            <div className="text-xs text-gray-500 mb-4">
+              By creating a server, you agree to Timewise's Community Guidelines.
+            </div>
+            <div className="flex justify-between">
+              <button type="button" onClick={() => setCurrentTab('main')} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
+                Back
+              </button>
+              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+                Create
+              </button>
+            </div>
+          </form>
+        )}
+
+        {/* Popup for Event Options */}
+        {showEventPopup && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} p-4 rounded-lg w-80`}>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold">Select Event Display Option</h3>
+                <button onClick={() => handleEventOptionSelect('dont_show')} className="text-gray-400 hover:text-gray-200">
+                  <X size={20} />
+                </button>
+              </div>
+              <p className="text-sm text-gray-400 mb-4">Choose how events from your personal calendar appear in this new server:</p>
+              <button
+                onClick={() => handleEventOptionSelect('dont_show')}
+                className="w-full px-4 py-2 mb-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Don’t Show Events
+              </button>
+              <button
+                onClick={() => handleEventOptionSelect('limited')}
+                className="w-full px-4 py-2 mb-2 bg-yellow-500 text-white rounded hover:bg-yellow-600"
+              >
+                Show Limited Events
+              </button>
+              <button
+                onClick={() => handleEventOptionSelect('full')}
+                className="w-full px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Show Full Events
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </div>
-  );
-};
+      );
+    };
+ 
+ 
+ 
 
-// added by seore 10/23/24
-const handleSubmitServerInfo = async (e) => {
-  e.preventDefault();
-
-  try {
-      // Make an API call to create the group
-      const response = await fetch('/api/groups/create', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(serverInfo), // Send server info (name, description, etc.)
-      });
-
-      const data = await response.json();
-      if (response.ok) {
-          console.log('Server info submitted:', serverInfo);
-          // Redirect the user to the shared calendar page of the new group
-          window.location.href = `/shared-calendar/${data.groupId}`;
-      } else {
-          console.error('Error creating group:', data.error);
-      }
-
-      if (onClose) onClose(); // Close modal after submitting server info & safely calls onClose if provided
-  } catch (error) {
-      console.error('Error submitting server info:', error);
-  }
-};
+ 
 
 export default CreateCalendarModal;

@@ -40,6 +40,7 @@ app.use(session({
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
 require('./routes/profile')(app, pool);
+require('./routes/servers')(app, pool);
 
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
 	.then(() => {console.log("Vector extension ready")})
@@ -58,6 +59,18 @@ pool.query(`
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
+    CREATE TABLE IF NOT EXISTS servers (
+      id SERIAL PRIMARY KEY,
+      name VARCHAR(100) NOT NULL,
+      image_url VARCHAR(255),
+      created_by INT REFERENCES users(id) ON DELETE CASCADE
+  );
+
+  CREATE TABLE IF NOT EXISTS user_servers (
+      user_id INT REFERENCES users(id) ON DELETE CASCADE,
+      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+      PRIMARY KEY (user_id, server_id)
+  );
 `).then(() => {
   console.log("Users table is ready");
   pool.query(`
@@ -72,11 +85,15 @@ pool.query(`
       frequency VARCHAR(50),
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
+      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+
       embedding vector(128),
-      CONSTRAINT unique_event_timeframe_per_day UNIQUE (user_id, title, start_time, end_time, location),
       completed BOOLEAN,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
+      ALTER TABLE events ADD COLUMN IF NOT EXISTS server_id INT REFERENCES servers(id) ON DELETE CASCADE;
+      ALTER TABLE events DROP CONSTRAINT IF EXISTS unique_event_timeframe_per_day;
+
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));

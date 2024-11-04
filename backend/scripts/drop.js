@@ -21,8 +21,10 @@ const pool = new Pool({
 
 
 pool.query(`
-	DROP TABLE events;
-	DROP TABLE users;
+  DROP TABLE user_servers CASCADE;
+  DROP TABLE servers CASCADE;
+	DROP TABLE events CASCADE;
+	DROP TABLE users CASCADE;
 `)
 	.catch((err) => console.error("Error dropping tables:", err));
 
