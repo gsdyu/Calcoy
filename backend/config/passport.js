@@ -40,26 +40,32 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
       if (!event.start.date && !event.end.date) {
         eventData = {
           user_id: userId,
-          title: event.summary || 'no title',
+          title: event.summary || 'No Title',
           description: event.description || '',
           start_time: new Date(event.start.dateTime),
           end_time: new Date(event.end.dateTime),
           location: event.location || '',
-          calendar: 'google',
-          time_zone: event.start.timezone || 'utc'
+          calendar: 'Google',
+          time_zone: event.start.timezone || 'UTC'
         };
       }
       else if (!event.start.datetime && !event.end.datetime) {
+        // events with no end date are considered all-day
+        // this logic adds one day extra to the start date
+        event_end_date = new Date (new Date(`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)      
+        console.log(event_end_date)
         eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
           description: event.description || '',
           start_time: new Date(`${event.start.date}T00:00:00`),
-          end_time: new Date(`${event.start.date}T23:59:59`),
+          end_time: event_end_date,
           location: event.location || '',
-          calendar: 'google',
+          calendar: 'Google',
           time_zone: event.start.timeZone || 'UTC'
         };
+        console.log('before: ',eventData.start_time)
+        console.log('after: ',eventData.end_time)
       }
       return eventData;
     });
@@ -87,7 +93,6 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
        // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
        // callback events will always be given even if our calendar already has it stored
        const row = result.rows;
-       console.log(row)
        if (!row[0]) {
          console.log('Import: Event already added')
          return};
@@ -98,8 +103,6 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
              console.error(`Error: No embeddings were created. Possibly out of tokens.`);
              return
            }
-           console.log(embed_result.length)
-           console.log(row)
            pool.query(`UPDATE events
                        SET embedding = $6
                        WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
@@ -108,6 +111,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
        } catch (error) {
            if (error.status===402) {
              console.log("Error: Out of tokens")
+             return
            }
          }
     })

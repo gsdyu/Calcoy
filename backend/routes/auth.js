@@ -129,6 +129,12 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
       throw new Error('Failed to fetch data from the provided URL');
     }
 
+    const {hostname} = new URL(url);
+    let sameEndStart= false;
+    if (hostname === "csulb.instructure.com") {
+      sameEndStart = true;
+    }
+
     const data = await response.text();
     const jcalData = ICAL.parse(data);
     const comp = new ICAL.Component(jcalData);
@@ -136,11 +142,12 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 
     const events = vevents.map(event => {
       const vEvent = new ICAL.Event(event);
+      const eventEndDay = sameEndStart ? vEvent.startDate.toJSDate(): vEvent.endDate.toJSDate();
       return {
         title: vEvent.summary || 'No Title',
         description: vEvent.description || '',
         start_time: vEvent.startDate.toJSDate(),
-        end_time: vEvent.endDate.toJSDate(),
+        end_time: eventEndDay, 
         location: vEvent.location || '',
         calendar: 'Task',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
@@ -171,7 +178,6 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
        // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
        // callback events will always be given even if our calendar already has it stored
        const row = result.rows;
-       console.log(row)
        if (!row[0]) {
          console.log('Import: Event already added')
          return};
@@ -182,8 +188,6 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
              console.error(`Error: No embeddings were created. Possibly out of tokens.`);
              return
            }
-           console.log(embed_result.length)
-           console.log(row)
            pool.query(`UPDATE events
                        SET embedding = $6
                        WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
@@ -201,7 +205,6 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
     res.status(200).json({ message: 'Events imported successfully' });
 
   } catch (error) {
-    console.log('dog')
     console.error('Error in proxy fetch:', error);
     res.status(500).json({ error: 'Error fetching data from the URL' });
   }

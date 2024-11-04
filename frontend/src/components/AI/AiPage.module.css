@@ -4,16 +4,11 @@
       color: rgb(102, 144, 207);
       display: inline-flex;
       align-items: center;
+      margin-bottom: 10px;
   }
 
   .ailogo {
     margin-left: 8px;
-  }
-
-  .aisubheader {
-    font-size: 25px;
-    font-weight: 600;
-    margin-bottom: 10px;
   }
 
   @keyframes growFadeIn {
@@ -32,7 +27,7 @@
     opacity: 1;
     transform-origin: top center;
     transition: all 0.3s ease;
-    width: 500px;
+    width: 600px;
     border-radius: 15px;
     background-color: rgb(63, 79, 105);
     margin-top: 10px;
@@ -155,9 +150,11 @@
     border-radius: 10px;
     margin: 5px 0;
     word-wrap: break-word;
-    display: inline-block;
     max-width: 75%;
     white-space: pre-wrap;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px
   }
   
   .user {
@@ -194,7 +191,7 @@
     justify-content: center;
     position: sticky;
     bottom: 0;
-    background-color: rgb(203, 208, 216);
+    background-color: rgb(215, 219, 224);
     border-radius: 35px;
     border: 2px solid rgb(185, 187, 189);
     padding: 5px;
@@ -213,7 +210,7 @@
   }
   
   .textarea {
-    background-color: rgb(203, 208, 216);
+    background-color: rgb(215, 219, 224);
     width: 90%;
     flex: 1;
     padding: 15px;
@@ -413,4 +410,31 @@
 }
 
 
-  
+.messageContent {
+  flex: 1;
+}
+
+.botIconContainer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background-color: #e5e7eb;
+  flex-shrink: 0;
+
+}
+
+.botIconContainerDark {
+  background-color: #374151;
+}
+
+.botIcon {
+  color: #6b7280;
+}
+
+.bot, .botDark {
+  padding: 12px 16px 12px 12px;
+}
+
