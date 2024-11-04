@@ -25,7 +25,7 @@ async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
       return response.data.data.map(item => {return item.embedding})
     })
 		.then(data=>data)
-		.catch(error=>console.error(error));
+		//.catch(error=>console.error(error));
 	return response;
 }
 

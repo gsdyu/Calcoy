@@ -159,7 +159,7 @@ const chat_createEvent = `createevent:
 	 - ensure times are in hh:mm format (24-hour)
    - end_time and start_time must be in ISO 8601 format, which shows both date and time 
    - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "23:59".
+   - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event allday: "true" with start_time: "00:00"and end_time: "00:00".
  
 
  
@@ -174,7 +174,7 @@ example events creation response:
   "description": "weekly sync with engineering team",
   "start_time": "14:00",
   "end_time": "15:00",
-  "location": "Conference Room a",
+  "location": "Conference room a",
   "frequency": "weekly",
   "calendar": "work",
   "allday": false,
