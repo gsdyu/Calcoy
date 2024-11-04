@@ -6,6 +6,7 @@ import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
+import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();
@@ -16,6 +17,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+  const [eventPositions, setEventPositions] = useState(new Map());
 
   // Initialize drag and drop hook
   const { 
@@ -109,33 +111,37 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     
-    // For events on the next day, start at midnight (0:00)
     let startHour = isNextDay ? 0 : startDate.getHours();
     let startMinute = isNextDay ? 0 : startDate.getMinutes();
     let endHour = endDate.getHours();
     let endMinute = endDate.getMinutes();
-
+  
     if (endHour === 0 && endMinute === 0) {
       endHour = 24;
       endMinute = 0;
     }
-
-    // Calculate position and size
+  
     const top = (startHour + startMinute / 60) * 60;
     let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
-
-    // Minimum height for visibility
+  
     const minHeight = 40;
     if (height < minHeight && event.calendar !== 'Task') {
       height = minHeight;
     }
-
+  
+    // Get positioning from eventPositions
+    const position = eventPositions.get(event.id) || {
+      left: '0%',
+      width: '100%',
+      zIndex: 10
+    };
+  
     return {
       top: `${top}px`,
       height: `${height}px`,
-      left: '0',
-      right: '20px',
-      zIndex: 10,
+      left: position.left,
+      width: position.width,
+      zIndex: position.zIndex
     };
   };
 
@@ -148,6 +154,11 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const filteredEvents = events.filter(event => shouldShowEventOnDay(event, currentDate));
   const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
   const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
+
+  useEffect(() => {
+    const positions = calculateEventColumns(timedEvents);
+    setEventPositions(positions);
+  }, [timedEvents]);
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
