@@ -6,6 +6,7 @@ import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
+import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();
@@ -15,6 +16,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
   const { darkMode } = useTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+  const [eventPositions, setEventPositions] = useState(new Map());
 
   // Initialize the enhanced drag and drop hook
   const { 
@@ -59,6 +61,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const positions = calculateEventColumns(events.filter(event => !isAllDayEvent(event)));
+    setEventPositions(positions);
+  }, [events]);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -98,24 +105,16 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 const getEventStyle = (event, isNextDayPortion = false) => {
   const startDate = new Date(event.start_time);
   const endDate = new Date(event.end_time);
-  let startHour = startDate.getHours();
-  let startMinute = startDate.getMinutes();
+  let startHour = isNextDayPortion ? 0 : startDate.getHours();
+  let startMinute = isNextDayPortion ? 0 : startDate.getMinutes();
   let endHour = endDate.getHours();
   let endMinute = endDate.getMinutes();
 
   // Handle next day portion of events
-  if (isNextDayPortion) {
-    startHour = 0;
-    startMinute = 0;
-  }
-
-  // Calculate end time for events crossing midnight
   if (!isNextDayPortion && isEventCrossingMidnight(event)) {
-    // First day portion ends at midnight
     endHour = 24;
     endMinute = 0;
   } else if (endHour === 0 && endMinute === 0) {
-    // If ends at exactly midnight
     endHour = 24;
     endMinute = 0;
   }
@@ -123,18 +122,22 @@ const getEventStyle = (event, isNextDayPortion = false) => {
   const top = (startHour + startMinute / 60) * 60;
   let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
-  // Minimum height for visibility
   const minHeight = 22;
   if (height < minHeight && event.calendar !== 'Task') {
     height = minHeight;
   }
 
+  const position = eventPositions.get(event.id) || {
+    left: '0%',
+    zIndex: 10
+  };
+
   return {
     top: `${top}px`,
     height: `${height}px`,
-    left: '0px',
+    left: position.left,
     right: '20px',
-    zIndex: 30,
+    zIndex: position.zIndex
   };
 };
 
