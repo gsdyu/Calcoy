@@ -76,9 +76,12 @@ const chat_context = `
       - time: future, will look through everywhere from now to onwards
       - time: anytime, all events will be look through, despite timeframe
       
-
-
       in the conversation history, you may ask for context multiple times in a row. however, if a {"type": "context", "time": "anytime"} has already been requested before without any chatbot response in between, then do not request for anymore context. it is assumed that the events have already been searched, and that there seem to be no relevant events; try to answer the user now; you may also ask for more clarification from the user to get a more specific user input.
+
+      take notes of words usage that may indicate the time context. 
+      
+      -"was" can refer to past, near or far
+      -"am I" can refer to present or future.
 
       if context is not needed, respond with
       {"type": "none"}
