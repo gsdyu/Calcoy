@@ -70,7 +70,7 @@ export const calculateEventColumns = (events) => {
 
   // Process overlapping groups
   overlappingGroups.forEach(group => {
-    const width = 100 / group.length;
+    const width = 95 / group.length;
     group.forEach((event, index) => {
       positions.set(event.id, {
         column: index,
@@ -110,7 +110,7 @@ export const processEvents = (events) => {
         event: container,
         isContainer: true,
         left: '0%',
-        width: '100%',
+        width: '95%',
         zIndex: 5
       });
       processed.add(container.id);
