@@ -4,6 +4,10 @@ const { createEmbeddings } = require('../ai/embeddings');
 const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
 const fs = require('fs');
 
+const contextAgent = new GeminiAgent({content: chat_context, responseMimeType: "application/json"});
+const chatAgent = new GeminiAgent({content: chatAll});
+const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent, responseMimetype: "application/json"});
+
 async function useRag(userInput, userId, context_query, pool) {
   let output = "Error in Rag"
   await createEmbeddings(userInput).then(async embed => {
@@ -55,11 +59,6 @@ module.exports = (app, pool) => {
       const userId = req.user.userId;
       //const userId = req.user.userId;
       //system prompt is in chatAll
-      const contextAgent = new GeminiAgent({content: chat_context});
-      const chatAgent = new GeminiAgent({content: chatAll});
-      const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent});
-
-
 
       if (!userInput) {
 		    return res.status(400).send({error: "Input is required."} );
@@ -84,9 +83,9 @@ module.exports = (app, pool) => {
         
       } else if (response.type === 'createEvent'){
         // starts workflow for chatbot creating an event
-        const create_response = await createAgent.inputChat(userInput)
-        console.log(create_response)
-        let create_json = await createAgent.inputChat(userInput); 
+        createAgent.setHistory(chatAgent.getHistory())
+        const create_json = await createAgent.inputChat(userInput); 
+        console.log(create_json)
         const eventDetailsString = JSON.stringify({
           title: create_json.title,
           description: create_json.description || '',
@@ -99,6 +98,7 @@ module.exports = (app, pool) => {
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         console.log(eventDetailsString)
+        chatAgent.setHistory(createAgent.getHistory())
         return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`})
       } else {
         return res.send({message: response})

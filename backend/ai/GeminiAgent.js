@@ -11,9 +11,10 @@ class GeminiAgent {
   #system_message
   #config
   #model
+  #responseSchema
   #history;
 
-  constructor({content="You are frankenstein monster as an assistant", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="application/json", responseSchema=undefined} = {}) {
+  constructor({content="You are frankenstein monster as an assistant", model="gemini-1.5-flash", history=[], maxOutputTokens=300, temperature=1, candidateCount=1, responseMimeType="text/plain", responseSchema=undefined} = {}) {
 
     this.#system_message = content
     if (history.length > 0) this.#history = history;
@@ -24,13 +25,14 @@ class GeminiAgent {
       maxOutputTokens: maxOutputTokens,
       temperature: temperature,
       response_mime_type: responseMimeType,
+      response_schema: responseSchema
     }
 
     this.#client = this.#genAI.getGenerativeModel({ 
       model: this.#model,
       systemInstruction: this.#system_message,
-      generationConfig: this.#config
-    });
+      generationConfig: this.#config,
+    })
     return 1;
   }
 
@@ -38,24 +40,29 @@ class GeminiAgent {
     return this.#history;
   }
 
+  setHistory(history) {
+    this.#history = history
+  }
+
   getSystem() {
     return this.#system_message;
   }
 
-  async inputChat(input, context, maxOutputTokens, temperature ) {
+  async inputChat(input, context) {
     // if bot outputs a json string, it will be parsed into json
     let real_input = input
     if (context) real_input += `\n\nEvents - ${context}`
-    this.#history.push({role: "user", parts: [{text: real_input}]});
+    this.#history = [...this.#history, {role: "user", parts: [{text: real_input}]}];
     var result = await this.#client.generateContent({
       contents: this.#history,
-      generationConfig: this.#config
+      generationConfig: this.#config,
     });
     let message = result.response.text(); 
-    this.#history.push({role: "model", parts: [{text: message}]});
+    this.#history = [...this.#history, {role: "model", parts: [{text: message}]}];
     try {
       message=JSON.parse(message);
-    } catch {
+    } catch (error) {
+      console.log(error)
     }
     return message;
   }
@@ -138,11 +145,11 @@ schema = {
 }
 
 const contextAgent = new GeminiAgent({content: chat_context})
-const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent});
+const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent, responseMimeType: "application/json"});
 //const chatAgent = new GeminiAgent({content:chatAll});
 
 //(async () => {
-  //console.log(await contextAgent.inputChat("hello"))
+  //console.log(await createAgent.inputChat("new event on tuesday"))
 
   
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
@@ -158,7 +165,7 @@ const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:js
 //})();
 
 
-module.exports = {GeminiAgent, handleContext, jsonEvent};
+module.exports = {GeminiAgent, handleContext};
 
 
 
