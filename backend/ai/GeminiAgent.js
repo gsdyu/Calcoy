@@ -2,7 +2,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const path = require("path");
 require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const {createEmbeddings} = require('../ai/embeddings');
-const {chatAll, chat_createEvent, jsonEvent} = require('./prompts')
+const {chatAll, chat_createEvent, chat_context, jsonEvent} = require('./prompts')
 
 class GeminiAgent {
   #genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -25,7 +25,6 @@ class GeminiAgent {
       temperature: temperature,
       response_mime_type: responseMimeType,
     }
-    console.log(temperature)
 
     this.#client = this.#genAI.getGenerativeModel({ 
       model: this.#model,
@@ -44,6 +43,7 @@ class GeminiAgent {
   }
 
   async inputChat(input, context, maxOutputTokens, temperature ) {
+    // if bot outputs a json string, it will be parsed into json
     let real_input = input
     if (context) real_input += `\n\nEvents - ${context}`
     this.#history.push({role: "user", parts: [{text: real_input}]});
@@ -51,8 +51,12 @@ class GeminiAgent {
       contents: this.#history,
       generationConfig: this.#config
     });
-    var message = result.response.text(); 
+    let message = result.response.text(); 
     this.#history.push({role: "model", parts: [{text: message}]});
+    try {
+      message=JSON.parse(message);
+    } catch {
+    }
     return message;
   }
 
@@ -103,7 +107,6 @@ class GeminiAgent {
 // testing stuff at the bottom, not necessary
 
 
-console.log(Intl.DateTimeFormat().resolvedOptions().timeZone)
 const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
 const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -134,11 +137,12 @@ schema = {
   }
 }
 
+const contextAgent = new GeminiAgent({content: chat_context})
 const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent});
 //const chatAgent = new GeminiAgent({content:chatAll});
 
-(async () => {
-  console.log(await createAgent.inputChat("mcdonald lunch tomorrow at 9pm"))
+//(async () => {
+  //console.log(await contextAgent.inputChat("hello"))
 
   
 //  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
@@ -151,7 +155,7 @@ const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:js
   const res = await response.response.text()
   console.log(res)
   */
-})();
+//})();
 
 
 module.exports = {GeminiAgent, handleContext, jsonEvent};

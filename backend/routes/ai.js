@@ -1,11 +1,45 @@
 const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
-const { chatAll, chat_createEvent, jsonEvent } = require('../ai/prompts');
+const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
 const fs = require('fs');
 
+async function useRag(userInput, userId, context_query, pool) {
+  let output = "Error in Rag"
+  await createEmbeddings(userInput).then(async embed => {
+    let query = `SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone,
+      embedding <-> '${JSON.stringify(embed[0])}' as correlation
+      FROM events
+      WHERE user_id=$1 AND COALESCE(${context_query}, TRUE)
+      ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
+      LIMIT 5;`
+    await pool.query(query, [ userId]
+    ).then(async (context) => {
+      const formattedContext = context.rows.map(event => {
+        const startTime = new Date(event.start_time);
+        const endTime = new Date(event.end_time)
+        return {
+          ...event,
+          date: startTime.toLocaleDateString(),
+          start_time: startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+          end_time: endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+        }
+      })
+      const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
+      // you can use a fileReader to read the context
+      output = textContext;
+      fs.writeFile('scripts/logs/context.txt',textContext.join('\n'), (err) => { if (err) {
+          console.error("Error writing file: ", err);
+        }
+      })
+    })
+  })
+  return output 
+}
+     
 module.exports = (app, pool) => {
   // Create event route
+
   app.get('/ai', async (req, res) => {
 	  res.send({"status":"ready"});
   })
@@ -15,74 +49,44 @@ module.exports = (app, pool) => {
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-      // system prompt is in chatAll
-      const chatAgent = new GeminiAgent({content: chatAll});
-      const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent})
+
       // gives embedding context of todays date
       const userInput = req.body.message;
       const userId = req.user.userId;
       //const userId = req.user.userId;
+      //system prompt is in chatAll
+      const contextAgent = new GeminiAgent({content: chat_context});
+      const chatAgent = new GeminiAgent({content: chatAll});
+      const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent});
+
+
+
       if (!userInput) {
 		    return res.status(400).send({error: "Input is required."} );
       }
       if (Array.isArray(userInput)) {
         return res.status(400).send({error: "Invalid input: arrays are not handled. please provide string"})
       }
-      
-      try {
-        ai_func = JSON.parse(req.body.message)
-      } 
-      catch {
+      const initial_context = await contextAgent.inputChat(userInput)
+      let initial_events = ''
+      if (initial_context.type === "none"){
+      } else {
+        initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
       }
-      let response = await chatAgent.inputChat(userInput)
+
+      let response = await chatAgent.inputChat(userInput, initial_events)
       console.log(response)
-      let ai_func 
-      try {
-        ai_func = JSON.parse(response)
-      } 
-      catch {
-      }
 
       // if chatbot responds with a json, checks for which ai function handles
 
-      if (ai_func?.type === "context") {
-        // context handles rag
-        let context_query = await handleContext(ai_func);
-        console.log(context_query)
-        createEmbeddings(userInput).then(embed => {
-          let query = `SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone,
-            embedding <-> '${JSON.stringify(embed[0])}' as correlation
-            FROM events
-            WHERE user_id=$1 AND COALESCE(${context_query}, TRUE)
-            ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
-            LIMIT 5;`
-          pool.query(query, [ userId]
-          ).then(async (context) => {
-            const formattedContext = context.rows.map(event => {
-              const startTime = new Date(event.start_time);
-              const endTime = new Date(event.end_time)
-              return {
-                ...event,
-                date: startTime.toLocaleDateString(),
-                start_time: startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-                end_time: endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-              }
-            })
-            const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
-            // you can use a fileReader to read the context
-            fs.writeFile('scripts/logs/context.txt',textContext.join('\n'), (err) => { if (err) {
-                console.error("Error writing file: ", err);
-              }
-            })
-            const context_response = await chatAgent.inputChat(userInput, JSON.stringify(formattedContext))
-            return res.send({message: context_response})
-          })
-        })
-      } else if (ai_func?.type === 'createEvent'){
+      if (response.type === "context") {
+        return res.send({message: JSON.stringify(response)})
+        
+      } else if (response.type === 'createEvent'){
         // starts workflow for chatbot creating an event
         const create_response = await createAgent.inputChat(userInput)
         console.log(create_response)
-        let create_json = JSON.parse(await createAgent.inputChat(userInput)) 
+        let create_json = await createAgent.inputChat(userInput); 
         const eventDetailsString = JSON.stringify({
           title: create_json.title,
           description: create_json.description || '',
