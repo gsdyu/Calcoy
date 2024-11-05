@@ -576,6 +576,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           onDelete={handleDeleteEvent}
           onTaskComplete={handleTaskComplete}
           triggerRect={eventModalTriggerRect}  
+          view={view}
         />
       )}
       {isAddingEvent && (

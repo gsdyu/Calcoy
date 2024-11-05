@@ -162,7 +162,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
-    onEventClick(event);
+    onEventClick(event, e);
   };
 
   const handleDateDoubleClick = (date, isAllDay, e) => {

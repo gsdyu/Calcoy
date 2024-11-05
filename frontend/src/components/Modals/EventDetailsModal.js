@@ -1,37 +1,88 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { X, Edit, Trash, Check, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, triggerRect }) => {
+const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, triggerRect, view }) => {
   const { darkMode } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
-  const [position, setPosition] = useState({ left: 0, top: 0 });
+  const [position, setPosition] = useState({ left: -9999, top: -9999 }); // Start offscreen
+  const modalRef = useRef(null);
   const isTask = event?.calendar === 'Task';
   const isCompleted = event?.completed;
 
+  // Lock scroll when modal is open
   useEffect(() => {
-    if (triggerRect) {
-      const viewportWidth = window.innerWidth;
-      const modalWidth = 384; // w-96 = 24rem = 384px
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
+  // Handle positioning
+  useEffect(() => {
+    if (!triggerRect || !modalRef.current) return;
+
+    const modalRect = modalRef.current.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const modalWidth = 384; // w-96 = 24rem = 384px
+    const modalHeight = modalRect.height || 300; // Use actual height if available
+
+    if (view === 'day') {
+      // For day view, attempt to center horizontally near the event
+      let left = triggerRect.left + (triggerRect.width / 2) - (modalWidth / 2);
+      let top = triggerRect.top + 40; // Position slightly below the event
+
+      // Keep modal within viewport bounds
+      left = Math.max(16, Math.min(left, viewportWidth - modalWidth - 16));
       
-      // Calculate if there's more space on the left or right of the trigger element
-      const spaceOnRight = viewportWidth - (triggerRect.left + triggerRect.width);
-      const spaceOnLeft = triggerRect.left;
+      // If modal would go below viewport, position it above the event
+      if (top + modalHeight > viewportHeight - 16) {
+        top = Math.max(16, triggerRect.top - modalHeight - 16);
+      }
+
+      setPosition({ left, top });
+    } else {
+      // For week/month views, position to the side with most space
+      const spaceOnRight = viewportWidth - triggerRect.right - 16;
+      const spaceOnLeft = triggerRect.left - 16;
       
-      // Position the modal to the side with more space
-      const left = spaceOnRight >= modalWidth 
-        ? triggerRect.left + triggerRect.width + 16 // Position to the right with 16px gap
-        : triggerRect.left - modalWidth - 16; // Position to the left with 16px gap
-      
-      // Vertically align with the trigger element
-      const top = triggerRect.top;
-      
+      let left;
+      if (spaceOnRight >= modalWidth) {
+        // Position to the right if there's enough space
+        left = triggerRect.right + 16;
+      } else if (spaceOnLeft >= modalWidth) {
+        // Position to the left if there's enough space
+        left = triggerRect.left - modalWidth - 16;
+      } else {
+        // Center in viewport if no space on either side
+        left = (viewportWidth - modalWidth) / 2;
+      }
+
+      // Ensure modal stays within vertical bounds
+      let top = triggerRect.top;
+      if (top + modalHeight > viewportHeight - 16) {
+        top = Math.max(16, viewportHeight - modalHeight - 16);
+      }
+
       setPosition({ left, top });
     }
-  }, [triggerRect]);
+  }, [triggerRect, view]);
+
+  // Handle escape key only - remove click outside handling
+  useEffect(() => {
+    const handleEscapeKey = (e) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+
+    document.addEventListener('keydown', handleEscapeKey);
+    return () => document.removeEventListener('keydown', handleEscapeKey);
+  }, [onClose]);
 
   if (!event) return null;
 
@@ -58,12 +109,30 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
   };
 
   return (
+    <>
+      {/* Invisible overlay for empty area clicks only */}
     <div 
+        className="fixed inset-0 z-40 pointer-events-none"
+      >
+        <div 
+          className="absolute inset-0 pointer-events-auto"
+          onClick={(e) => {
+            // Only close if clicking directly on the overlay (not events or modal)
+            if (e.target === e.currentTarget) {
+              onClose();
+            }
+          }}
+        />
+      </div>
+      
+      {/* Modal */}
+      <div 
+        ref={modalRef}
       className="fixed z-50"
       style={{
         left: `${position.left}px`,
         top: `${position.top}px`,
-        transform: 'none' // Remove the translate transform
+        transform: 'none'
       }}
     >
       <div 
@@ -71,7 +140,7 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
           darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'
         } rounded-xl w-96 overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700`}
       >
-        {/* Header with all buttons */}
+        {/* Header */}
         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
           <h3 className={`text-xl font-medium ${isTask && isCompleted ? 'line-through opacity-50' : ''}`}>
             {isTask && <Check className="inline-block w-5 h-5 mr-2 text-blue-500" />}
@@ -130,8 +199,8 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
               onClick={handleTaskComplete}
               className={`mt-4 w-full py-2 px-4 rounded-lg border ${
                 isCompleted
-                  ? 'border-gray-300 text-gray-600 hover:bg-gray-50'
-                  : 'border-blue-500 text-blue-500 hover:bg-blue-50'
+                  ? 'border-gray-300 text-gray-600 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-400 dark:hover:bg-gray-700'
+                  : 'border-blue-500 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900'
               } transition-colors duration-200`}
             >
               {isCompleted ? 'Mark uncompleted' : 'Mark completed'}
@@ -140,6 +209,7 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
         </div>
       </div>
     </div>
+  </>
   );
 };
 
