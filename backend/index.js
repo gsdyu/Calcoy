@@ -102,13 +102,6 @@ pool.query(`
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));
-pool.query(`
-	ALTER TABLE users
-  ALTER COLUMN id SET DATA TYPE BIGINT;
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS refresh_token TEXT;
-  `).then(() => {
-	console.log("Updated column type to BIGINT successfully.");
-  }).catch(err => console.error('Error updating column to BIGINT:', err));
 // Additional routes
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);
