@@ -41,7 +41,6 @@ const Profile = ({ isCollapsed, darkMode }) => {
     const fetchProfile = async () => {
       const check = await fetch('http://localhost:5000/auth/check', {
         method: 'GET',
-        headers: {'Content-Type': 'application/json'},
         credentials: 'include',
       });
 

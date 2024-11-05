@@ -20,44 +20,102 @@ const findOrCreateUser = async (email, pool) => {
   return user;
 };
 const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
-    const events = calendarData.items;
-    for (const event of events) {
-      const eventData = {
+  try {
+    const events = calendarData.items.filter(event => {
+      if (event.status === 'cancelled') return false;
+      return true;
+    }).map(event => {
+      let eventData = {user_id: 'userid'};
+      if (!event.start.date && !event.end.date) {
+        eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
           description: event.description || '',
-          start_time: new Date(event.start?.dateTime || `${event.start.date}T00:00:00`),
-          end_time: new Date(event.end?.dateTime || `${event.end.date}T23:59:59`),
+          start_time: new Date(event.start.dateTime),
+          end_time: new Date(event.end.dateTime),
           location: event.location || '',
-          calendar: 'google',
-          time_zone: event.start.timeZone || 'UTC'
-      };
-      await pool.query(
+          calendar: 'Google',
+          time_zone: event.start.timezone || 'UTC'
+        };
+      } else if (!event.start.datetime && !event.end.datetime) {
+        event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
+        eventData = {
+          user_id: userId,
+          title: event.summary || 'No Title',
+          description: event.description || '',
+          start_time: new Date(`${event.start.date}T00:00:00`),
+          end_time: event_end_date,
+          location: event.location || '',
+          calendar: 'Google',
+          time_zone: event.start.timezone || 'UTC'
+        }
+      }
+      return eventData;
+    }); 
+    const insertPromises = events.map(event =>
+      pool.query(
         `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-         ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`,
+         ON CONFLICT DO NOTHING
+         RETURNING *;`,
         [
-          eventData.user_id, eventData.title, eventData.description,
-          eventData.start_time, eventData.end_time,
-          eventData.location, eventData.calendar, eventData.time_zone
+          event.user_id, 
+          event.title,
+          event.description,
+          event.start_time,
+          event.end_time,
+          event.location,
+          event.calendar,
+          event.time_zone,
         ]
-      );
-    }
+    ).then(async result => {
+      // checks for embedding on all events. can convert to function
+      // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+      // callback events will always be given even if our calendar already has it stored
+      const row = result.rows;
+        if (!row[0]) {
+          console.log('Import: Event already added')
+          return};
+        try {
+          const embed = await createEmbeddings(JSON.stringify(row)
+          ).then(embed_result => {
+            if (embed_result === null || embed_result === undefined) { 
+              console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+              return
+            }
+            pool.query(`UPDATE events
+              SET embedding = $6
+              WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
+            );  
+          }
+         ) 
+       } catch (error) {
+         if (error.status===402) {
+           console.log("Error: Out of tokens")
+           return
+         }
+       }
+    })
+    );
+    await Promise.all(insertPromises)
+  } catch (error) {
+    console.error(`error adding events:`, error)
+  }
 }
 // Helper function to fetch and save calendar events to PostgreSQL
 // Helper function to fetch and save Google Calendar events with incremental sync
 const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
   // Retrieve the last sync token for this user, if any
-  const result = await pool.query('SELECT sync_token, page_token FROM users WHERE id = $1', [userId]);
+  const result = await pool.query('SELECT sync_token FROM users WHERE id = $1', [userId]);
   let syncToken = result.rows[0]?.sync_token;
-  let pageToken = result.rows[0]?.page_token;
 
   let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true';
   if (syncToken) {
-      console.log("Performing incremental sync.");
+      console.log("\nPerforming incremental sync.");
       url += `&syncToken=${syncToken}`;
   } else {
-      console.log("Performing full sync.");
+      console.log("\nPerforming full sync.");
   }
 
   // Fetch events with sync or full sync token

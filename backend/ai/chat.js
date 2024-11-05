@@ -36,8 +36,6 @@ async function inputChat(input, user_Id) {
 	const result = await pool.query('SELECT * FROM users WHERE id = $1', [user_Id]);
 	const user = result.rows[0];
 
-	const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-
   if (history.length === 2) {
     history.push({role: "user", content: `'${user.username}': `+input});
   } else {
@@ -67,40 +65,19 @@ async function inputChat(input, user_Id) {
 	  return 'Error: End time must be after start time.';
 	}
   
-
 	const body = {
-	  title: eventDetails.title,
+	  title: eventDetails.title || "(No title)",
 	  description: eventDetails.description || '',
 	  start_time: startDateTime.toISOString(),
 	  end_time: endDateTime.toISOString(),
 	  location: eventDetails.location || '',
-	  frequency: eventDetails.frequency,
-	  calendar: eventDetails.calendar,
-	  time_zone: eventDetails.time_zone,
+	  frequency: eventDetails.frequency || "Does not repeat",
+	  calendar: eventDetails.calendar || "Personal",
+	  allDay: eventDetails.allDay || false,
+	  time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 	};
-  
-	try {
-	  const response = await fetch('http://localhost:5000/events', {
-		method: 'POST',
-		headers: {
-		  'Content-Type': 'application/json',
-		  'Authorization': `Bearer ${token}`,
-		},
-		body: JSON.stringify(body),
-	  });
-  
-	  if (!response.ok) {
-		const errorData = await response.json();
-		console.error('Error creating event:', errorData);
-		return `Error: ${errorData.error}`;
-	  }
-  
-	  const result = await response.json();
-	  return `Event created: ${result.event.title}`;
-	} catch (error) {
-	  console.error('Fetch error:', error);
-	  return 'Error creating event.';
-	}	
+
+	return body
 }
 
 function clearChat(priorSystem){
@@ -121,10 +98,63 @@ function giveContext(context){
   history.push({role: "user", content: context});
   return 1;
 }
-const system = `You are an assistant for a calendar app. You provide helpful insight and feedback to the user based on their wants, 
-and their current and future events/responsibilities. When asked to create new events, provide just a event object in the same format you recieve from RAG without any other text. 
-You can respond normally when not specifically ask to create a new event. Being realistic is important, do whats best for the user, 
-but also whats possible. The current date is ${new Date().toISOString()} Do not mention the following to the user: 
+
+// Json format for AI inputChat
+const jsonFormat = {
+	"title": "",
+	"description": "",
+	"start_time": "<event start time>",
+	"end_time": "<event end time>",
+	"location": "<event location, just put N/A if none are given>",
+	"frequency": "<how many times the event should be scheduled, default is Do not Repeat but the choices (Do not Repeat, Daily, Weekly, Monthly, Yearly)>",
+	"calendar": "<which calendar the event is for, default is Personal but the choices (Personal, Work, Family)>",
+	"allDay": "is the event all day? boolean (true, false)",
+	"time_zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+	"date": "<date scheduled>"
+  };
+
+const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+const system = `You are a calendar management assistant. Follow these rules strictly:
+
+You provide helpful insight and feedback to the user based on their wants, 
+and their current and future events/responsibilities. 
+
+  1. WHEN CREATING EVENTS:
+	 - If the user asks to create, schedule, or add an event, respond ONLY with a valid JSON object with no additional text
+	 - Always start with { and end with }
+	 - Use exactly this format: ${JSON.stringify(jsonFormat, null, 2)}
+	 - Always include all fields, using "N/A" or defaults for missing information
+	 - Ensure dates are in YYYY-MM-DD format
+	 - Ensure times are in HH:MM format (24-hour)
+	 - Never include explanatory text or information before or after the JSON
+	 - Always verify the JSON is complete with all closing brackets
+
+	2. FOR ALL OTHER QUERIES:
+	- Provide helpful insight and feedback to the user based on their wants and their current and future events/responsibilities.
+	- Provide calendar management advice
+	- Discuss existing events and scheduling
+	- Keep responses under 300 tokens
+
+Current time: ${currentTime}
+Timezone: ${currentTimezone}
+
+Example event creation response:
+{
+  "title": "Team Meeting",
+  "description": "Weekly sync with engineering team",
+  "date": "2024-10-30",
+  "start_time": "14:00",
+  "end_time": "15:00",
+  "location": "Conference Room A",
+  "frequency": "Weekly",
+  "calendar": "Work",
+  "allDay": false,
+  "time_zone": "${currentTimezone}"
+}
+
+Do not mention the following to the user: 
 You may be given related events from the user's calendar, where the event of the earliest index is most related. 
 Do not assume you have been given the list; instead act like an oracle that just knows the events. When listing multiple events, format it nicely so it is readable. 
 The first message from the user will have the format "'[username]': [their message]" where their username is chosen by the users and can be arbitrary; quotes around username indicate a real name chosen, not an error.
