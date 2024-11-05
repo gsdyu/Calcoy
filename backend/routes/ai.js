@@ -67,7 +67,6 @@ module.exports = (app, pool) => {
         return res.status(400).send({error: "Invalid input: arrays are not handled. please provide string"})
       }
       const initial_context = await contextAgent.inputChat(userInput)
-      console.log(initial_context,"dog")
       let initial_events = ''
       if (initial_context.type === "none"){
       } else {

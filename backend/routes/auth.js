@@ -94,6 +94,8 @@ app.get('/auth/google/calendar', authenticateToken, passport.authenticate('googl
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
+  accessType: 'offline',
+  approvalPrompt: 'force',
 }),
 async (req, res) => {console.log("User authenticated:", req.user);}
 );

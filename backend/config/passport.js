@@ -184,10 +184,6 @@ module.exports = (pool) => {
       const email = profile.emails[0].value;
       try {
         const user = await findOrCreateUser(email, pool);
-        await pool.query(
-          'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
-          [accessToken, refreshToken, user.id]
-        );
         return done(null, user);
       } catch (error) {
         console.error('Google signup error:', error);
@@ -216,6 +212,10 @@ module.exports = (pool) => {
     // Fetch or create the user
     const user = await findOrCreateUser(email, pool);
 
+    await pool.query(
+      'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
+      [accessToken, refreshToken, user.id]
+    );
     // Save calendar events to the database
     await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
