@@ -64,6 +64,10 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     setIsVisible(true);
     
     if (event) {
+      if (event.isHoliday) {
+        // Don't set any form state for holidays as they're read-only
+        return;
+      }
       // Handle editing existing event
       if (event.calendar === 'Task') {
         setSelected('task');
@@ -171,7 +175,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
         eventData = {
           title: newTask.title.trim() || "(No title)",
           start_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate()).toISOString(),
-          end_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate() + 1).toISOString(), // Only change is here: added + 1
+          end_time: new Date(taskDate.getFullYear(), taskDate.getMonth(), taskDate.getDate() + 1).toISOString(),
           location: '',
           frequency: newTask.frequency,
           calendar: 'Task',
@@ -243,7 +247,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
 
     onSave(eventData);
     handleClose();
-};
+  };
 
 
   const handleClose = () => {
@@ -251,6 +255,68 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
     setTimeout(onClose, 300);
   };
 
+  // If this is a holiday, render the holiday view
+  if (event?.isHoliday) {
+    return (
+      <div
+        className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        onMouseDown={(e) => {
+          if (e.target === e.currentTarget) handleClose();
+        }}
+      >
+        <div 
+          className={`${darkMode ? 'bg-gray-800 text-gray-200' : 'bg-white text-black'} p-7 rounded-xl w-[550px] transition-transform duration-300 transform ${isVisible ? 'scale-100' : 'scale-95'}`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-2xl font-medium">{event.title}</h3>
+            <button onClick={handleClose} className="text-gray-400 hover:text-gray-200">
+              <X size={25} />
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            <div>
+              <label className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Date</label>
+              <p className="text-lg">
+                {new Date(event.start_time).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric'
+                })}
+              </p>
+            </div>
+
+            {event.type && (
+              <div>
+                <label className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Type</label>
+                <p className="text-lg capitalize">{event.type}</p>
+              </div>
+            )}
+
+            {event.description && (
+              <div>
+                <label className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} text-sm`}>Description</label>
+                <p className="text-lg">{event.description}</p>
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end pt-6">
+            <button 
+              onClick={handleClose}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-[7px] transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Regular event/task modal
   return (
     <div
       className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
