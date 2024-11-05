@@ -162,7 +162,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         `}
         onClick={(e) => {
           e.stopPropagation();
-          onEventClick(event);
+          onEventClick(event, e);
         }}
       >
         <div className="flex items-center overflow-hidden">

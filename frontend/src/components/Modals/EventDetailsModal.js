@@ -1,15 +1,37 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Edit, Trash, Check, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete }) => {
+const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, triggerRect }) => {
   const { darkMode } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
+  const [position, setPosition] = useState({ left: 0, top: 0 });
   const isTask = event?.calendar === 'Task';
   const isCompleted = event?.completed;
+
+  useEffect(() => {
+    if (triggerRect) {
+      const viewportWidth = window.innerWidth;
+      const modalWidth = 384; // w-96 = 24rem = 384px
+      
+      // Calculate if there's more space on the left or right of the trigger element
+      const spaceOnRight = viewportWidth - (triggerRect.left + triggerRect.width);
+      const spaceOnLeft = triggerRect.left;
+      
+      // Position the modal to the side with more space
+      const left = spaceOnRight >= modalWidth 
+        ? triggerRect.left + triggerRect.width + 16 // Position to the right with 16px gap
+        : triggerRect.left - modalWidth - 16; // Position to the left with 16px gap
+      
+      // Vertically align with the trigger element
+      const top = triggerRect.top;
+      
+      setPosition({ left, top });
+    }
+  }, [triggerRect]);
 
   if (!event) return null;
 
@@ -39,9 +61,9 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete })
     <div 
       className="fixed z-50"
       style={{
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)'
+        left: `${position.left}px`,
+        top: `${position.top}px`,
+        transform: 'none' // Remove the translate transform
       }}
     >
       <div 
