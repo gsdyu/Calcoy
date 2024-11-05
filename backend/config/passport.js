@@ -220,10 +220,10 @@ module.exports = (pool) => {
     await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
     // Webhook URL for Google Calendar notifications
-    const webhookUrl = 'https://c7f0-47-146-160-30.ngrok-free.app/webhook/google-calendar';
-    
+    const webhookUrl = 'https://0fe4-2607-fb90-57aa-cfd4-f0b4-5cda-99d6-5187.ngrok-free.app/webhook/google-calendar';
+     
     // Set up Google Calendar notification only once
-    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
+    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool);
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
@@ -251,8 +251,7 @@ const extractUserIdFromChannelId = (channelId) => {
   return channelId.split('-')[1]; // Assuming channelId format is `channel-<userId>`
 };
 // Helper function to subscribe to Google Calendar updates
-// Helper function to subscribe to Google Calendar updates
-const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl) => {
+const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId, pool) => {
   try {
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/watch', {
       method: 'POST',
@@ -266,6 +265,15 @@ const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl) => {
         address: webhookUrl
       })
     });
+    const responseJson = await response.json()
+    let resourceId = responseJson.resourceId
+    console.log(responseJson)
+    const watchedCalendarResult = await pool.query(`INSERT INTO watched_calendars (name, source) VALUES ('primary', 'google') 
+      ON CONFLICT ON CONSTRAINT unique_name_source DO NOTHING
+      RETURNING *`)
+    const watchedCalendarId= watchedCalendarResult.rows
+    console.log(watchedCalendarId)
+    await pool.query(`INSERT INTO users_watched_calendars (user_id, watched_calendar_id) VALUES ($1, $2, $3, $4)`, [userId, watchedCalendarId, resourceId])
 
     if (!response.ok) {
       const errorDetails = await response.json();
@@ -310,10 +318,6 @@ app.post('/webhook/google-calendar', async (req, res) => {
     console.error('Error processing Google Calendar webhook:', error);
     res.status(500).send('Internal Server Error');
   }
- 
-
-
-
   
   try {
     const userId = extractUserIdFromChannelId(channelId); // Implement based on your channel ID format

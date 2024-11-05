@@ -72,10 +72,25 @@ pool.query(`
   );
 
   CREATE TABLE IF NOT EXISTS user_servers (
-      user_id INT REFERENCES users(id) ON DELETE CASCADE,
-      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
-      PRIMARY KEY (user_id, server_id)
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, server_id)
   );
+
+  CREATE TABLE IF NOT EXISTS watched_calendars (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    CONSTRAINT unique_name_source UNIQUE (name, source)
+  );
+
+  CREATE TABLE IF NOT EXISTS users_watched_calendars(
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    watched_calendar_id INT REFERENCES watched_calendars(id) ON DELETE CASCADE,
+    resource_id VARCHAR(50),
+    PRIMARY KEY (user_id, watched_calendar_id)
+  );
+
 `).then(() => {
   console.log("Users table is ready");
   pool.query(`

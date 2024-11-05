@@ -65,40 +65,44 @@ const getUserAccessToken = async (userId, pool) => {
 // Main webhook handler function
 const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
   const channelId = req.headers['x-goog-channel-id'];
-  const resourceId = req.headers['x-goog-resource-id'];
+  const resResourceId = req.headers['x-goog-resource-id'];
 
   if (!channelId || !resourceId) {
     console.error('Missing required headers in webhook request');
     return res.status(400).send('Missing required headers');
   }
-  const userIds = await pool.query(`
-        
-  `)
+  const result  = await pool.query(`
+    SELECT id, access_token, refresh_token FROM users;        
+  `);
+  const rows = result.rows;
+  console.log(rows.refresh_token)
+
   try {
-    const userId = extractUserIdFromChannelId(channelId);
-    const accessToken = await getUserAccessToken(userId, pool);
+    //const userId = extractUserIdFromChannelId(channelId);
+    //const accessToken = await getUserAccessToken(userId, pool);
   
-   const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${resourceId}`, {
-     method: 'GET',
-     headers: { Authorization: `Bearer ${accessToken}` }
-   });
+    let accessToken = rows[0].access_token
+    const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/events`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
     
    if (eventResponse.ok) {
-     const event = await eventResponse.json();
-     await saveOrUpdateEventInDatabase(userId, event, pool);
-     res.status(200).send('Event received and processed');
+    const event = await eventResponse.json();
+    await saveOrUpdateEventInDatabase(userId, event, pool);
+    res.status(200).send('Event received and processed');
    } else {
-     const errorDetails = await eventResponse.json();
-     console.error('Failed to fetch event details:', errorDetails);
+    const errorDetails = await eventResponse.json();
+    console.error('Failed to fetch event details:', errorDetails);
     res.status(401).send(`Failed to fetch event details: ${errorDetails.error.message}`);
-   }
-   } catch (error) {
-     if (error.message.includes("No refresh token available")) {
-       res.status(401).send('Authorization expired. Please reauthorize the application.');
-     } else {
-       console.error('Error processing Google Calendar webhook:', error);
-       res.status(500).send('Internal Server Error');
-     }
+  }
+  } catch (error) {
+    if (error.message.includes("No refresh token available")) {
+      res.status(401).send('Authorization expired. Please reauthorize the application.');
+    } else {
+      console.error('Error processing Google Calendar webhook:', error);
+      res.status(500).send('Internal Server Error');
+    }
   }
 }    
 
