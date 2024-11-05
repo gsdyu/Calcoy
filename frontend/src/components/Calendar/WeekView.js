@@ -231,7 +231,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
-    onEventClick(event);
+    onEventClick(event, e)
   };
 
   const toggleAllDayExpansion = () => {
