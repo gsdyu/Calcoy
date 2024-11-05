@@ -37,12 +37,17 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete })
 
   return (
     <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" 
-      onClick={onClose}
+      className="fixed z-50"
+      style={{
+        top: '50%',
+        left: '50%',
+        transform: 'translate(-50%, -50%)'
+      }}
     >
       <div 
-        className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} rounded-xl w-96 overflow-hidden shadow-xl`}
-        onClick={(e) => e.stopPropagation()}
+        className={`${
+          darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'
+        } rounded-xl w-96 overflow-hidden shadow-xl border border-gray-200 dark:border-gray-700`}
       >
         {/* Header with all buttons */}
         <div className="flex justify-between items-center px-4 py-3 border-b border-gray-200 dark:border-gray-700">
