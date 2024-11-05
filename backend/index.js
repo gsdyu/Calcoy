@@ -54,11 +54,11 @@ pool.query(`
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,  -- Set password to allow NULL for OAuth users
     profile_image VARCHAR(255),
-	 access_token TEXT,
-	sync_token VARCHAR(255),
- 	refresh_token TEXT,
+    access_token TEXT,
+    sync_token VARCHAR(255),
+    refresh_token TEXT,
     dark_mode BOOLEAN DEFAULT false, -- dark mode preference
-	preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
+    preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );

@@ -19,13 +19,38 @@ const findOrCreateUser = async (email, pool) => {
   }
   return user;
 };
-
+const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
+    const events = calendarData.items;
+    for (const event of events) {
+      const eventData = {
+          user_id: userId,
+          title: event.summary || 'No Title',
+          description: event.description || '',
+          start_time: new Date(event.start?.dateTime || `${event.start.date}T00:00:00`),
+          end_time: new Date(event.end?.dateTime || `${event.end.date}T23:59:59`),
+          location: event.location || '',
+          calendar: 'google',
+          time_zone: event.start.timeZone || 'UTC'
+      };
+      await pool.query(
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`,
+        [
+          eventData.user_id, eventData.title, eventData.description,
+          eventData.start_time, eventData.end_time,
+          eventData.location, eventData.calendar, eventData.time_zone
+        ]
+      );
+    }
+}
 // Helper function to fetch and save calendar events to PostgreSQL
 // Helper function to fetch and save Google Calendar events with incremental sync
 const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
   // Retrieve the last sync token for this user, if any
-  const result = await pool.query('SELECT sync_token FROM users WHERE id = $1', [userId]);
+  const result = await pool.query('SELECT sync_token, page_token FROM users WHERE id = $1', [userId]);
   let syncToken = result.rows[0]?.sync_token;
+  let pageToken = result.rows[0]?.page_token;
 
   let url = 'https://www.googleapis.com/calendar/v3/calendars/primary/events?singleEvents=true';
   if (syncToken) {
@@ -51,36 +76,35 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
       throw new Error('Failed to fetch calendar events');
   }
 
-  const calendarData = await response.json();
+  let calendarData = await response.json();
+  addGoogleCalendarEvents(calendarData, userId, pool)
+  let newPageToken = calendarData.nextPageToken;
+  let page = 0;
+  let newEvents = calendarData.items.length;
 
-  // Save events to the database
-  const events = calendarData.items;
-  for (const event of events) {
-      const eventData = {
-          user_id: userId,
-          title: event.summary || 'No Title',
-          description: event.description || '',
-          start_time: new Date(event.start.dateTime || `${event.start.date}T00:00:00`),
-          end_time: new Date(event.end.dateTime || `${event.end.date}T23:59:59`),
-          location: event.location || '',
-          calendar: 'google',
-          time_zone: event.start.timeZone || 'UTC'
-      };
+  while (newPageToken) {
+    console.log("page:",page)
+    url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?singleevents=true`;
+    if (syncToken) {
+        url += `&syncToken=${syncToken}`;
+    }
+    url += `&pageToken=${newPageToken}`
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${accessToken}`}})
+    calendarData = await response.json()
+    // Save events to the database
+    addGoogleCalendarEvents(calendarData, userId, pool);
 
-      await pool.query(
-          `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-           ON CONFLICT (user_id, title, start_time, end_time, location) DO NOTHING`,
-          [
-              eventData.user_id, eventData.title, eventData.description,
-              eventData.start_time, eventData.end_time,
-              eventData.location, eventData.calendar, eventData.time_zone
-          ]
-      );
+    newPageToken = calendarData.nextPageToken;
+    page+=1
+    newEvents+=calendarData.items.length;
   }
+  console.log(newEvents, "new events from Google")
 
   // Update sync token for the next incremental sync
   const newSyncToken = calendarData.nextSyncToken;
+  newPageToken = calendarData.nextPageToken;
   if (newSyncToken) {
       await pool.query('UPDATE users SET sync_token = $1 WHERE id = $2', [newSyncToken, userId]);
   }
