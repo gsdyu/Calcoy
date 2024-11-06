@@ -106,7 +106,7 @@ const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, user
   });
 
   if (!response.ok) {
-      if (response.status === 401 && refreshToken) {
+      if ((response.status === 403 || response.status === 401)) {
         try {
           accessToken = await refreshAccessToken(refreshToken)
           response = await fetch(url, {
@@ -119,7 +119,8 @@ const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, user
         }
       }
       if (response.status === 410) {
-          // Token invalidated, trigger a full sync
+        
+        // Token invalidated, trigger a full sync
           console.warn('Sync token expired, initiating a full sync.');
           await pool.query('UPDATE users SET sync_token = NULL WHERE id = $1', [userId]);
           return await fetchAndSaveGoogleCalendarEvents(refreshToken, calendarName, userId, pool);
