@@ -7,6 +7,7 @@ import { ChevronDown, Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
+import holidayService from '@/utils/holidayUtils';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();
@@ -18,6 +19,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
   const [eventPositions, setEventPositions] = useState(new Map());
+  const [holidays, setHolidays] = useState([]);
 
   // Initialize drag and drop hook
   const { 
@@ -30,11 +32,22 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     darkMode,
     view: 'day',
     cellHeight: 60,
-    emptyImage
+    emptyImage,
+    shouldAllowDrag: (event) => !event.isHoliday
   });
 
-  // Add helper function for getting event colors
+  // Holiday fetching effect
+  useEffect(() => {
+    const monthHolidays = holidayService.getMonthHolidays(currentDate);
+    setHolidays(monthHolidays);
+  }, [currentDate]);
+
+  // Helper function for getting event colors
   const getEventColor = (event) => {
+    if (event.isHoliday) {
+      return itemColors?.holidays || 'bg-yellow-500';
+    }
+
     const calendarType = event.calendar || 'default';
     
     return itemColors?.[calendarType] 
@@ -151,7 +164,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (hours + minutes / 60) * 60;
   };
 
-  const filteredEvents = events.filter(event => shouldShowEventOnDay(event, currentDate));
+  const filteredEvents = [...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate));
   const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
   const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
 
@@ -189,6 +202,38 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   ` : '';
 
   const renderAllDayEvent = (event) => {
+    if (event.isHoliday) {
+      return (
+        <div
+          key={event.id}
+          className={`
+            flex justify-between items-center
+            text-xs mb-1 truncate
+            rounded-full py-1 px-2
+            ${itemColors?.holidays || 'bg-yellow-500'}
+            text-white opacity-75
+            cursor-pointer hover:opacity-100 transition-opacity
+            mr-5
+          `}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEventClick({
+              ...event,
+              description: `${event.type} Holiday in United States`,
+              date: event.date,
+              time: '-',
+              isReadOnly: true
+            }, e);
+          }}
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="truncate">{event.title}</span>
+            <span className="ml-2 opacity-75">{event.type}</span>
+          </div>
+        </div>
+      );
+    }
+
     const eventColor = getEventColor(event).replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
@@ -197,6 +242,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       return (
         <div
           key={event.id}
+          {...getDragHandleProps(event)}
           className={`
             flex justify-between items-center
             text-xs mb-1 truncate cursor-pointer
@@ -227,6 +273,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (
       <div
         key={event.id}
+        {...getDragHandleProps(event)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
@@ -251,6 +298,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const hiddenCount = allDayEvents.length - visibleCount;
   
     const sortedEvents = [...allDayEvents].sort((a, b) => {
+      if (a.isHoliday && !b.isHoliday) return -1;
+      if (!a.isHoliday && b.isHoliday) return 1;
       if (a.calendar === 'Task' && b.calendar === 'Task') {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
       }
@@ -260,10 +309,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (
       <div className={`
         transition-all duration-300 ease-in-out origin-top
-        ${isAllDayExpanded 
-          ? 'opacity-100 scale-y-100' 
-          : 'opacity-95 scale-y-95'
-        }
+        ${isAllDayExpanded ? 'max-h-none' : ''}
       `}>
         {sortedEvents.slice(0, visibleCount).map(renderAllDayEvent)}
         {!isAllDayExpanded && allDayEvents.length > maxVisibleEvents && (
@@ -397,6 +443,35 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                   </div>
                 );
               }
+
+              if (event.isHoliday) {
+                const eventColor = getEventColor(event).replace('bg-', '');
+                return (
+                  <div
+                    key={event.id}
+                    className={`
+                      absolute text-xs overflow-hidden cursor-pointer
+                      rounded py-1 px-2
+                      border border-${eventColor} bg-${eventColor} bg-opacity-20
+                      ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                      opacity-75 hover:opacity-100 transition-opacity
+                    `}
+                    style={getEventStyle(event)}
+                    onClick={(e) => handleEventClick({
+                      ...event,
+                      description: `${event.type} Holiday in United States`,
+                      time: '-',
+                      isReadOnly: true
+                    }, e)}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <div className="truncate">{event.title}</div>
+                      <span className="ml-2 opacity-75">{event.type}</span>
+                    </div>
+                  </div>
+                );
+              }
+
               const start = new Date(event.start_time);
               const end = new Date(event.end_time);
               const isCrossingMidnight = isEventCrossingMidnight(event);
