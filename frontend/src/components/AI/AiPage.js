@@ -12,6 +12,7 @@ import EventDetailsBox from './EventDetailsBox';
 import LoadingCircle from './LoadingCircle';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
+import ChatSidebar from './ChatSidebar';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -24,8 +25,46 @@ const AiPage = () => {
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
   const [showPrompts, setShowPrompts] = useState(true);
 
+  const [chats, setChats] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
+
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
+
+  // new chat handler
+  const handleNewChat = () => {
+    const newChat = {
+      id: Date.now(),
+      title: 'New Chat',
+      timestamp: new Date().toISOString(),
+    };
+    setChats(prev => [newChat, ...prev]);
+    setCurrentChatId(newChat.id);
+    setMessages([]);
+    setShowPrompts(true);
+  };
+
+  // handle caht select
+  const handleChatSelect = (chatId) => {
+    setCurrentChatId(chatId);
+    // api
+  };
+
+  const handleRenameChat = (chatId, newTitle) => {
+    setChats(prevChats =>
+      prevChats.map(chat =>
+        chat.id === chatId ? { ...chat, title: newTitle } : chat
+      )
+    );
+  };
+
+  const handleDeleteChat = (chatId) => {
+    setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
+    if (currentChatId === chatId) {
+      setCurrentChatId(null);
+      setMessages([]);
+    }
+  };
 
   const handleExampleClick = (text) => {
     setInput(text);
@@ -215,8 +254,8 @@ const AiPage = () => {
 
 
   return (
-    <>
-      <div className={styles.container}>
+    <div className="flex h-screen">
+      <div className={`${styles.container} flex-1`}>
         <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
 
         <AiPromptExamples 
@@ -261,6 +300,7 @@ const AiPage = () => {
             </div>
           )}
         </div>
+
         <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
           <textarea 
             ref={textareaRef}
@@ -274,10 +314,12 @@ const AiPage = () => {
           <button 
             type="submit" 
             disabled={!input.trim()}
-            className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}>
+            className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}
+          >
             <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
           </button>
         </form>
+
         <NotificationSnackbar
           message={notification.message}
           action={notification.action}
@@ -285,7 +327,17 @@ const AiPage = () => {
           onActionClick={() => {console.log('placeholder')}}
         />
       </div>
-    </>
+
+      <ChatSidebar 
+        currentChatId={currentChatId}
+        onChatSelect={handleChatSelect}
+        onNewChat={handleNewChat}
+        onRename={handleRenameChat}
+        onDelete={handleDeleteChat}
+        chats={chats}
+        darkMode={darkMode}
+      />
+    </div>
   );
 };
 
