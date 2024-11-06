@@ -3,6 +3,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const fetch = require('node-fetch');
 const express = require('express');
 const app = express(); // Assuming this is your main file
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname,'../.env') });
 const { createEmbeddings } = require('../ai/embeddings');
 
 // Helper function to find or create a user by email
@@ -226,7 +228,7 @@ module.exports = (pool) => {
     await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
     // Webhook URL for Google Calendar notifications
-    const webhookUrl = 'https://a19b-2607-fb90-57aa-cfd4-b5a0-928b-57cc-88fc.ngrok-free.app/webhook/google-calendar';
+    const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
      
     // Set up Google Calendar notification only once
     await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool);
@@ -256,13 +258,18 @@ module.exports = (pool) => {
 // For Primary calendars only
 const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId, pool) => {
   try {
-    const expiration = Date.now() + 86400000
-    const currentChannel = await pool.query(`SELECT "usersWatchedCalendars".channel_expire
-      FROM "usersWatchedCalendars" INNER JOIN "watchedCalendars" ON "usersWatchedCalendars".watched_calendar_id="watchedCalendars".id
+    const userName = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId]).then(results => results?.rows[0]?.username)
+    const result = await pool.query(`SELECT "usersWatchedCalendars".channel_expire FROM "usersWatchedCalendars" 
+      INNER JOIN "watchedCalendars" ON "usersWatchedCalendars".watched_calendar_id="watchedCalendars".id
       WHERE "watchedCalendars".name='primary' AND "watchedCalendars".source='google' AND "usersWatchedCalendars".user_id=$1;
-    `, [userId]).then(results => results?.rows[0]?.channel_expire)
-    console.log(currentChannel);
-    console.log(Date.now(currentChannel))
+    `, [userId]).then(results => results?.rows[0])
+    const currentChannel = result?.channel_expire
+    if (Date.now() < new Date(currentChannel).getTime()){
+      console.log(`\nChannel for google primary already set up for user ${userName}`)
+      console.log(`The channel will expire on: ${new Date(currentChannel)}`)
+      return
+    }
+    const expiration = Date.now() + 86400000
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/watch', {
       method: 'POST',
       headers: {
@@ -287,9 +294,11 @@ const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId,
     await pool.query(`INSERT INTO "watchedCalendars" (name, source) VALUES ('primary', 'google') 
       ON CONFLICT ON CONSTRAINT unique_name_source DO NOTHING`)
     const watchedCalendarId = await pool.query(`SELECT id FROM "watchedCalendars" WHERE name = 'primary' AND source = 'google';`).then(async result => {return result.rows[0]?.id}) 
-    await pool.query(`INSERT INTO "usersWatchedCalendars" (user_id, watched_calendar_id, resource_id, channel_expire) VALUES ($1, $2, $3, $4)
-      ON CONFLICT ON CONSTRAINT "usersWatchedCalendars_pkey" DO UPDATE SET resource_id = EXCLUDED.resource_id`, [userId, watchedCalendarId, resourceId, expiration])
-    console.log(`Watched Calendar set up for ${userId}`)
+    await pool.query(`INSERT INTO "usersWatchedCalendars" (user_id, watched_calendar_id, resource_id, channel_expire) VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '1 day')
+      ON CONFLICT ON CONSTRAINT "usersWatchedCalendars_pkey" DO UPDATE SET resource_id=EXCLUDED.resource_id, channel_expire=CURRENT_TIMESTAMP+INTERVAL '1 day'`, [userId, watchedCalendarId, resourceId])
+
+    console.log(`\nChannel for watched calendar set up for user ${userName}`)
+    console.log(`The channel will expire on: ${new Date(expiration)}`)
 
   } catch (error) {
     console.error('Error setting up calendar notifications:', error.message);

@@ -1,10 +1,5 @@
 const fetch = require('node-fetch');
 
-// Helper function to extract user ID from channel ID
-const extractUserIdFromChannelId = (channelId) => {
-  return channelId.split('-')[1];
-};
-
 const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
   try {
     const events = calendarData.items.filter(event => {
@@ -197,12 +192,9 @@ const refreshAccessToken = async (refreshToken) => {
   return newAccessToken;
 };
 
-const recentEvents = new Map();
-
 // Main webhook handler function
 const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
   res.status(200).send('Event recieved')
-  console.log(req.headers['x-goog-resour-state']);
   const channelId = req.headers['x-goog-channel-id'];
   const resourceId = req.headers['x-goog-resource-id'];
 
@@ -210,12 +202,6 @@ const handleGoogleCalendarWebhook = (pool) => async (req, res) => {
     console.error('Missing required headers in webhook request');
   }
   const now = Date.now();
-
-  //if (recentEvents.has(resourceId) && now - recentEvents.get(resourceId) < 500){
-    //console.log('Duplicate notification ignored');
-    //return res.status(200).send("Duplicate notification ignored");
-  //}
-  recentEvents.set(resourceId, now);
 
   const watchedCalendars = await pool.query(`SELECT "watchedCalendars".name, "watchedCalendars".source, users.access_token, users.id
     FROM "watchedCalendars"
