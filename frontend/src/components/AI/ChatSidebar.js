@@ -68,8 +68,8 @@ const ChatSidebar = ({
           flex items-center gap-2 m-2 p-3 rounded-xl
           transition-colors duration-200
           ${darkMode 
-            ? 'hover:bg-gray-700 text-blue-400 hover:text-blue-400' 
-            : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'}
+            ? 'hover:bg-gray-700 text-blue-500 hover:text-blue-500' 
+            : 'hover:bg-gray-100 text-blue-500 hover:text-blue-500'}
         `}
       >
         <SquarePen size={24} />
