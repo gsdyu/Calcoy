@@ -1,7 +1,7 @@
-// components/FriendPage.js
+'use client';
 
 import React, { useEffect, useState } from 'react';
-import FriendItem from '@/components/FriendItem'; // Assuming FriendItem is in the same components folder
+import FriendItem from './FriendItem'; // Assuming FriendItem is in the same components folder
 import { fetchFriends } from '@/utils/api'; // Assuming the API utility is correctly configured here
 
 const FriendPage = () => {
@@ -13,7 +13,7 @@ const FriendPage = () => {
     fetchFriends()
       .then((data) => {
         setFriends(data);
-        setLoading(false);
+        setLoading(false);  
       })
       .catch((error) => {
         console.error('Error fetching friends:', error);
