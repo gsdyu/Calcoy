@@ -62,6 +62,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         if (data.preferences?.colors) {
           setItemColors(data.preferences.colors);
         }
+        
         if (data.preferences?.visibility) {
           setVisibleItems(data.preferences.visibility);
         }
@@ -549,6 +550,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
+              
               onColorChange={handleColorChange}
             />
           )}

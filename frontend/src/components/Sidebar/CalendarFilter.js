@@ -21,6 +21,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   const [servers, setServers] = useState([]);  
   const [showServers, setShowServers] = useState(true);  
   const [serverColors, setServerColors] = useState({}); 
+  
   // Fetch profile information
   useEffect(() => {
     const fetchProfile = async () => {
@@ -59,7 +60,23 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   
     fetchProfile();
   }, []);
-  
+  const scrollbarStyles = darkMode ? `
+  .dark-scrollbar::-webkit-scrollbar {
+    width: 12px;
+  }
+  .dark-scrollbar::-webkit-scrollbar-track {
+    background: #2D3748;
+  }
+  .dark-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #4A5568;
+    border-radius: 6px;
+    border: 3px solid #2D3748;
+  }
+  .dark-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: #4A5568 #2D3748;
+  }
+` : '';
   useEffect(() => {
     const fetchServers = async () => {
       try {
@@ -82,20 +99,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
     };
     fetchServers();
   }, []);
-  const changeServerColor = (serverId, color) => {
-    setServerColors((prevColors) => {
-      const updatedColors = { ...prevColors, [serverId]: color };
+ 
   
-       savePreferences({ visibility: visibleItems, serverColors: updatedColors });
-  
-      return updatedColors;  
-    });
-  
-     setPopupVisible((prev) => ({
-      ...prev,
-      [serverId]: false,
-    }));
-  };
   
   
   const renderPersonalCalendarEvents = (events) => {
@@ -103,7 +108,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
       .filter(event => serverColors[event.server_id] === selectedColor) // Filter by color
       .map(event => <EventComponent key={event.id} event={event} />);
   };
-  const renderServerItem = (server, showEyeIcon = true) => (
+  const renderServerItem = (server, showEyeIcon = true,color) => (
     <div
       key={server.id}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
@@ -151,10 +156,17 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   
       {/* Color picker popup */}
       {popupVisible[server.id] && (
-        <ColorPicker item={server.id} colors={colorOptions} onSelectColor={(color) => changeServerColor(server.id, color)} />
+        <ColorPicker 
+          item={server.id} 
+          colors={colorOptions} 
+          onSelectColor={changeColor}// Corrected function call
+        />
       )}
     </div>
   );
+ 
+
+  
   
   
   
@@ -207,9 +219,19 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   };
 
   const changeColor = (item, color) => {
+     
+    setServerColors((prevColors) => ({
+      ...prevColors,
+      [item]: color,
+      
+    }));
+  
+   
     if (onColorChange) {
-      onColorChange(item, color);
+      onColorChange(item, color);  
     }
+  
+    
     togglePopup(item);
   };
 
@@ -269,7 +291,9 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   );
   
   return (
-    <div className={`p-4 space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
+      <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
+      <style>{scrollbarStyles}</style>
+    
       {/* Conditionally render My Calendars and Other Calendars if no active server */}
       {!activeServer ? (
         <>
