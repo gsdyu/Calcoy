@@ -67,7 +67,9 @@ const ForgotPasswordPage = () => {
 
       if (response.ok) {
         setMessage(data.message);
-        router.push('/auth/login'); // Redirect to login page after success
+        setTimeout(() => {
+          router.push('/auth/login');
+        }, 2000);
       } else {
         setError(data.error || 'Something went wrong.');
       }
@@ -106,12 +108,20 @@ const ForgotPasswordPage = () => {
             >
               Send reset code
             </button>
+            <div className="text-center mt-4">
+              <Link 
+                href="/auth/login"
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Back to login
+              </Link>
+            </div>
           </form>
         ) : (
           <form onSubmit={handleResetPassword} className="space-y-4">
             <div>
               <label htmlFor="resetCode" className="block text-sm font-medium text-gray-700 mb-1">
-                Enter reset code
+                Reset Code
               </label>
               <input
                 type="text"
@@ -139,7 +149,7 @@ const ForgotPasswordPage = () => {
             </div>
             <div>
               <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm New Password
+                Confirm Password
               </label>
               <input
                 type="password"
@@ -151,13 +161,21 @@ const ForgotPasswordPage = () => {
                 required
               />
             </div>
-            
             <button
               type="submit"
               className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
             >
               Reset Password
             </button>
+            <div className="text-center mt-4">
+              <button
+                type="button"
+                onClick={() => setIsCodeSent(false)}
+                className="text-sm text-blue-600 hover:text-blue-800"
+              >
+                Request new code
+              </button>
+            </div>
           </form>
         )}
       </div>
