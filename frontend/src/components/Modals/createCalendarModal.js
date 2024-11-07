@@ -1,6 +1,6 @@
 'use client';
 
-import { X } from 'lucide-react';
+import { X, Plus, Users, CalendarPlus } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import EventOptionsPopup from '@/components/Modals/EventOptionsPopup';
@@ -12,13 +12,18 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
   const [showEventPopup, setShowEventPopup] = useState(false);
   const [eventDisplayOption, setEventDisplayOption] = useState('dont_show');
 
-  // State for server info
   const [serverInfo, setServerInfo] = useState({
     serverName: '',
     description: '',
     icon: null,
     iconPreview: null 
   });
+
+  const handleClickOutside = (e) => {
+    if (e.target.classList.contains('modal-overlay')) {
+      onClose();
+    }
+  };
 
   useEffect(() => {
     const fetchUserId = async () => {
@@ -27,7 +32,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
           credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch user ID');
-        
         const data = await response.json();
         setUserId(data.userId);
       } catch (error) {
@@ -80,15 +84,8 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       }
   
       const data = await response.json();
-      console.log('Server created:', data.server);
-  
-      // Store the new server ID
       setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
-  
-      // Add the new server to the server list
       setServers((prevServers) => [...prevServers, data.server]);
-  
-      // Open the event display options popup
       setShowEventPopup(true);
     } catch (error) {
       console.error('Error submitting server info:', error);
@@ -99,7 +96,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     setEventDisplayOption(option);
     setShowEventPopup(false);
 
-    // Use the newly created server ID for importing events
     const newServerId = serverInfo.serverId;
 
     if (option !== 'dont_show') {
@@ -116,9 +112,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
           }),
         });
 
-        if (response.ok) {
-          console.log('Events imported successfully');
-        } else {
+        if (!response.ok) {
           console.error('Failed to import events');
         }
       } catch (error) {
@@ -129,121 +123,193 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     if (onClose) onClose();
   };
 
-  const handleJoinServer = () => {
-    if (!serverInfo.serverName) {
-      alert('Please enter a valid invite link to join a server.');
-      return;
-    }
-    console.log('Joining server with invite link:', serverInfo.serverName);
-    if (typeof onClose === 'function') {
-      onClose();
-    } else {
-      console.warn('onClose is not defined or not a function.');
-    }
-  };
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className={`${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-black'} p-6 rounded-lg w-96`}>
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-xl font-bold">
-            {currentTab === 'main' ? 'Create a Calendar' : currentTab === 'join' ? 'Join A Server' : 'Tell Us About The Calendar'}
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-200">
-            <X size={20} />
-          </button>
-        </div>
-      
-        {currentTab === 'main' && (
-          <div className="space-y-4">
-            <button
-              onClick={() => setCurrentTab('join')}
-              className="w-full px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+    <div 
+      className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 modal-overlay"
+      onClick={handleClickOutside}
+    >
+      <div 
+        className={`
+          ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-white text-gray-900'}
+          w-[480px] rounded-3xl shadow-2xl transform transition-all
+          border border-gray-800/10
+        `}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="px-8 pt-6 pb-4 border-b border-gray-800/10">
+          <div className="flex justify-between items-center">
+            <h3 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+              {currentTab === 'main' ? 'Create a Calendar' : 
+               currentTab === 'join' ? 'Join A Server' : 'Create Your Server'}
+            </h3>
+            <button 
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-200 transition-colors p-2 hover:bg-gray-800/40 rounded-full"
             >
-              Join A Server
-            </button>
-            <button
-              onClick={() => setCurrentTab('server')}
-              className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700"
-            >
-              Create a Server
+              <X size={20} />
             </button>
           </div>
-        )}
+        </div>
+      
+        {/* Content */}
+        <div className="p-8">
+          {currentTab === 'main' && (
+            <div className="space-y-4">
+              <button
+                onClick={() => setCurrentTab('join')}
+                className="w-full p-4 rounded-2xl transition-all bg-gradient-to-r from-green-400/10 to-green-500/10 
+                  hover:from-green-400/20 hover:to-green-500/20 border border-green-500/20
+                  group flex items-center gap-4"
+              >
+                <div className="p-3 rounded-full bg-green-500/10 group-hover:bg-green-500/20 transition-colors">
+                  <Users className="w-6 h-6 text-green-400" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-lg text-green-400 mb-1">Join A Server</div>
+                  <p className="text-sm text-gray-400">Connect with friends using their invite link</p>
+                </div>
+              </button>
 
-        {currentTab === 'join' && (
-          <form onSubmit={handleSubmitServerInfo}>
-            <input
-              type="text"
-              name="serverName"
-              placeholder="https://timewise.com/invite/es167y6o"
-              value={serverInfo.serverName}
-              onChange={handleServerChange}
-              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-400 border-gray-500'} border rounded`}
-              required
-            />
-            <div className="text-sm text-gray-500 mb-4">
-              <span className="block mb-2 font-semibold">Invites Should Look Like This:</span>
-              <div>https://timewise.com/invite/es589y9v</div>
-              <div>https://timewise.com/invite/es323y6c</div>
-              <div>https://timewise.com/invite/es945y8h</div>
-            </div>
-         
-            <div className="flex justify-between">
-              <button type="button" onClick={() => setCurrentTab('main')} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
-                Back
-              </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Join Calendar
+              <button
+                onClick={() => setCurrentTab('server')}
+                className="w-full p-4 rounded-2xl transition-all bg-gradient-to-r from-purple-400/10 to-pink-500/10 
+                  hover:from-purple-400/20 hover:to-pink-500/20 border border-purple-500/20
+                  group flex items-center gap-4"
+              >
+                <div className="p-3 rounded-full bg-purple-500/10 group-hover:bg-purple-500/20 transition-colors">
+                  <CalendarPlus className="w-6 h-6 text-purple-400" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-lg text-purple-400 mb-1">Create a Server</div>
+                  <p className="text-sm text-gray-400">Start a new calendar server for your team</p>
+                </div>
               </button>
             </div>
-          </form>
-        )}
+          )}
 
-        {currentTab === 'server' && (
-          <form onSubmit={handleSubmitServerInfo}>
-            <p className="text-center mb-4">Give your new server a personality with a name and an icon. You can always change it later.</p>
-            <div className="flex flex-col items-center mb-4">
-              <label className="w-20 h-20 bg-gray-500 rounded-full flex items-center justify-center cursor-pointer mb-2 relative overflow-hidden">
-                <input type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
-                {serverInfo.iconPreview ? (
-                  <img src={serverInfo.iconPreview} alt="Icon preview" className="w-full h-full object-cover rounded-full" />
-                ) : (
-                  <span className="text-white">UPLOAD</span>
-                )}
-              </label>
-            </div>
-            <label htmlFor="serverName" className="block text-gray-400 mb-1">SERVER NAME</label>
-            <input
-              type="text"
-              id="serverName"
-              name="serverName"
-              placeholder="Enter server name"
-              value={serverInfo.serverName}
-              onChange={handleServerChange}
-              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
-              required
-            />
-            <div className="text-xs text-gray-500 mb-4">
-              By creating a server, you agree to Timewise's Community Guidelines.
-            </div>
-            <div className="flex justify-between">
-              <button type="button" onClick={() => setCurrentTab('main')} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
-                Back
-              </button>
-              <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
-                Create
-              </button>
-            </div>
-          </form>
-        )}
+          {currentTab === 'join' && (
+            <form onSubmit={handleSubmitServerInfo}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Server Invite Link</label>
+                  <input
+                    type="text"
+                    name="serverName"
+                    placeholder="https://timewise.com/invite/es167y6o"
+                    value={serverInfo.serverName}
+                    onChange={handleServerChange}
+                    className={`
+                      w-full p-3 rounded-full transition-all
+                      ${darkMode 
+                        ? 'bg-gray-800/50 focus:bg-gray-800/70 border-gray-700' 
+                        : 'bg-gray-100 border-gray-300'} 
+                      border focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                    `}
+                    required
+                  />
+                </div>
 
-        <EventOptionsPopup 
-          showEventPopup={showEventPopup}
-          darkMode={darkMode}
-          handleEventOptionSelect={handleEventOptionSelect}
-        />
+                <div className="bg-gray-800/30 rounded-2xl p-4">
+                  <div className="font-medium text-gray-400 mb-2">Example Invite Links:</div>
+                  <div className="space-y-1 text-sm text-gray-500">
+                    <div>https://timewise.com/invite/es589y9v</div>
+                    <div>https://timewise.com/invite/es323y6c</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentTab('main')}
+                  className="px-6 py-2 rounded-full border border-gray-700 hover:bg-gray-800/50 transition-colors"
+                >
+                  Back
+                </button>
+                <button 
+                  type="submit"
+                  className="px-8 py-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 
+                    hover:from-blue-600 hover:to-blue-700 text-white transition-colors"
+                >
+                  Join Server
+                </button>
+              </div>
+            </form>
+          )}
+
+          {currentTab === 'server' && (
+            <form onSubmit={handleSubmitServerInfo} className="space-y-6">
+              <div className="text-center space-y-2">
+                <div className="flex justify-center">
+                  <label className="w-24 h-24 rounded-full flex items-center justify-center cursor-pointer
+                    relative overflow-hidden group transition-all duration-300
+                    bg-gradient-to-br from-purple-500/10 to-pink-500/10 hover:from-purple-500/20 hover:to-pink-500/20
+                    border-2 border-dashed border-gray-700 hover:border-purple-500/50"
+                  >
+                    <input type="file" accept="image/*" onChange={handleIconChange} className="hidden" />
+                    {serverInfo.iconPreview ? (
+                      <img src={serverInfo.iconPreview} alt="Icon preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <Plus className="w-8 h-8 text-gray-400 group-hover:text-purple-400 transition-colors" />
+                    )}
+                  </label>
+                </div>
+                <p className="text-sm text-gray-400">Upload a server icon</p>
+              </div>
+
+              <div>
+                <label htmlFor="serverName" className="block text-sm font-medium text-gray-400 mb-2">
+                  SERVER NAME
+                </label>
+                <input
+                  type="text"
+                  id="serverName"
+                  name="serverName"
+                  placeholder="Enter server name"
+                  value={serverInfo.serverName}
+                  onChange={handleServerChange}
+                  className={`
+                    w-full p-3 rounded-full transition-all
+                    ${darkMode 
+                      ? 'bg-gray-800/50 focus:bg-gray-800/70 border-gray-700' 
+                      : 'bg-gray-100 border-gray-300'} 
+                    border focus:outline-none focus:ring-2 focus:ring-purple-500/50
+                  `}
+                  required
+                />
+              </div>
+
+              <p className="text-xs text-gray-500">
+                By creating a server, you agree to TimeWise's Community Guidelines
+              </p>
+
+              <div className="flex justify-between">
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentTab('main')}
+                  className="px-6 py-2 rounded-full border border-gray-700 hover:bg-gray-800/50 transition-colors"
+                >
+                  Back
+                </button>
+                <button
+                  type="submit"
+                  className="px-8 py-2 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 
+                    hover:from-purple-600 hover:to-pink-700 text-white transition-colors"
+                >
+                  Create Server
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
       </div>
+
+      <EventOptionsPopup 
+        showEventPopup={showEventPopup}
+        darkMode={darkMode}
+        handleEventOptionSelect={handleEventOptionSelect}
+      />
     </div>
   );
 };
