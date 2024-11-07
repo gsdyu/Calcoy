@@ -24,8 +24,8 @@ module.exports = (app, pool) => {
         console.error('embed error: failed to create embedding for event')
       }
       const result = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *',
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
+        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId]
       )
         .then(result => {
         if (embed) {
@@ -50,18 +50,14 @@ app.get('/events', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const server_id = req.query.server_id ? parseInt(req.query.server_id) : null;
 
-  try {
-    const query = server_id !== null 
-      ? `SELECT * FROM events WHERE user_id = $1 AND server_id = $2 ORDER BY start_time`
-      : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
-    
-    const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
-    res.json(result.rows);
-  } catch (error) {
-    console.error('Get events error:', error);
-    res.status(500).json({ error: 'Internal server error' });
-  }
+  const query = server_id !== null 
+    ? `SELECT * FROM events WHERE user_id = $1 AND server_id = $2 ORDER BY start_time`
+    : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+
+  const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
+  res.json(result.rows);
 });
+
 
 app.post('/events/import', authenticateToken, async (req, res) => {
   const { server_id, displayOption } = req.body;

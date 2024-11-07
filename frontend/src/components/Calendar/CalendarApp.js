@@ -120,15 +120,14 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to save color preference');
     }
   };
-
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
-
+  
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
     if (!check.ok) return;
-
+  
     try {
       const url = activeCalendar !== null 
         ? `http://localhost:5000/events?server_id=${activeCalendar.id}` 
@@ -137,7 +136,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       const response = await fetch(url, {
         credentials: 'include',
       });
-
+  
       if (response.ok) {
         const data = await response.json();
         const formattedEvents = data.map(event => {
@@ -153,7 +152,7 @@ import { useTheme } from '@/contexts/ThemeContext';
             server_id: event.server_id
           };
         });
-
+  
         setEvents(formattedEvents);
       } else {
         throw new Error('Failed to fetch events');
@@ -251,70 +250,70 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to update task');
     }
   };
-  const handleSaveEvent = async (event) => {
-    // First, check authentication status
-    const check = await fetch('http://localhost:5000/auth/check', {
+const handleSaveEvent = async (event) => {
+  // First, check authentication status
+  const check = await fetch('http://localhost:5000/auth/check', {
+    credentials: 'include',
+  });
+  if (!check.ok) return;
+
+  const isTask = event.calendar === 'Task';
+  showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
+
+  try {
+    // Determine if we're creating a new event or updating an existing one
+    const method = event.id ? 'PUT' : 'POST';
+    const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
+
+    // Include the activeCalendar/server_id in the event data if available
+    const eventData = {
+      ...event,
+      server_id: activeCalendar?.id || null, // Sets to active server ID or null for main calendar
+    };
+
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
+      body: JSON.stringify(eventData),
     });
-    if (!check.ok) return;
-  
-    const isTask = event.calendar === 'Task';
-    showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
-  
-    try {
-      // Determine if we're creating a new event or updating an existing one
-      const method = event.id ? 'PUT' : 'POST';
-      const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
-  
-      // Include the activeCalendar/server_id in the event data if available
-      const eventData = {
-        ...event,
-        server_id: activeCalendar?.id || null, // activeCalendar? can be null for main|Use `null` for global calendar if no activeCalendar
+
+    if (response.ok) {
+      const savedEvent = await response.json();
+      const startTime = new Date(savedEvent.event.start_time);
+      const endTime = new Date(savedEvent.event.end_time);
+      const formattedEvent = {
+        ...savedEvent.event,
+        date: startTime.toLocaleDateString(),
+        startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isTask: event.calendar === 'Task',
+        completed: event.completed || false,
+        server_id: eventData.server_id, // Use assigned server_id
       };
-  
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(eventData),
+
+      // Update events list based on whether this was an update or new creation
+      setEvents((prevEvents) => {
+        if (event.id) {
+          return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
+        } else {
+          return [...prevEvents, formattedEvent];
+        }
       });
-  
-      if (response.ok) {
-        const savedEvent = await response.json();
-        const startTime = new Date(savedEvent.event.start_time);
-        const endTime = new Date(savedEvent.event.end_time);
-        const formattedEvent = {
-          ...savedEvent.event,
-          date: startTime.toLocaleDateString(),
-          startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isTask: event.calendar === 'Task',
-          completed: event.completed || false,
-          server_id: event.server_id,
-        };
-  
-        // Update events list based on whether this was an update or new creation
-        setEvents((prevEvents) => {
-          if (event.id) {
-            return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
-          } else {
-            return [...prevEvents, formattedEvent];
-          }
-        });
-  
-        setIsAddingEvent(false);
-        setSelectedEvent(null);
-        showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
-      } else {
-        throw new Error(`Failed to save ${isTask ? 'task' : 'event'}`);
-      }
-    } catch (error) {
-      console.error(`Error saving ${isTask ? 'task' : 'event'}:`, error);
-      showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
+
+      setIsAddingEvent(false);
+      setSelectedEvent(null);
+      showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
+    } else {
+      throw new Error(`Failed to save ${isTask ? 'task' : 'event'}`);
     }
-  };
+  } catch (error) {
+    console.error(`Error saving ${isTask ? 'task' : 'event'}:`, error);
+    showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
+  }
+};
   
 
   const handleDeleteEvent = async (eventId) => {
