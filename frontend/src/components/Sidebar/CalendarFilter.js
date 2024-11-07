@@ -18,7 +18,9 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [serverUsers, setServerUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(true); // New state for Users dropdown
-
+  const [servers, setServers] = useState([]);  
+  const [showServers, setShowServers] = useState(true);  
+  const [serverColors, setServerColors] = useState({}); 
   // Fetch profile information
   useEffect(() => {
     const fetchProfile = async () => {
@@ -37,15 +39,16 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
           },
           credentials: 'include',
         });
-
+  
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
         }
-
+  
         const data = await response.json();
         setEmail(data.email);
         setUsername(data.username || 'My Calendar');
         setVisibleItems(data.preferences.visibility || {});
+        setServerColors(data.preferences.serverColors || {});  
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');
@@ -53,10 +56,110 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         setLoading(false);
       }
     };
-
+  
     fetchProfile();
   }, []);
+  
+  useEffect(() => {
+    const fetchServers = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/servers', {
+          credentials: 'include',
+        });
+        if (!response.ok) throw new Error('Failed to fetch servers');
 
+        const data = await response.json();
+        setServers(data.servers || []);
+        setServerColors(
+          data.servers.reduce((acc, server) => {
+            acc[server.id] = colorOptions[server.id % colorOptions.length];  
+            return acc;
+          }, {})
+        );
+      } catch (error) {
+        console.error('Error fetching servers:', error);
+      }
+    };
+    fetchServers();
+  }, []);
+  const changeServerColor = (serverId, color) => {
+    setServerColors((prevColors) => {
+      const updatedColors = { ...prevColors, [serverId]: color };
+  
+       savePreferences({ visibility: visibleItems, serverColors: updatedColors });
+  
+      return updatedColors;  
+    });
+  
+     setPopupVisible((prev) => ({
+      ...prev,
+      [serverId]: false,
+    }));
+  };
+  
+  
+  const renderPersonalCalendarEvents = (events) => {
+    return events
+      .filter(event => serverColors[event.server_id] === selectedColor) // Filter by color
+      .map(event => <EventComponent key={event.id} event={event} />);
+  };
+  const renderServerItem = (server, showEyeIcon = true) => (
+    <div
+      key={server.id}
+      className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
+        visibleItems[server.id] ? '' : 'opacity-50'
+      }`}
+      onClick={(e) => {
+        e.preventDefault();
+        toggleVisibility(server.id, e);
+      }}
+      onContextMenu={(e) => togglePopup(server.id, e)} // Open color picker on right-click
+    >
+      <div className="flex items-center">
+        {/* Display server image or fallback initial */}
+        {server.image_url ? (
+          <img 
+            src={`http://localhost:5000${server.image_url}`} 
+            alt={`${server.name} icon`} 
+            className="w-4 h-4 mr-2 rounded-full"
+            onError={(e) => { e.target.style.display = 'none'; }} // Fallback if image fails
+          />
+        ) : (
+          <div className="w-4 h-4 mr-2 bg-gray-400 rounded-full flex items-center justify-center text-xs">
+            {server.name.charAt(0).toUpperCase()}
+          </div>
+        )}
+        {/* Color circle and server name */}
+        <div className="flex items-center">
+          <div className={`w-3 h-3 rounded-full mr-2 ${serverColors[server.id] || 'bg-gray-400'}`}></div>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{server.name}</p>
+        </div>
+      </div>
+  
+      {/* Eye icon toggle for visibility */}
+      {showEyeIcon && (
+        <button
+          className="p-2 hover:bg-gray-500/20 rounded"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleVisibility(server.id, e);
+          }}
+        >
+          {visibleItems[server.id] ? <FiEye /> : <FiEyeOff />}
+        </button>
+      )}
+  
+      {/* Color picker popup */}
+      {popupVisible[server.id] && (
+        <ColorPicker item={server.id} colors={colorOptions} onSelectColor={(color) => changeServerColor(server.id, color)} />
+      )}
+    </div>
+  );
+  
+  
+  
+  
+  
   // Fetch users tied to the selected server
   useEffect(() => {
     const fetchServerUsers = async () => {
@@ -99,8 +202,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
     }
     setPopupVisible(prev => ({
       ...prev,
-      [item]: !prev[item]
-    }));
+      [item]: !prev[item],
+     }));
   };
 
   const changeColor = (item, color) => {
@@ -118,7 +221,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ preferences }),
+        body: JSON.stringify({ preferences: { ...preferences } }),    
       });
       if (!response.ok) {
         throw new Error('Failed to save preferences');
@@ -127,11 +230,11 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
       console.error('Error saving preferences:', error);
     }
   };
+   
 
   if (loading) {
     return <p>Loading...</p>;
   }
-
   const renderCalendarItem = (key, label, color, showEyeIcon = true) => (
     <div
       key={key}
@@ -164,7 +267,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
       )}
     </div>
   );
-
+  
   return (
     <div className={`p-4 space-y-4 ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>
       {/* Conditionally render My Calendars and Other Calendars if no active server */}
@@ -215,6 +318,24 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
               <div className="space-y-1 pl-2">
                 {renderCalendarItem('google', email, 'bg-blue-500')}
                 {renderCalendarItem('holidays', 'Holidays in United States', 'bg-yellow-500')}
+              </div>
+
+              
+            )}
+          </div>
+          <div className="space-y-2">
+            {/* Servers Dropdown */}
+            <div
+              className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+              onClick={() => setShowServers(!showServers)}
+            >
+              <h3 className="font-medium">Servers</h3>
+              {showServers ? <FiChevronUp /> : <FiChevronDown />}
+            </div>
+            {showServers && (
+              <div className="space-y-1 pl-2">
+                {servers.map((server) => renderServerItem(server))}
+                
               </div>
             )}
           </div>
