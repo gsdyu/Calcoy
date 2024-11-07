@@ -71,6 +71,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
         <CalendarFilter 
         onColorChange={onColorChange}
         itemColors={itemColors}
+        activeServer={activeCalendar}
         />
         <Tasks 
           events={events}
