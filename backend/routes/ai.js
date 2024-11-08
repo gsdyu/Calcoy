@@ -39,7 +39,7 @@ class SharedAgentsManager {
 
       // convert database messages to agent history format
       const messages = result.rows.map(row => ({
-        role: row.sender === 'user' ? 'user' : 'bot',
+        role: row.sender === 'user' ? 'user' : 'model',
         parts: [{text: row.content}]
       }));
 
@@ -174,7 +174,7 @@ module.exports = (app, pool) => {
 
       const initial_context = await agentManager.contextAgent.inputChat(userInput);
       if (initial_context.type !== "none") {
-        await agentManager.saveMessage(conversationId, 'bot', JSON.stringify(initial_context));
+        await agentManager.saveMessage(conversationId, 'model', JSON.stringify(initial_context));
       }
 
       let initial_events = ''
@@ -186,7 +186,7 @@ module.exports = (app, pool) => {
       let response = await agentManager.chatAgent.inputChat(userInput, initial_events);
       console.log(response)
 
-      await agentManager.saveMessage(conversationId, 'bot', typeof response === 'string' ? response : JSON.stringify(response));
+      await agentManager.saveMessage(conversationId, 'model', typeof response === 'string' ? response : JSON.stringify(response));
 
       // if chatbot responds with a json, checks for which ai function handles
 
@@ -212,7 +212,7 @@ module.exports = (app, pool) => {
         });
         console.log(eventDetailsString)
 
-        await agentManager.saveMessage(conversationId, 'bot', eventDetailsString);
+        await agentManager.saveMessage(conversationId, 'model', eventDetailsString);
         
         agentManager.chatAgent.setHistory(agentManager.createAgent.getHistory());
 
