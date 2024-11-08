@@ -8,7 +8,17 @@ import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 import CalendarButton from '@/components/Sidebar/CalendarButton';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar }) => {
+const Sidebar = ({ 
+  onDateSelect, 
+  currentView, 
+  onViewChange, 
+  mainCalendarDate, 
+  events, 
+  onTaskComplete, 
+  activeCalendar, 
+  handleChangeActiveCalendar, 
+  servers = [] // New prop for dynamic server instances
+}) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -42,6 +52,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           activeCalendar={activeCalendar}
           handleChangeActiveCalendar={handleChangeActiveCalendar}
         />
+        
         <MiniCalendar 
           onDateSelect={handleMiniCalendarDateSelect} 
           currentView={currentView} 
@@ -49,8 +60,27 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
         />
+        
         <CalendarFilter />
-        <CalendarButton /> 
+        
+        <CalendarButton />
+
+        {/* Dynamically Render Server Buttons */}
+        {servers.length > 0 && (
+          <div className="server-buttons mt-4">
+            <h2 className="text-sm font-semibold mb-2 text-gray-600">Servers</h2>
+            {servers.map((server) => (
+              <button
+                key={server.id}
+                className="w-full flex items-center justify-center px-4 py-2 bg-green-600 text-white rounded mt-2 hover:bg-green-700"
+                onClick={() => handleChangeActiveCalendar(server.id)}
+              >
+                {server.name}
+              </button>
+            ))}
+          </div>
+        )}
+        
         <Tasks 
           events={events}
           selectedDate={selectedDate || mainCalendarDate}

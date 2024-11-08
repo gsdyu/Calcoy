@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react'; // Import Users icon
 import MenuItem from './MenuItem';
 import Profile from './Profile';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -18,7 +18,9 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
   const iconColor = darkMode ? "text-white" : "text-gray-600";
 
   const handleNavigation = (route) => {
-    setActiveItem(route);
+    if (setActiveItem) {
+      setActiveItem(route);
+    }
     switch (route) {
       case 'Calendar':
         router.push('/calendar');
@@ -42,17 +44,17 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
 
   useEffect(() => {
     if (pathname.includes('/calendar')) {
-      setActiveItem('Calendar');
+      setActiveItem && setActiveItem('Calendar');
     } else if (pathname.includes('/dashboard')) {
-      setActiveItem('Dashboard');
+      setActiveItem && setActiveItem('Dashboard');
     } else if (pathname.includes('/settings')) {
-      setActiveItem('Settings');
+      setActiveItem && setActiveItem('Settings');
     } else if (pathname.includes('/ai')) {
-      setActiveItem('AI');
+      setActiveItem && setActiveItem('AI');
     } else if (pathname.includes('/friends')) { // Track Friends page
-      setActiveItem('Friends');
+      setActiveItem && setActiveItem('Friends');
     } else {
-      setActiveItem('Dashboard');
+      setActiveItem && setActiveItem('Dashboard');
     }
   }, [pathname, setActiveItem]);
 
