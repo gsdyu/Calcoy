@@ -136,7 +136,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         )}
         {/* Color circle and server name */}
         <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${serverColors[server.id] || 'bg-gray-400'}`}></div>
+          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[server.id] || 'bg-gray-400'}`}></div>
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{server.name}</p>
         </div>
       </div>
@@ -159,7 +159,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         <ColorPicker 
           item={server.id} 
           colors={colorOptions} 
-          onSelectColor={changeColor}// Corrected function call
+          onSelectColor={changeColor} 
         />
       )}
     </div>
