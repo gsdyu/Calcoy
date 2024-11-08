@@ -45,7 +45,7 @@ const ChatSidebar = ({
     <div 
       className={`
         flex flex-col border-l rounded-l-2xl
-        transition-all duration-500 ease-in-out
+        transition-all duration-300 ease-in-out
         ${darkMode ? 'bg-gray-800 border-gray-800' : 'bg-white border-gray-200'}
         ${isCollapsed ? 'w-16' : 'w-72'}
       `}

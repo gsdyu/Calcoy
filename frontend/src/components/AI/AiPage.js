@@ -1,12 +1,8 @@
 'use client';
- 
+
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
-import { MoveUp } from 'lucide-react';
-import { ArrowUp } from 'lucide-react';
-import { Sparkles } from 'lucide-react';
-import { CirclePlus } from 'lucide-react';
-import { CircleX } from 'lucide-react';
+import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingCircle from './LoadingCircle';
@@ -31,40 +27,132 @@ const AiPage = () => {
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
 
-  // new chat handler
-  const handleNewChat = () => {
-    const newChat = {
-      id: Date.now(),
-      title: 'New Chat',
-      timestamp: new Date().toISOString(),
+  // Fetch existing conversations
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/conversations', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          throw new Error(`Error fetching conversations: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setChats(data);
+      } catch (error) {
+        console.error('Failed to fetch conversations:', error);
+        showNotification('Failed to load conversations.');
+      }
     };
-    setChats(prev => [newChat, ...prev]);
-    setCurrentChatId(newChat.id);
+
+    fetchConversations();
+  }, []);
+
+  // Handle selecting a conversation
+  const handleChatSelect = async (chatId) => {
+    setCurrentChatId(chatId);
+    setMessages([]);
+    setShowPrompts(false);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching conversation: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      const formattedMessages = data.map((msg) => ({
+        sender: msg.sender === 'model' ? 'bot' : msg.sender,
+        text: msg.content,
+        eventDetails: msg.sender === 'model' && isJson(msg.content) ? JSON.parse(msg.content).eventDetails : null,
+      }));
+
+      setMessages(formattedMessages);
+      setShowPrompts(false);
+    } catch (error) {
+      console.error('Failed to fetch conversation:', error);
+      showNotification('Failed to load the selected conversation.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isJson = (str) => {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  };
+
+  // Handle creating a new conversation
+  const handleNewChat = () => {
+    setCurrentChatId(null);
     setMessages([]);
     setShowPrompts(true);
   };
 
-  // handle caht select
-  const handleChatSelect = (chatId) => {
-    setCurrentChatId(chatId);
-    // api
-  };
+  const handleRenameChat = async (chatId, newTitle) => {
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ title: newTitle }),
+      });
 
-  const handleRenameChat = (chatId, newTitle) => {
-    setChats(prevChats =>
-      prevChats.map(chat =>
-        chat.id === chatId ? { ...chat, title: newTitle } : chat
-      )
-    );
-  };
+      if (!response.ok) {
+        throw new Error(`Error renaming conversation: ${response.statusText}`);
+      }
 
-  const handleDeleteChat = (chatId) => {
-    setChats(prevChats => prevChats.filter(chat => chat.id !== chatId));
-    if (currentChatId === chatId) {
-      setCurrentChatId(null);
-      setMessages([]);
+      // local update
+      setChats((prevChats) =>
+        prevChats.map((chat) => (chat.id === chatId ? { ...chat, title: newTitle } : chat))
+      );
+      showNotification('Conversation renamed successfully.');
+    } catch (error) {
+      console.error('Failed to rename conversation:', error);
+      showNotification('Failed to rename conversation.');
     }
   };
+
+  const handleDeleteChat = async (chatId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete conversation.');
+      }
+  
+      // local update
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
+  
+      if (currentChatId === chatId) {
+        setCurrentChatId(null);
+        setMessages([]);
+        setShowPrompts(true);
+      }
+  
+      showNotification('Conversation deleted successfully.');
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+      showNotification(`Failed to delete conversation: ${error.message}`);
+    }
+  };
+  
 
   const handleExampleClick = (text) => {
     setInput(text);
@@ -82,12 +170,12 @@ const AiPage = () => {
   const handleEdit = async (eventId, editedDetails) => {
     try {
       // First, update the message in the messages state
-      setMessages(prevMessages => 
-        prevMessages.map(msg => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
           if (msg.eventDetails?.id === eventId) {
             return {
               ...msg,
-              eventDetails: editedDetails
+              eventDetails: editedDetails,
             };
           }
           return msg;
@@ -95,45 +183,40 @@ const AiPage = () => {
       );
 
       // Then, update the eventDetails state
-      setEventDetails(prevDetails =>
-        prevDetails.map(detail =>
-          detail.id === eventId ? editedDetails : detail
-        )
+      setEventDetails((prevDetails) =>
+        prevDetails.map((detail) => (detail.id === eventId ? editedDetails : detail))
       );
-
     } catch (error) {
       console.error('Error updating event:', error);
       // Add an error message
-      setMessages(prev => [...prev, {
-        sender: 'bot',
-        text: 'There was an error updating the event.'
-      }]);
-      // You might want to revert the changes in the UI here
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: 'There was an error updating the event.',
+        },
+      ]);
     }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    if (!input) console.error();
 
     setShowPrompts(false);
-  
+
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    const check = await fetch('http://localhost:5000/auth/check', {
-      method: 'GET',
-      credentials: 'include',
-    })
-    if (!check.ok) {
-      //handle error, i didnt read yet how to handle here
-      console.error('not login')
-      setIsLoading(false);
-    }
 
     setIsLoading(true);
-  
-    // groq api
+
+    const payload = {
+      message: input,
+    };
+    if (currentChatId) {
+      payload.conversationId = currentChatId;
+    }
+
     try {
       const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
@@ -141,57 +224,76 @@ const AiPage = () => {
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify(payload),
       });
-  
+
       if (!response.ok) {
-        throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
+        throw new Error(`Network response was not ok. status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       console.log('Response from AI:', data);
-  
+
+      // If it's a new conversation, add it to the chats list
+      if (!currentChatId && data.conversationId) {
+        setChats((prevChats) => [
+          {
+            id: data.conversationId,
+            title: 'New Conversation',
+            created_at: new Date().toISOString(),
+          },
+          ...prevChats,
+        ]);
+        setCurrentChatId(data.conversationId);
+      }
+
       const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
       let newEventDetails = null;
-  
+
       if (eventDetailsMatch && eventDetailsMatch[1]) {
-        newEventDetails = JSON.parse(eventDetailsMatch[1]);
-        const newEventId = Date.now();
-  
-        setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
-        setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
-        
-        const botMessage = {
-          sender: 'bot',
-          text: `Do you want to create the following event?`,
-          eventDetails: { ...newEventDetails, id: newEventId },
-        };
-  
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
+        try {
+          newEventDetails = JSON.parse(eventDetailsMatch[1]);
+        } catch (parseError) {
+          console.error('Failed to parse event details:', parseError);
+        }
+
+        if (newEventDetails) {
+          const newEventId = Date.now();
+
+          setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
+          setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
+
+          const botMessage = {
+            sender: 'bot', // Ensure sender is 'bot'
+            text: `Do you want to create the following event?`,
+            eventDetails: { ...newEventDetails, id: newEventId },
+          };
+
+          setMessages((prevMessages) => [...prevMessages, botMessage]);
+        }
       } else {
         const botMessage = { sender: 'bot', text: data.message };
         setMessages((prevMessages) => [...prevMessages, botMessage]);
       }
-  
     } catch (error) {
       console.error('Error fetching response:', error);
-      const errorMessage = { sender: 'bot', text: 'There was an error' };
+      const errorMessage = { sender: 'bot', text: 'There was an error processing your request.' };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      showNotification('Failed to send message.');
     } finally {
       setIsLoading(false);
       setInput('');
-      textareaRef.current.style.height = 'auto';
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
-  
-    setInput('');
-    textareaRef.current.style.height = 'auto';
   };
 
   const handleConfirm = async (eventId, editedDetails = null) => {
-    const eventToConfirm = editedDetails || eventDetails.find(event => event.id === eventId);
+    const eventToConfirm = editedDetails || eventDetails.find((event) => event.id === eventId);
 
     try {
-      showNotification(`Saving event...`);
+      showNotification('Saving event...');
       const response = await fetch('http://localhost:5000/events', {
         method: 'POST',
         headers: {
@@ -206,7 +308,7 @@ const AiPage = () => {
       }
 
       const result = await response.json();
-      showNotification(`Event saved successfully`);
+      showNotification('Event saved successfully.');
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
@@ -214,7 +316,7 @@ const AiPage = () => {
       setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
       console.error('Error saving event:', error);
-      showNotification(`Failed to create event`)
+      showNotification('Failed to create event.');
       setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Error creating event.' }]);
     }
   };
@@ -222,7 +324,7 @@ const AiPage = () => {
   const handleDeny = (eventId) => {
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
-    showNotification("Event creation canceled")
+    showNotification('Event creation canceled.');
   };
 
   useEffect(() => {
@@ -232,13 +334,11 @@ const AiPage = () => {
     }
   }, [input]);
 
-
   useEffect(() => {
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
   }, [messages]);
-
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -249,25 +349,31 @@ const AiPage = () => {
 
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
-    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
+    setTimeout(() => setNotification((prev) => ({ ...prev, isVisible: false })), 3000);
   };
-
 
   return (
     <div className="flex h-screen">
       <div className={`${styles.container} flex-1`}>
-        <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
+        <h1 className={styles.aiheader}>
+          Timewise AI<Sparkles className={styles.ailogo} />
+        </h1>
 
-        <AiPromptExamples 
-          onExampleClick={handleExampleClick}
-          visible={showPrompts && messages.length === 0}
-        />
+        <AiPromptExamples onExampleClick={handleExampleClick} visible={showPrompts && messages.length === 0} />
 
         <div ref={chatWindowRef} className={styles.chatWindow}>
           {messages.map((msg, index) => (
-            <div 
-              key={index} 
-              className={`${styles.message} ${msg.sender === 'user' ? (darkMode ? styles.userDark : styles.user) : (darkMode ? styles.botDark : styles.bot)}`}
+            <div
+              key={index}
+              className={`${styles.message} ${
+                msg.sender === 'user'
+                  ? darkMode
+                    ? styles.userDark
+                    : styles.user
+                  : darkMode
+                  ? styles.botDark
+                  : styles.bot
+              }`}
             >
               {msg.sender === 'bot' && (
                 <div className={`${styles.botIconContainer} ${darkMode ? styles.botIconContainerDark : ''}`}>
@@ -302,21 +408,23 @@ const AiPage = () => {
         </div>
 
         <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
-          <textarea 
+          <textarea
             ref={textareaRef}
-            value={input} 
-            onChange={handleInputChange} 
+            value={input}
+            onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Ask Timewise AI..." 
-            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`} 
+            placeholder="Ask Timewise AI..."
+            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`}
             rows={1}
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={!input.trim()}
-            className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}
+            className={`${styles.button} ${
+              input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
+            } ${darkMode ? styles.buttonDark : styles.buttonLight}`}
           >
-            <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
+            <ArrowUp strokeWidth={2.5} className={styles.sendicon} />
           </button>
         </form>
 
@@ -324,11 +432,13 @@ const AiPage = () => {
           message={notification.message}
           action={notification.action}
           isVisible={notification.isVisible}
-          onActionClick={() => {console.log('placeholder')}}
+          onActionClick={() => {
+            console.log('placeholder');
+          }}
         />
       </div>
 
-      <ChatSidebar 
+      <ChatSidebar
         currentChatId={currentChatId}
         onChatSelect={handleChatSelect}
         onNewChat={handleNewChat}

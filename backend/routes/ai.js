@@ -4,9 +4,107 @@ const { createEmbeddings } = require('../ai/embeddings');
 const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
 const fs = require('fs');
 
-const contextAgent = new GeminiAgent({content: chat_context, responseMimeType: "application/json"});
-const chatAgent = new GeminiAgent({content: chatAll});
-const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent, responseMimetype: "application/json"});
+class SharedAgentsManager {
+  constructor(pool) {
+    this.pool = pool;
+    
+    // shared agents
+    this.contextAgent = new GeminiAgent({
+      content: chat_context,
+      responseMimeType: "application/json"
+    });
+    
+    this.chatAgent = new GeminiAgent({
+      content: chatAll
+    });
+    
+    this.createAgent = new GeminiAgent({
+      content: chat_createEvent,
+      responseSchema: jsonEvent,
+      responseMimetype: "application/json"
+    });
+  }
+
+  // Load conversation history from database
+  async loadConversationState(conversationId) {
+    try {
+      // get all messages for this conversation, ordered
+      const result = await this.pool.query(
+        `SELECT sender, content 
+         FROM messages 
+         WHERE conversation_id = $1 
+         ORDER BY created_at ASC`,
+        [conversationId]
+      );
+
+      // convert database messages to agent history format
+      const messages = result.rows.map(row => ({
+        role: row.sender === 'user' ? 'user' : 'bot',
+        parts: [{text: row.content}]
+      }));
+
+      // set histories for all agents
+      this.contextAgent.setHistory(messages.filter(msg => 
+        msg.parts[0].text.includes('"type":"context"')
+      ));
+      
+      this.chatAgent.setHistory(messages);
+      
+      this.createAgent.setHistory(messages.filter(msg => 
+        msg.parts[0].text.includes('"type":"createEvent"')
+      ));
+
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+      this.contextAgent.setHistory([]);
+      this.chatAgent.setHistory([]);
+      this.createAgent.setHistory([]);
+    }
+  }
+
+  // Save message to database
+  async saveMessage(conversationId, sender, content) {
+    try {
+      await this.pool.query(
+        `INSERT INTO messages (conversation_id, sender, content)
+         VALUES ($1, $2, $3)`,
+        [conversationId, sender, content]
+      );
+    } catch (error) {
+      console.error('Error saving message:', error);
+      throw error;
+    }
+  }
+
+  // Create new conversation
+  async createConversation(userId, title = 'New Conversation') {
+    try {
+      const result = await this.pool.query(
+        `INSERT INTO conversations (user_id, title)
+         VALUES ($1, $2)
+         RETURNING id`,
+        [userId, title]
+      );
+      return result.rows[0].id;
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      throw error;
+    }
+  }
+
+  // Delete conversation and its messages
+  async deleteConversation(conversationId) {
+    try {
+      await this.pool.query(
+        'DELETE FROM conversations WHERE id = $1',
+        [conversationId]
+      );
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      throw error;
+    }
+  }
+}
 
 async function useRag(userInput, userId, context_query, pool) {
   let output = "Error in Rag"
@@ -43,6 +141,7 @@ async function useRag(userInput, userId, context_query, pool) {
      
 module.exports = (app, pool) => {
   // Create event route
+  const agentManager = new SharedAgentsManager(pool);
 
   app.get('/ai', async (req, res) => {
 	  res.send({"status":"ready"});
@@ -50,15 +149,12 @@ module.exports = (app, pool) => {
   app.post('/ai', authenticateToken, async (req, res) => {
     try {
 
-      const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
-      const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-
-
       // gives embedding context of todays date
       const userInput = req.body.message;
       const userId = req.user.userId;
       //const userId = req.user.userId;
       //system prompt is in chatAll
+      let conversationId = req.body.conversationId;
 
       if (!userInput) {
 		    return res.status(400).send({error: "Input is required."} );
@@ -66,26 +162,43 @@ module.exports = (app, pool) => {
       if (Array.isArray(userInput)) {
         return res.status(400).send({error: "Invalid input: arrays are not handled. please provide string"})
       }
-      const initial_context = await contextAgent.inputChat(userInput)
+
+      // create new conversation if none exists
+      if (!conversationId) {
+        conversationId = await agentManager.createConversation(userId);
+      }
+
+      await agentManager.loadConversationState(conversationId);
+
+      await agentManager.saveMessage(conversationId, 'user', userInput);
+
+      const initial_context = await agentManager.contextAgent.inputChat(userInput);
+      if (initial_context.type !== "none") {
+        await agentManager.saveMessage(conversationId, 'bot', JSON.stringify(initial_context));
+      }
+
       let initial_events = ''
       if (initial_context.type === "none"){
       } else {
         initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
       }
 
-      let response = await chatAgent.inputChat(userInput, initial_events)
+      let response = await agentManager.chatAgent.inputChat(userInput, initial_events);
       console.log(response)
+
+      await agentManager.saveMessage(conversationId, 'bot', typeof response === 'string' ? response : JSON.stringify(response));
 
       // if chatbot responds with a json, checks for which ai function handles
 
       if (response.type === "context") {
-        return res.send({message: JSON.stringify(response)})
+        return res.send({message: JSON.stringify(response), conversationId})
         
       } else if (response.type === 'createEvent'){
         // starts workflow for chatbot creating an event
-        createAgent.setHistory(chatAgent.getHistory())
-        const create_json = await createAgent.inputChat(userInput); 
+        agentManager.createAgent.setHistory(agentManager.chatAgent.getHistory());
+        const create_json = await agentManager.createAgent.inputChat(userInput);
         console.log(create_json)
+        
         const eventDetailsString = JSON.stringify({
           title: create_json.title,
           description: create_json.description || '',
@@ -98,15 +211,113 @@ module.exports = (app, pool) => {
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         console.log(eventDetailsString)
-        chatAgent.setHistory(createAgent.getHistory())
-        return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`})
+
+        await agentManager.saveMessage(conversationId, 'bot', eventDetailsString);
+        
+        agentManager.chatAgent.setHistory(agentManager.createAgent.getHistory());
+
+        return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`, conversationId})
       } else {
-        return res.send({message: response})
+        return res.send({message: response, conversationId})
       }
     }
     catch (error){ 
       console.error("Chatbot error: ", error)
       return res.status(500).json({error: 'Internal server error'});
     }
-  })
+  });
+
+    // Add route to get conversation history
+  app.get('/conversations/:conversationId', authenticateToken, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT sender, content, created_at 
+         FROM messages 
+         WHERE conversation_id = $1 
+         ORDER BY created_at ASC`,
+        [req.params.conversationId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching conversation:", error);
+      res.status(500).json({error: 'Internal server error'});
+    }
+  });
+
+  // Add route to list user's conversations
+  app.get('/conversations', authenticateToken, async (req, res) => {
+    try {
+      const result = await pool.query(
+        `SELECT id, title, created_at 
+         FROM conversations 
+         WHERE user_id = $1 
+         ORDER BY created_at DESC`,
+        [req.user.userId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error("Error fetching conversations:", error);
+      res.status(500).json({error: 'Internal server error'});
+    }
+  });
+
+  // Delete conversation
+  app.delete('/conversations/:conversationId', authenticateToken, async (req, res) => {
+    const { conversationId } = req.params;
+    const userId = req.user.userId;
+
+    try {
+      // verify that the conversation belongs to the user
+      const convoCheck = await pool.query(
+        `SELECT id FROM conversations WHERE id = $1 AND user_id = $2`,
+        [conversationId, userId]
+      );
+
+      if (convoCheck.rowCount === 0) {
+        return res.status(404).json({ error: 'Conversation not found.' });
+      }
+
+      // delete the conversation
+      await agentManager.deleteConversation(conversationId);
+
+      res.json({ message: 'Conversation deleted successfully.' });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  });
+
+  // Rename conversation
+  app.patch('/conversations/:conversationId', authenticateToken, async (req, res) => {
+    const { conversationId } = req.params;
+    const { title } = req.body;
+    const userId = req.user.userId;
+
+    if (!title || typeof title !== 'string') {
+      return res.status(400).json({ error: 'Valid title is required.' });
+    }
+
+    try {
+      // verify that the conversation belongs to the user
+      const convoCheck = await pool.query(
+        `SELECT id FROM conversations WHERE id = $1 AND user_id = $2`,
+        [conversationId, userId]
+      );
+
+      if (convoCheck.rowCount === 0) {
+        return res.status(404).json({ error: 'Conversation not found.' });
+      }
+
+      // update the conversation title
+      await pool.query(
+        `UPDATE conversations SET title = $1 WHERE id = $2`,
+        [title, conversationId]
+      );
+
+      res.json({ message: 'Conversation renamed successfully.', title });
+    } catch (error) {
+      console.error('Error renaming conversation:', error);
+      res.status(500).json({ error: 'Internal server error.' });
+    }
+  });
 }
