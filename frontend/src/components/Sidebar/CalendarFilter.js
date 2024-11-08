@@ -186,7 +186,7 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
         {showOtherCalendars && (
           <div className="space-y-1 pl-2">
             {renderCalendarItem('google', email, 'bg-blue-500')}
-            {renderCalendarItem('holidays', 'Holidays in United States', 'bg-yellow-500')}
+            {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
           </div>
         )}
       </div>
