@@ -231,6 +231,19 @@ const AboutPage = () => {
               
             />
               <TeamMemberCard 
+              name="Toan"
+              role="Full-Stack & AI Developer | UI Designer"
+              description="loves his gf"
+              image="/toan.png"
+              imagePosition="object-[50%_40%]"
+              socials={{
+                instagram: "",
+                linkedin: "",
+                website: ""
+              }}
+              
+            />
+              <TeamMemberCard 
               name="Justin"
               role="Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
