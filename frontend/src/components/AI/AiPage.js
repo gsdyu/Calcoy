@@ -9,6 +9,7 @@ import LoadingCircle from './LoadingCircle';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
 import ChatSidebar from './ChatSidebar';
+import DeleteChatModal from './DeleteChatModal';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -20,6 +21,8 @@ const AiPage = () => {
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
   const [showPrompts, setShowPrompts] = useState(true);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
 
   const [chats, setChats] = useState([]);
   const [currentChatId, setCurrentChatId] = useState(null);
@@ -126,8 +129,14 @@ const AiPage = () => {
   };
 
   const handleDeleteChat = async (chatId) => {
+    const chat = chats.find(c => c.id === chatId);
+    setChatToDelete(chatId);
+    setIsDeleteModalOpen(true);
+  };
+  
+  const handleConfirmDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+      const response = await fetch(`http://localhost:5000/conversations/${chatToDelete}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -137,10 +146,9 @@ const AiPage = () => {
         throw new Error(errorData.error || 'Failed to delete conversation.');
       }
   
-      // local update
-      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatId));
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatToDelete));
   
-      if (currentChatId === chatId) {
+      if (currentChatId === chatToDelete) {
         setCurrentChatId(null);
         setMessages([]);
         setShowPrompts(true);
@@ -150,6 +158,9 @@ const AiPage = () => {
     } catch (error) {
       console.error('Failed to delete conversation:', error);
       showNotification(`Failed to delete conversation: ${error.message}`);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setChatToDelete(null);
     }
   };
   
@@ -435,6 +446,16 @@ const AiPage = () => {
           onActionClick={() => {
             console.log('placeholder');
           }}
+        />
+
+        <DeleteChatModal 
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setChatToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          chatTitle={chats.find(c => c.id === chatToDelete)?.title}
         />
       </div>
 
