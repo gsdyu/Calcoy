@@ -250,13 +250,14 @@ const AiPage = () => {
         setChats((prevChats) => [
           {
             id: data.conversationId,
-            title: 'New Conversation',
+            title: data.title || 'New chat',
             created_at: new Date().toISOString(),
           },
           ...prevChats,
         ]);
         setCurrentChatId(data.conversationId);
       }
+      
 
       const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
       let newEventDetails = null;

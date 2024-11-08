@@ -23,6 +23,10 @@ class SharedAgentsManager {
       responseSchema: jsonEvent,
       responseMimetype: "application/json"
     });
+
+    this.titleAgent = new GeminiAgent({
+      content: `You are a chat title generator. Given a conversation message, create a brief, contextual title (max 50 chars) that captures the essence of what the conversation will be about. Respond with just the title, no extra text.`,
+    });
   }
 
   // Load conversation history from database
@@ -62,6 +66,26 @@ class SharedAgentsManager {
     }
   }
 
+  // generate title
+  async generateAndUpdateTitle(conversationId, message) {
+    try {
+      const title = await this.titleAgent.inputChat(message);
+      
+      // Update the conversation title in the database
+      await this.pool.query(
+        `UPDATE conversations 
+         SET title = $1 
+         WHERE id = $2`,
+        [title, conversationId]
+      );
+      
+      return title;
+    } catch (error) {
+      console.error('Error generating/updating title:', error);
+      return 'New chat';
+    }
+  }
+
   // Save message to database
   async saveMessage(conversationId, sender, content) {
     try {
@@ -82,7 +106,7 @@ class SharedAgentsManager {
   }
 
   // Create new conversation
-  async createConversation(userId, title = 'New Conversation') {
+  async createConversation(userId, title = 'New chat') {
     try {
       const result = await this.pool.query(
         `INSERT INTO conversations (user_id, title)
@@ -168,14 +192,22 @@ module.exports = (app, pool) => {
         return res.status(400).send({error: "Invalid input: arrays are not handled. please provide string"})
       }
 
+      // Track if this is a new conversation
+      const isNewConversation = !conversationId;
+      
       // create new conversation if none exists
-      if (!conversationId) {
+      if (isNewConversation) {
         conversationId = await agentManager.createConversation(userId);
       }
 
       await agentManager.loadConversationState(conversationId);
-
       await agentManager.saveMessage(conversationId, 'user', userInput);
+
+      // Generate title for new conversations after first message
+      let title;
+      if (isNewConversation) {
+        title = await agentManager.generateAndUpdateTitle(conversationId, userInput);
+      }
 
       const initial_context = await agentManager.contextAgent.inputChat(userInput);
       if (initial_context.type !== "none") {
@@ -223,7 +255,11 @@ module.exports = (app, pool) => {
 
         return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`, conversationId})
       } else {
-        return res.send({message: response, conversationId})
+        return res.send({
+          message: response,
+          conversationId,
+          ...(title && { title })
+        });
       }
     }
     catch (error){ 
