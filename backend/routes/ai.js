@@ -65,6 +65,11 @@ class SharedAgentsManager {
   // Save message to database
   async saveMessage(conversationId, sender, content) {
     try {
+
+      if (typeof content === 'string' && (content.includes('"type":"createEvent"') || content.includes('"type":"context"'))) {
+        return;
+      }
+
       await this.pool.query(
         `INSERT INTO messages (conversation_id, sender, content)
          VALUES ($1, $2, $3)`,
