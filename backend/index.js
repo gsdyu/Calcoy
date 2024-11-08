@@ -94,11 +94,11 @@ pool.query(`
 
       embedding vector(128),
       completed BOOLEAN,
+      include_in_personal BOOLEAN DEFAULT FALSE,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
       ALTER TABLE events ADD COLUMN IF NOT EXISTS server_id INT REFERENCES servers(id) ON DELETE CASCADE;
       ALTER TABLE events DROP CONSTRAINT IF EXISTS unique_event_timeframe_per_day;
-
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));

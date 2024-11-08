@@ -4,7 +4,7 @@ const { createEmbeddings } = require('../ai/embeddings');
 module.exports = (app, pool) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, include_in_personal } = req.body;
     const userId = req.user.userId;
   
     const serverId = server_id !== undefined && server_id !== null ? parseInt(server_id) : null;
@@ -24,44 +24,33 @@ module.exports = (app, pool) => {
         console.error('embed error: failed to create embedding for event');
       }
   
-      // Start a transaction to insert both records
-      await pool.query('BEGIN');
-  
-      // Insert event for the specified server
-      const resultForServer = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *',
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId]
+      const result = await pool.query(
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+         RETURNING *`,
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, include_in_personal ?? true]
       );
   
-      // Insert event for the user's personal (global) calendar with server_id as NULL
-      const resultForGlobal = await pool.query(
-        'INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NULL) RETURNING *',
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone]
-      );
-  
-      // Commit the transaction
-      await pool.query('COMMIT');
-  
-      // Update embeddings if created
       if (embed) {
         await pool.query(`
           UPDATE events
           SET embedding = $1
-          WHERE user_id = $2 AND start_time = $3 AND end_time = $4 AND location = $5
-        `, [JSON.stringify(embed[0]), userId, startDate.toISOString(), endDate.toISOString(), location]);
+          WHERE id = $2
+        `, [JSON.stringify(embed[0]), result.rows[0].id]);
       }
   
       res.status(201).json({
-        message: 'Event created in both global and server calendars',
-        events: [resultForServer.rows[0], resultForGlobal.rows[0]],
+        message: 'Event created successfully',
+        event: result.rows[0],
       });
     } catch (error) {
-      // Rollback the transaction in case of an error
       await pool.query('ROLLBACK');
       console.error('Create event error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  
+  
   
   // Get events route
 // Get events route (with optional server_id filter)
@@ -70,8 +59,8 @@ app.get('/events', authenticateToken, async (req, res) => {
   const server_id = req.query.server_id ? parseInt(req.query.server_id) : null;
 
   const query = server_id !== null 
-    ? `SELECT * FROM events WHERE user_id = $1 AND server_id = $2 ORDER BY start_time`
-    : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+    ? `SELECT * FROM events WHERE user_id = $1 AND (server_id = $2 OR (include_in_personal = TRUE AND server_id IS NULL)) ORDER BY start_time`
+    : `SELECT * FROM events WHERE user_id = $1 AND (server_id IS NULL OR include_in_personal = TRUE) ORDER BY start_time`;
 
   const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
   res.json(result.rows);

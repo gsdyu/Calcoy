@@ -267,6 +267,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       const eventData = {
         ...event,
         server_id: activeCalendar?.id || null,
+        include_in_personal: event.include_in_personal ?? true  // Explicitly set `include_in_personal`
       };
   
       const response = await fetch(url, {
@@ -282,8 +283,8 @@ import { useTheme } from '@/contexts/ThemeContext';
         const savedEventResponse = await response.json();
         console.log("Server response:", savedEventResponse);
   
-        // Check if 'events' array exists and get the first event from it
-        const savedEvent = savedEventResponse?.events?.[0];
+        // Directly access the single returned event object
+        const savedEvent = savedEventResponse.event;
         if (savedEvent) {
           const startTime = new Date(savedEvent.start_time);
           const endTime = new Date(savedEvent.end_time);
@@ -319,7 +320,6 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
     }
   };
-  
   
 
   const handleDeleteEvent = async (eventId) => {
