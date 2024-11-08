@@ -60,7 +60,7 @@ app.get('/events', authenticateToken, async (req, res) => {
 
   const query = server_id !== null 
     ? `SELECT * FROM events WHERE user_id = $1 AND (server_id = $2 OR (include_in_personal = TRUE AND server_id IS NULL)) ORDER BY start_time`
-    : `SELECT * FROM events WHERE user_id = $1 AND (server_id IS NULL OR include_in_personal = TRUE) ORDER BY start_time`;
+    : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL OR include_in_personal = TRUE ORDER BY start_time`;
 
   const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
   res.json(result.rows);
