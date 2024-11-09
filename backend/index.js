@@ -68,7 +68,9 @@ pool.query(`
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(255),
-    created_by INT REFERENCES users(id) ON DELETE CASCADE
+    created_by INT REFERENCES users(id) ON DELETE CASCADE,
+    invite_link VARCHAR(255) UNIQUE 
+
   );
 
   CREATE TABLE IF NOT EXISTS user_servers (
@@ -99,6 +101,7 @@ pool.query(`
     );
       ALTER TABLE events ADD COLUMN IF NOT EXISTS server_id INT REFERENCES servers(id) ON DELETE CASCADE;
       ALTER TABLE events DROP CONSTRAINT IF EXISTS unique_event_timeframe_per_day;
+      ALTER TABLE servers ADD COLUMN IF NOT EXISTS invite_link VARCHAR(255) UNIQUE;
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
 }).catch(err => console.error('Error creating users table:', err));

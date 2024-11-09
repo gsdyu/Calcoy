@@ -149,13 +149,13 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
             <div className="flex items-center space-x-4">
               <input
                 type="text"
-                value={`https://timewise.com/invite/${activeCalendar.id}`}
+                value={`https://timewise.com/invite/${activeCalendar.invite_link}`} 
                 readOnly
                 className="w-full p-2 bg-gray-700 text-gray-200 rounded"
               />
               <button
                 onClick={() => {
-                  navigator.clipboard.writeText(`https://timewise.com/invite/${activeCalendar.id}`);
+                  navigator.clipboard.writeText(`https://timewise.com/invite/${activeCalendar.invite_link}`);
                   alert('Link copied to clipboard!');
                 }}
                 className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"

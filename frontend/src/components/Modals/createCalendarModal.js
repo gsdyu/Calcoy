@@ -127,21 +127,66 @@ const handleEventOptionSelect = async (option) => {
 
   if (onClose) onClose();
 };
+const handleJoinServer = async () => {
+  if (!inviteLink) {
+    alert('Please enter a valid invite link to join a server.');
+    return;
+  }
 
-  const handleJoinServer = () => {
-    if (!inviteLink) {
-      alert('Please enter a valid invite link to join a server.');
-      return;
-    }
-    console.log('Joining server with invite link:', inviteLink);
-    // Ensure onClose is a function before calling it
-    if (typeof onClose === 'function') {
-      onClose(); // Close modal after joining server
+  const formData = new FormData();
+  formData.append('inviteLink', inviteLink);
+
+  try {
+    const response = await fetch('http://localhost:5000/api/servers/join', {
+      method: 'POST',
+      credentials: 'include',
+      body: formData,
+    });
+
+    const joinData = await response.json();
+
+    if (response.ok) {
+      const serverId = joinData.serverId;
+
+      if (!serverId) {
+        console.error('Server ID not returned from join response:', joinData);
+        alert('Failed to retrieve server ID after joining.');
+        return;
+      }
+
+      // Fetch the full server details using the server ID
+      const serverResponse = await fetch(`http://localhost:5000/api/servers/${serverId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (serverResponse.ok) {
+        const serverData = await serverResponse.json();
+        setServers((prevServers) => [...prevServers, serverData]);
+        alert('Joined server successfully!');
+      } else {
+        alert('Failed to load server details after joining.');
+      }
     } else {
-      console.warn('onClose is not defined or not a function.');
+      // Check for "Already joined" message and handle it as an error
+      if (joinData.message === 'Already joined') {
+        alert('You have already joined this server.');
+      } else {
+        console.error('Error response from server:', joinData.error);
+        alert(joinData.error || 'Failed to join server');
+      }
     }
-  };
- 
+  } catch (error) {
+    console.error('Error joining server:', error);
+    alert('Failed to join server');
+  }
+
+  if (onClose) onClose();
+};
+
+
+
+
   const handleGenerateInviteLink = () => {
     // Generates new invite link for the current calendar
     const newInviteLink = `https://timewise.com/invite/${Math.random().toString(36).substr(2, 8)}`;
@@ -284,17 +329,19 @@ const handleEventOptionSelect = async (option) => {
             </div>
           </form>
         )}  
-
         {currentTab === 'join' && (
-          <form onSubmit={handleSubmitServerInfo}>
+          <form onSubmit={(e) => {
+            e.preventDefault();  // Prevent form from refreshing the page
+            handleJoinServer();   // Call handleJoinServer when form is submitted
+          }}>
             {/* Updated placeholder for server name */}
             <input
               type="text"
-              name="serverName"
+              name="inviteLink"
               placeholder="https://timewise.com/invite/es167y6o" // NEW placeholder for server invite link
-              value={serverInfo.serverName}
-              onChange={handleServerChange}
-              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-400 border-gray-500'} border rounded`}
+              value={inviteLink}
+              onChange={(e) => setInviteLink(e.target.value)}
+              className={`w-full p-2 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-300'} border rounded`}
               required
             />
             {/* Added example invite links below input */}
@@ -304,7 +351,7 @@ const handleEventOptionSelect = async (option) => {
               <div>https://timewise.com/invite/es323y6c</div>
               <div>https://timewise.com/invite/es945y8h</div>
             </div>
-         
+
             <div className="flex justify-between">
               <button type="button" onClick={() => setCurrentTab('main')} className="px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded">
                 Back
@@ -313,7 +360,6 @@ const handleEventOptionSelect = async (option) => {
                 Join Calendar {/* Renamed submit button */}
               </button>
             </div>
-    
           </form>
         )}
         {currentTab === 'server' && (

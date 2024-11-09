@@ -57,17 +57,37 @@ app.post('/events', authenticateToken, async (req, res) => {
   
   // Get events route
 // Get events route (with optional server_id filter)
+// Get events route with server filter for joined servers
 app.get('/events', authenticateToken, async (req, res) => {
   const userId = req.user.userId;
   const server_id = req.query.server_id ? parseInt(req.query.server_id) : null;
 
-  const query = server_id !== null 
-    ? `SELECT * FROM events WHERE user_id = $1 AND (server_id = $2 OR (include_in_personal = TRUE AND server_id IS NULL)) ORDER BY start_time`
-    : `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL OR include_in_personal = TRUE ORDER BY start_time`;
+  try {
+    // Check which servers the user has access to
+    const userServers = await pool.query(
+      'SELECT server_id FROM user_servers WHERE user_id = $1',
+      [userId]
+    );
+    const accessibleServerIds = userServers.rows.map(row => row.server_id);
 
-  const result = await pool.query(query, server_id !== null ? [userId, server_id] : [userId]);
-  res.json(result.rows);
+    // If specific server_id is requested, validate access
+    if (server_id && !accessibleServerIds.includes(server_id)) {
+      return res.status(403).json({ error: 'Access to this server is denied' });
+    }
+
+    // Fetch events either for the personal calendar or a specific server
+    const query = server_id !== null 
+      ? `SELECT * FROM events WHERE (server_id = $1 OR (include_in_personal = TRUE AND server_id IS NULL)) ORDER BY start_time`
+      : `SELECT * FROM events WHERE (server_id IS NULL OR include_in_personal = TRUE) AND user_id = $1 ORDER BY start_time`;
+
+    const result = await pool.query(query, server_id !== null ? [server_id] : [userId]);
+    res.json(result.rows);
+  } catch (error) {
+    console.error('Error fetching events:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
 });
+
 
 
 app.post('/events/import', authenticateToken, async (req, res) => {
