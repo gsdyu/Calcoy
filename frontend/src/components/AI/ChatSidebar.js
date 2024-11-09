@@ -197,6 +197,7 @@ const ChatSidebar = ({
       className={`
         flex flex-col border-l 
         transition-all duration-300 ease-in-out
+        overflow-hidden
         ${darkMode ? 'bg-gray-800 border-gray-800' : 'bg-white border-gray-200'}
         ${isCollapsed ? 'w-16' : 'w-72'}
         h-full
@@ -232,14 +233,14 @@ const ChatSidebar = ({
       </div>
 
       {/* chat items */}
-      <div className="flex-1 overflow-auto px-2">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2">
         <AnimatePresence initial={false}>
           {chats.map((chat) => (
             <motion.div
               key={chat.id}
               initial={{ opacity: 0, x: '50%' }}
               animate={{ opacity: 1, x: '0%' }}
-              exit={{ opacity: 0, x: '100%' }}
+              exit={{ opacity: 0, x: '70%' }}
               transition={{ duration: 0.4 }}
             >
               <ChatItem
