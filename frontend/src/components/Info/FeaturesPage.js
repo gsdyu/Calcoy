@@ -55,7 +55,6 @@ const FeaturesPage = () => {
             <div className="hidden md:flex items-center space-x-8">
               <Link href="/about" className="text-gray-600 hover:text-indigo-600 transition-colors">About</Link>
               <Link href="/features" className="text-indigo-600 font-medium">Features</Link>
-              <Link href="/documentation" className="text-gray-600 hover:text-indigo-600 transition-colors">Documentation</Link>
               <Link href="/contact" className="text-gray-600 hover:text-indigo-600 transition-colors">Contact</Link>
             </div>
 
