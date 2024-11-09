@@ -5,7 +5,15 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { FiChevronDown, FiChevronUp, FiEye, FiEyeOff, FiPlus } from 'react-icons/fi';
 import CalendarPopup from '../Modals/CalendarPopup';
 
-const colorOptions = ['bg-red-500', 'bg-orange-500', 'bg-yellow-500', 'bg-green-500', 'bg-blue-500', 'bg-purple-500', 'bg-gray-400'];
+const colorOptions = [
+  { value: 'bg-red-500', label: 'Red' },
+  { value: 'bg-orange-500', label: 'Orange' },
+  { value: 'bg-yellow-500', label: 'Yellow' },
+  { value: 'bg-green-500', label: 'Green' },
+  { value: 'bg-blue-500', label: 'Blue' },
+  { value: 'bg-purple-500', label: 'Purple' },
+  { value: 'bg-gray-400', label: 'Gray' }
+];
 
 const CalendarFilter = ({ onColorChange, itemColors }) => {
   const { darkMode } = useTheme();
@@ -133,7 +141,52 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
         </button>
       )}
       {popupVisible[key] && (
-        <ColorPicker item={key} colors={colorOptions} onSelectColor={changeColor} />
+        <div 
+          className={`
+            absolute z-50 right-0 top-full mt-1 
+            ${darkMode ? 'bg-gray-900' : 'bg-white'} 
+            p-3 rounded-xl shadow-xl 
+            border ${darkMode ? 'border-gray-800/10' : 'border-gray-200'}
+            backdrop-blur-sm
+          `}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex flex-wrap gap-2 min-w-[140px]">
+            {colorOptions.map(({ value, label }) => (
+              <button
+                key={value}
+                className={`
+                  group relative w-7 h-7 rounded-full ${value}
+                  transition-all duration-200
+                  hover:scale-110
+                  ${itemColors?.[key] === value ? 
+                    'ring-2 ring-blue-400 ring-offset-2 ' + 
+                    (darkMode ? 'ring-offset-gray-900' : 'ring-offset-white')
+                    : ''
+                  }
+                  before:absolute before:inset-0 
+                  before:rounded-full before:transition-opacity
+                  before:duration-200 before:opacity-0
+                  hover:before:opacity-100
+                  before:bg-gradient-to-br before:from-white/20 before:to-transparent
+                `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeColor(key, value);
+                }}
+              >
+                <span className={`
+                  absolute -top-6 left-1/2 -translate-x-1/2 text-xs
+                  opacity-0 group-hover:opacity-100 whitespace-nowrap 
+                  ${darkMode ? 'text-gray-400' : 'text-gray-600'}
+                  transition-opacity duration-200 z-50
+                `}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -192,26 +245,6 @@ const CalendarFilter = ({ onColorChange, itemColors }) => {
       </div>
 
       {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
-    </div>
-  );
-};
-
-const ColorPicker = ({ item, colors, onSelectColor }) => {
-  return (
-    <div 
-      className="absolute z-50 right-0 top-full mt-1 bg-gray-800/95 p-2 rounded shadow-lg flex space-x-2"
-      onClick={e => e.stopPropagation()}
-    >
-      {colors.map((color) => (
-        <button
-          key={color}
-          className={`w-6 h-6 rounded-full ${color} hover:ring-2 hover:ring-white transition-all duration-200`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelectColor(item, color);
-          }}
-        />
-      ))}
     </div>
   );
 };
