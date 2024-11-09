@@ -70,13 +70,33 @@ const AiPage = () => {
       }
 
       const data = await response.json();
-      const formattedMessages = data.map((msg) => ({
-        sender: msg.sender === 'model' ? 'bot' : msg.sender,
-        text: msg.content,
-        eventDetails: msg.sender === 'model' && isJson(msg.content) ? JSON.parse(msg.content).eventDetails : null,
-      }));
+
+      let handledEventsTemp = {};
+      const formattedMessages = data.map((msg) => {
+        const sender = msg.sender === 'model' ? 'bot' : msg.sender;
+        let text = msg.content;
+        let eventDetails = null;
+  
+        if (sender === 'bot' && isJson(msg.content)) {
+          const parsedContent = JSON.parse(msg.content);
+          if (parsedContent.title && parsedContent.start_time) {
+            // It's an event details message
+            text = null;
+            const newEventId = parsedContent.id || Date.now() + Math.random();
+            eventDetails = { ...parsedContent, id: newEventId };
+            handledEventsTemp[newEventId] = true;
+          }
+        }
+  
+        return {
+          sender,
+          text,
+          eventDetails,
+        };
+      });
 
       setMessages(formattedMessages);
+      setHandledEvents(handledEventsTemp);
       setShowPrompts(false);
     } catch (error) {
       console.error('Failed to fetch conversation:', error);
