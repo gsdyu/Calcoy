@@ -24,6 +24,7 @@ const AiPage = () => {
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
   const [showPrompts, setShowPrompts] = useState(true);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
@@ -39,6 +40,10 @@ const AiPage = () => {
 
   const handleInputChange = (e) => {
     setInput(e.target.value);
+  };
+
+  const handleFileChange = (e) => {
+    setSelectedFile(event.target.files[0]);
   };
 
   const handleEdit = async (eventId, editedDetails) => {
@@ -77,7 +82,7 @@ const AiPage = () => {
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    if (!input) console.error();
+    if (!input || !selectedFile ) console.error();
 
     setShowPrompts(false);
   
@@ -88,22 +93,22 @@ const AiPage = () => {
       credentials: 'include',
     })
     if (!check.ok) {
-      //handle error, i didnt read yet how to handle here
       console.error('not login')
       setIsLoading(false);
     }
 
     setIsLoading(true);
-  
-    // groq api
+    
+    const formData = new FormData();
+    formData.append('text', input);
+    formData.append('file', selectedFile);
+    console.log(formData)
+    // gemini api
     try {
       const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         credentials: 'include',
-        body: JSON.stringify({ message: input }),
+        body: formData,
       });
   
       if (!response.ok) {
@@ -276,6 +281,7 @@ const AiPage = () => {
             id="fileInput"
             type="file"
             accept="image/*"
+            onChange={handleFileChange}
             style={{display: 'none'}}
             />
             <textarea 
@@ -293,6 +299,17 @@ const AiPage = () => {
             className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}>
             <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
           </button>
+          {selectedFile && (
+            <div>
+              {selectedFile.type.startsWith('image/') ? (
+                <div style={{width: '75px', height: '75px', overflow: 'hidden'}}>
+                  <img src={URL.createObjectURL(selectedFile)} alt="File Preview" style={{width: "100%", height: "100%",'object-fit': 'cover'}} />
+                </div>
+              ) : (
+                <p>Unsupported file type. Please upload an image file.</p>
+              )}
+            </div>
+      )}
         </form>
         <NotificationSnackbar
           message={notification.message}

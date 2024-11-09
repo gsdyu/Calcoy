@@ -2,11 +2,13 @@ const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
 const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
+const multer = require('multer')
 const fs = require('fs');
 
 const contextAgent = new GeminiAgent({content: chat_context, responseMimeType: "application/json"});
 const chatAgent = new GeminiAgent({content: chatAll});
 const createAgent = new GeminiAgent({content: chat_createEvent, responseSchema: jsonEvent, responseMimetype: "application/json"});
+const upload = multer({ storage: multer.memoryStorage()});
 
 async function useRag(userInput, userId, context_query, pool) {
   let output = "Error in Rag"
@@ -47,16 +49,18 @@ module.exports = (app, pool) => {
   app.get('/ai', async (req, res) => {
 	  res.send({"status":"ready"});
   })
-  app.post('/ai', authenticateToken, async (req, res) => {
+  app.post('/ai', authenticateToken, upload.single('file'), async (req, res) => {
     try {
 
       const currentTime = new Date().toLocaleString('en-US', { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
       const currentTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
+      console.log(req.file)
+      console.log(req.body)
 
-      // gives embedding context of todays date
-      const userInput = req.body.message;
+      const userInput = req.body.text;
       const userId = req.user.userId;
+      console.log(req.body)
       //const userId = req.user.userId;
       //system prompt is in chatAll
 
