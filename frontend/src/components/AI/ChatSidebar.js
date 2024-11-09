@@ -62,11 +62,11 @@ const ChatItem = ({
     >
       <button
         onClick={() => onSelect(chat.id)}
-        className="flex-1 flex items-center gap-2 min-w-0"
+        className="flex-1 flex items-center gap-3 min-w-0"
       >
-        <MessageSquare size={20} />
+        <MessageSquare size={20} className="flex-shrink-0" />
         {!isCollapsed && (
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 text-left pl-1">
             {isEditing ? (
               <input
                 type="text"
@@ -78,7 +78,7 @@ const ChatItem = ({
                   if (e.key === 'Escape') setIsEditing(false);
                 }}
                 className={`
-                  w-full px-2 py-1 rounded-lg
+                  w-full px-2 py-1 rounded-lg text-left
                   ${darkMode
                     ? 'bg-gray-700 text-gray-100 border-gray-600'
                     : 'bg-white text-gray-900 border-gray-200'}
@@ -91,19 +91,19 @@ const ChatItem = ({
                 onClick={(e) => e.stopPropagation()}
               />
             ) : (
-              <>
-                <span className="block truncate">
+              <div className="space-y-1">
+                <span className="block truncate text-left font-medium">
                   {chat.title || 'New Chat'}
                 </span>
                 <span
                   className={`
-                    text-xs truncate
+                    text-xs truncate block
                     ${darkMode ? 'text-gray-400' : 'text-gray-500'}
                   `}
                 >
-                  {new Date(chat.timestamp).toLocaleDateString()}
+                  {new Date(chat.created_at).toLocaleDateString()}
                 </span>
-              </>
+              </div>
             )}
           </div>
         )}

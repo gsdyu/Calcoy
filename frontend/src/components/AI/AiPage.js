@@ -250,7 +250,7 @@ const AiPage = () => {
         setChats((prevChats) => [
           {
             id: data.conversationId,
-            title: data.title || 'New chat',
+            title: data.title || 'Scheduling Event',
             created_at: new Date().toISOString(),
           },
           ...prevChats,
