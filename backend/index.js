@@ -46,7 +46,9 @@ pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
 	.catch(err => {console.error('Error creating vector extension: ', err)});
 
 // Create or alter users table to add 2FA columns
-pool.query(`  
+pool
+  .query(
+    `  
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE,
@@ -58,9 +60,13 @@ pool.query(`
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
-`).then(() => {
-  console.log("Users table is ready");
-  pool.query(`
+`
+  )
+  .then(() => {
+    console.log('Users table is ready');
+    // Create events table
+    return pool.query(
+      `
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -77,9 +83,44 @@ pool.query(`
       completed BOOLEAN,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
-  `).then(() => console.log("Events table is ready"))
-    .catch(err => console.error('Error creating events table:', err));
-}).catch(err => console.error('Error creating users table:', err));
+  `
+    );
+  })
+  .then(() => {
+    console.log('Events table is ready');
+    // Create conversations table
+    return pool.query(
+      `
+    CREATE TABLE IF NOT EXISTS conversations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `
+    );
+  })
+  .then(() => {
+    console.log('Conversations table is ready');
+    // Create messages table
+    return pool.query(
+      `
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+      sender VARCHAR(50) NOT NULL, -- 'user' or 'model'
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `
+    );
+  })
+  .then(() => {
+    console.log('Messages table is ready');
+  })
+  .catch((err) => {
+    console.error('Error creating tables: ', err);
+  });
 
 // Additional routes
 require('./routes/auth')(app, pool);

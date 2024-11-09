@@ -1,18 +1,15 @@
 'use client';
- 
+
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
-import { MoveUp } from 'lucide-react';
-import { ArrowUp } from 'lucide-react';
-import { Sparkles } from 'lucide-react';
-import { CirclePlus } from 'lucide-react';
-import { CircleX } from 'lucide-react';
-import { Paperclip } from 'lucide-react';
+import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX, Paperclip } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingCircle from './LoadingCircle';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
+import ChatSidebar from './ChatSidebar';
+import DeleteChatModal from './DeleteChatModal';
 
 const AiPage = () => {
   const { darkMode } = useTheme();
@@ -25,9 +22,168 @@ const AiPage = () => {
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
   const [showPrompts, setShowPrompts] = useState(true);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [chatToDelete, setChatToDelete] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [currentChatId, setCurrentChatId] = useState(null);
 
   const textareaRef = useRef(null);
   const chatWindowRef = useRef(null);
+
+  // Fetch existing conversations
+  useEffect(() => {
+    const fetchConversations = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/conversations', {
+          method: 'GET',
+          credentials: 'include',
+        });
+        if (!response.ok) {
+          throw new Error(`Error fetching conversations: ${response.statusText}`);
+        }
+        const data = await response.json();
+        setChats(data);
+      } catch (error) {
+        console.error('Failed to fetch conversations:', error);
+        showNotification('Failed to load conversations.');
+      }
+    };
+
+    fetchConversations();
+  }, []);
+
+  // Handle selecting a conversation
+  const handleChatSelect = async (chatId) => {
+    setCurrentChatId(chatId);
+    setMessages([]);
+    setShowPrompts(false);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error fetching conversation: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      let handledEventsTemp = {};
+      const formattedMessages = data.map((msg) => {
+        const sender = msg.sender === 'model' ? 'bot' : msg.sender;
+        let text = msg.content;
+        let eventDetails = null;
+  
+        if (sender === 'bot' && isJson(msg.content)) {
+          const parsedContent = JSON.parse(msg.content);
+          if (parsedContent.title && parsedContent.start_time) {
+            // It's an event details message
+            text = null;
+            const newEventId = parsedContent.id || Date.now() + Math.random();
+            eventDetails = { ...parsedContent, id: newEventId };
+            handledEventsTemp[newEventId] = true;
+          }
+        }
+  
+        return {
+          sender,
+          text,
+          eventDetails,
+        };
+      });
+
+      setMessages(formattedMessages);
+      setHandledEvents(handledEventsTemp);
+      setShowPrompts(false);
+    } catch (error) {
+      console.error('Failed to fetch conversation:', error);
+      showNotification('Failed to load the selected conversation.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const isJson = (str) => {
+    try {
+      JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return true;
+  };
+
+  // Handle creating a new conversation
+  const handleNewChat = () => {
+    setCurrentChatId(null);
+    setMessages([]);
+    setShowPrompts(true);
+  };
+
+  const handleRenameChat = async (chatId, newTitle) => {
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ title: newTitle }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Error renaming conversation: ${response.statusText}`);
+      }
+
+      // local update
+      setChats((prevChats) =>
+        prevChats.map((chat) => (chat.id === chatId ? { ...chat, title: newTitle } : chat))
+      );
+      showNotification('Conversation renamed successfully.');
+    } catch (error) {
+      console.error('Failed to rename conversation:', error);
+      showNotification('Failed to rename conversation.');
+    }
+  };
+
+  const handleDeleteChat = async (chatId) => {
+    const chat = chats.find(c => c.id === chatId);
+    setChatToDelete(chatId);
+    setIsDeleteModalOpen(true);
+  };
+  
+  const handleConfirmDelete = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/conversations/${chatToDelete}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+  
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete conversation.');
+      }
+  
+      setChats((prevChats) => prevChats.filter((chat) => chat.id !== chatToDelete));
+  
+      if (currentChatId === chatToDelete) {
+        setCurrentChatId(null);
+        setMessages([]);
+        setShowPrompts(true);
+      }
+  
+      showNotification('Conversation deleted successfully.');
+    } catch (error) {
+      console.error('Failed to delete conversation:', error);
+      showNotification(`Failed to delete conversation: ${error.message}`);
+    } finally {
+      setIsDeleteModalOpen(false);
+      setChatToDelete(null);
+    }
+  };
+  
 
   const handleExampleClick = (text) => {
     setInput(text);
@@ -49,12 +205,12 @@ const AiPage = () => {
   const handleEdit = async (eventId, editedDetails) => {
     try {
       // First, update the message in the messages state
-      setMessages(prevMessages => 
-        prevMessages.map(msg => {
+      setMessages((prevMessages) =>
+        prevMessages.map((msg) => {
           if (msg.eventDetails?.id === eventId) {
             return {
               ...msg,
-              eventDetails: editedDetails
+              eventDetails: editedDetails,
             };
           }
           return msg;
@@ -62,30 +218,28 @@ const AiPage = () => {
       );
 
       // Then, update the eventDetails state
-      setEventDetails(prevDetails =>
-        prevDetails.map(detail =>
-          detail.id === eventId ? editedDetails : detail
-        )
+      setEventDetails((prevDetails) =>
+        prevDetails.map((detail) => (detail.id === eventId ? editedDetails : detail))
       );
-
     } catch (error) {
       console.error('Error updating event:', error);
       // Add an error message
-      setMessages(prev => [...prev, {
-        sender: 'bot',
-        text: 'There was an error updating the event.'
-      }]);
-      // You might want to revert the changes in the UI here
+      setMessages((prev) => [
+        ...prev,
+        {
+          sender: 'bot',
+          text: 'There was an error updating the event.',
+        },
+      ]);
     }
   };
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim()) return;
-    if (!input || !selectedFile ) console.error();
 
     setShowPrompts(false);
-  
+
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
     const check = await fetch('http://localhost:5000/auth/check', {
@@ -99,66 +253,93 @@ const AiPage = () => {
 
     setIsLoading(true);
     
-    const formData = new FormData();
-    formData.append('text', input);
-    formData.append('file', selectedFile);
-    console.log(formData)
     // gemini api
+
+    setIsLoading(true);
+
+    const payload = new FormData();
+    payload.append('text', input);
+    payload.append('file', selectedFile);
+    if (currentChatId) {
+      payload.append('conversationId', currentChatId);
+    }
+    console.log(payload)
+
     try {
       const response = await fetch('http://localhost:5000/ai', {
         method: 'POST',
         credentials: 'include',
-        body: formData,
+        body: payload,
       });
-  
+
       if (!response.ok) {
-        throw new Error(`Network response was not ok. status: ${response.status}, ${response.statusText}`);
+        throw new Error(`Network response was not ok. status: ${response.status}`);
       }
-  
+
       const data = await response.json();
       console.log('Response from AI:', data);
-  
+
+      // If it's a new conversation, add it to the chats list
+      if (!currentChatId && data.conversationId) {
+        setChats((prevChats) => [
+          {
+            id: data.conversationId,
+            title: data.title || 'Scheduling Event',
+            created_at: new Date().toISOString(),
+          },
+          ...prevChats,
+        ]);
+        setCurrentChatId(data.conversationId);
+      }
+      
+
       const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
       let newEventDetails = null;
-  
+
       if (eventDetailsMatch && eventDetailsMatch[1]) {
-        newEventDetails = JSON.parse(eventDetailsMatch[1]);
-        const newEventId = Date.now();
-  
-        setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
-        setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
-        
-        const botMessage = {
-          sender: 'bot',
-          text: `Do you want to create the following event?`,
-          eventDetails: { ...newEventDetails, id: newEventId },
-        };
-  
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
+        try {
+          newEventDetails = JSON.parse(eventDetailsMatch[1]);
+        } catch (parseError) {
+          console.error('Failed to parse event details:', parseError);
+        }
+
+        if (newEventDetails) {
+          const newEventId = Date.now();
+
+          setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
+          setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
+
+          const botMessage = {
+            sender: 'bot', // Ensure sender is 'bot'
+            text: `Do you want to create the following event?`,
+            eventDetails: { ...newEventDetails, id: newEventId },
+          };
+
+          setMessages((prevMessages) => [...prevMessages, botMessage]);
+        }
       } else {
         const botMessage = { sender: 'bot', text: data.message };
         setMessages((prevMessages) => [...prevMessages, botMessage]);
       }
-  
     } catch (error) {
       console.error('Error fetching response:', error);
-      const errorMessage = { sender: 'bot', text: 'There was an error' };
+      const errorMessage = { sender: 'bot', text: 'There was an error processing your request.' };
       setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      showNotification('Failed to send message.');
     } finally {
       setIsLoading(false);
       setInput('');
-      textareaRef.current.style.height = 'auto';
+      if (textareaRef.current) {
+        textareaRef.current.style.height = 'auto';
+      }
     }
-  
-    setInput('');
-    textareaRef.current.style.height = 'auto';
   };
 
   const handleConfirm = async (eventId, editedDetails = null) => {
-    const eventToConfirm = editedDetails || eventDetails.find(event => event.id === eventId);
+    const eventToConfirm = editedDetails || eventDetails.find((event) => event.id === eventId);
 
     try {
-      showNotification(`Saving event...`);
+      showNotification('Saving event...');
       const response = await fetch('http://localhost:5000/events', {
         method: 'POST',
         headers: {
@@ -173,7 +354,7 @@ const AiPage = () => {
       }
 
       const result = await response.json();
-      showNotification(`Event saved successfully`);
+      showNotification('Event saved successfully.');
       setMessages((prevMessages) => [
         ...prevMessages,
         { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
@@ -181,7 +362,7 @@ const AiPage = () => {
       setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
       console.error('Error saving event:', error);
-      showNotification(`Failed to create event`)
+      showNotification('Failed to create event.');
       setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Error creating event.' }]);
     }
   };
@@ -189,7 +370,7 @@ const AiPage = () => {
   const handleDeny = (eventId) => {
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
-    showNotification("Event creation canceled")
+    showNotification('Event creation canceled.');
   };
 
   useEffect(() => {
@@ -199,13 +380,11 @@ const AiPage = () => {
     }
   }, [input]);
 
-
   useEffect(() => {
     if (chatWindowRef.current) {
       chatWindowRef.current.scrollTop = chatWindowRef.current.scrollHeight;
     }
   }, [messages]);
-
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -216,25 +395,31 @@ const AiPage = () => {
 
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
-    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
+    setTimeout(() => setNotification((prev) => ({ ...prev, isVisible: false })), 3000);
   };
 
-
   return (
-    <>
-      <div className={styles.container}>
-        <h1 className={styles.aiheader}>Timewise AI<Sparkles className={styles.ailogo}/></h1>
+    <div className="flex h-screen">
+      <div className={`${styles.container} flex-1`}>
+        <h1 className={styles.aiheader}>
+          Timewise AI<Sparkles className={styles.ailogo} />
+        </h1>
 
-        <AiPromptExamples 
-          onExampleClick={handleExampleClick}
-          visible={showPrompts && messages.length === 0}
-        />
+        <AiPromptExamples onExampleClick={handleExampleClick} visible={showPrompts && messages.length === 0} />
 
         <div ref={chatWindowRef} className={styles.chatWindow}>
           {messages.map((msg, index) => (
-            <div 
-              key={index} 
-              className={`${styles.message} ${msg.sender === 'user' ? (darkMode ? styles.userDark : styles.user) : (darkMode ? styles.botDark : styles.bot)}`}
+            <div
+              key={index}
+              className={`${styles.message} ${
+                msg.sender === 'user'
+                  ? darkMode
+                    ? styles.userDark
+                    : styles.user
+                  : darkMode
+                  ? styles.botDark
+                  : styles.bot
+              }`}
             >
               {msg.sender === 'bot' && (
                 <div className={`${styles.botIconContainer} ${darkMode ? styles.botIconContainerDark : ''}`}>
@@ -267,6 +452,7 @@ const AiPage = () => {
             </div>
           )}
         </div>
+
         <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
           <button
             className={`${styles.clip}`}
@@ -284,20 +470,23 @@ const AiPage = () => {
             onChange={handleFileChange}
             style={{display: 'none'}}
             />
-            <textarea 
+          <textarea
             ref={textareaRef}
-            value={input} 
-            onChange={handleInputChange} 
+            value={input}
+            onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Ask Timewise AI..." 
-            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`} 
+            placeholder="Ask Timewise AI..."
+            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`}
             rows={1}
           />
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             disabled={!input.trim()}
-            className={`${styles.button} ${input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''} ${darkMode ? styles.buttonDark : styles.buttonLight}`}>
-            <ArrowUp strokeWidth={2.5} className={styles.sendicon}/>
+            className={`${styles.button} ${
+              input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
+            } ${darkMode ? styles.buttonDark : styles.buttonLight}`}
+          >
+            <ArrowUp strokeWidth={2.5} className={styles.sendicon} />
           </button>
           {selectedFile && (
             <div>
@@ -311,14 +500,37 @@ const AiPage = () => {
             </div>
       )}
         </form>
+
         <NotificationSnackbar
           message={notification.message}
           action={notification.action}
           isVisible={notification.isVisible}
-          onActionClick={() => {console.log('placeholder')}}
+          onActionClick={() => {
+            console.log('placeholder');
+          }}
+        />
+
+        <DeleteChatModal 
+          isOpen={isDeleteModalOpen}
+          onClose={() => {
+            setIsDeleteModalOpen(false);
+            setChatToDelete(null);
+          }}
+          onConfirm={handleConfirmDelete}
+          chatTitle={chats.find(c => c.id === chatToDelete)?.title}
         />
       </div>
-    </>
+
+      <ChatSidebar
+        currentChatId={currentChatId}
+        onChatSelect={handleChatSelect}
+        onNewChat={handleNewChat}
+        onRename={handleRenameChat}
+        onDelete={handleDeleteChat}
+        chats={chats}
+        darkMode={darkMode}
+      />
+    </div>
   );
 };
 
