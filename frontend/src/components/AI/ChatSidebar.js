@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+
 import {
   MessageSquare,
   SquarePen,
@@ -231,18 +233,27 @@ const ChatSidebar = ({
 
       {/* chat items */}
       <div className="flex-1 overflow-auto px-2">
-        {chats.map((chat) => (
-          <ChatItem
-            key={chat.id}
-            chat={chat}
-            isActive={currentChatId === chat.id}
-            onSelect={onChatSelect}
-            onRename={onRename}
-            onDelete={onDelete}
-            isCollapsed={isCollapsed}
-            darkMode={darkMode}
-          />
-        ))}
+        <AnimatePresence initial={false}>
+          {chats.map((chat) => (
+            <motion.div
+              key={chat.id}
+              initial={{ opacity: 0, x: '50%' }}
+              animate={{ opacity: 1, x: '0%' }}
+              exit={{ opacity: 0, x: '100%' }}
+              transition={{ duration: 0.4 }}
+            >
+              <ChatItem
+                chat={chat}
+                isActive={currentChatId === chat.id}
+                onSelect={onChatSelect}
+                onRename={onRename}
+                onDelete={onDelete}
+                isCollapsed={isCollapsed}
+                darkMode={darkMode}
+              />
+            </motion.div>
+          ))}
+        </AnimatePresence>
       </div>
     </div>
   );
