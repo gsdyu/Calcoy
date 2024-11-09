@@ -7,6 +7,7 @@ import { ArrowUp } from 'lucide-react';
 import { Sparkles } from 'lucide-react';
 import { CirclePlus } from 'lucide-react';
 import { CircleX } from 'lucide-react';
+import { Paperclip } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingCircle from './LoadingCircle';
@@ -262,6 +263,15 @@ const AiPage = () => {
           )}
         </div>
         <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
+          <button
+            className={`${styles.clip}`}
+            type="submit" 
+            disabled={!input.trim()}
+          >
+            <span 
+              className={`${styles.clipTip}`}>Insert a file</span>
+            <Paperclip strokeWidth={2.5} className={styles.sendicon}/>
+          </button>
           <textarea 
             ref={textareaRef}
             value={input} 
