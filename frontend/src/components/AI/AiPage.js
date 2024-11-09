@@ -266,13 +266,19 @@ const AiPage = () => {
           <button
             className={`${styles.clip}`}
             type="submit" 
-            disabled={!input.trim()}
+            onClick={() => document.getElementById('fileInput').click()}
           >
             <span 
               className={`${styles.clipTip}`}>Insert a file</span>
-            <Paperclip strokeWidth={2.5} className={styles.sendicon}/>
+            <Paperclip className={styles.clipIcon}/>
           </button>
-          <textarea 
+          <input 
+            id="fileInput"
+            type="file"
+            accept="image/*"
+            style={{display: 'none'}}
+            />
+            <textarea 
             ref={textareaRef}
             value={input} 
             onChange={handleInputChange} 

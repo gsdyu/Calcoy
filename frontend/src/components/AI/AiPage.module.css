@@ -253,19 +253,14 @@
     margin-bottom: 4px;
   }
 
-  .clip-container {
-    position: relative;
-    display: inline-block;
-  }
   .clipTip {
     visibility: hidden;
     background-color: #333;
     color: #fff;
     padding: 5px;
-    border-radius: 4px;
     position: absolute;
     top: 20px;
-    left: 30px;
+    left: 25px;
     transform: translateY(-50%) rotate(225deg) scaleY(-1);
     white-space: nowrap;
     z-index: 1;
@@ -274,11 +269,13 @@
   }
 
   .clip {
-  height: 45px;
-  width: 45px;
-  padding: 10px 10px;
+  height: 20px;
+  width: 20px;
+  border-radius: 50px;
+  color: white;
+  margin-left: 20px;
   margin-top: auto;
-  margin-bottom: 4px;
+  margin-bottom: 16px;
   transform: rotate(-135deg) scaleY(-1);
   }
 
@@ -297,6 +294,9 @@
     color: rgb(255, 255, 255);
   }
   
+  .clipIcon {
+    color: #dadada;
+  }
   .sendicon {
     color: #272727;
   }
