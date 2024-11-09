@@ -329,6 +329,7 @@ const AiPage = () => {
     } finally {
       setIsLoading(false);
       setInput('');
+      setSelectedFile(null);
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }

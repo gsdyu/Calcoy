@@ -2,14 +2,18 @@ const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
 const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
-const multer = require('multer')
+const multer = require('multer');
 const fs = require('fs');
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname,"../.env")});
+const { GoogleAIFileManager } = require("@google/generative-ai/server")
 
 const upload = multer({ storage: multer.memoryStorage()});
 class SharedAgentsManager {
   constructor(pool) {
     this.pool = pool;
     
+    this.fileManager = new GoogleAIFileManager(process.env.GEMINI_API_KEY);
     // shared agents
     this.contextAgent = new GeminiAgent({
       content: chat_context,
@@ -71,7 +75,7 @@ class SharedAgentsManager {
   // generate title
   async generateAndUpdateTitle(conversationId, message) {
     try {
-      const title = await this.titleAgent.inputChat(message);
+      const title = await this.titleAgent.inputChat({input: message});
       
       // Update the conversation title in the database
       await this.pool.query(
@@ -135,6 +139,11 @@ class SharedAgentsManager {
       throw error;
     }
   }
+
+  async uploadFile(file) {
+    const uploadResult = await fileManager.uploadFile(
+    )
+  }
 }
 
 async function useRag(userInput, userId, context_query, pool) {
@@ -182,10 +191,19 @@ module.exports = (app, pool) => {
 
       const userInput = req.body.text;
       const userId = req.user.userId;
-      console.log(req.body)
       //const userId = req.user.userId;
       //system prompt is in chatAll
       let conversationId = req.body.conversationId;
+
+      if (req.file && req.file.size > 0) { 
+        const imageBuffer = req.file.buffer;
+        const image = {
+          inlineData: {
+            data: imageBuffer,
+            mimeType: req.file.mimetype
+          }
+        }
+      }
 
       if (!userInput) {
 		    return res.status(400).send({error: "Input is required."} );
@@ -211,7 +229,7 @@ module.exports = (app, pool) => {
         title = await agentManager.generateAndUpdateTitle(conversationId, userInput);
       }
 
-      const initial_context = await agentManager.contextAgent.inputChat(userInput);
+      const initial_context = await agentManager.contextAgent.inputChat({input: userInput});
       if (initial_context.type !== "none") {
         await agentManager.saveMessage(conversationId, 'model', JSON.stringify(initial_context));
       }
@@ -222,8 +240,8 @@ module.exports = (app, pool) => {
         initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
       }
 
-      let response = await agentManager.chatAgent.inputChat(userInput, initial_events);
-      console.log(response)
+      let response = await agentManager.chatAgent.inputChat({input: userInput, context: initial_events, file: req.file});
+      //console.log(response)
 
       await agentManager.saveMessage(conversationId, 'model', typeof response === 'string' ? response : JSON.stringify(response));
 
@@ -235,7 +253,7 @@ module.exports = (app, pool) => {
       } else if (response.type === 'createEvent'){
         // starts workflow for chatbot creating an event
         agentManager.createAgent.setHistory(agentManager.chatAgent.getHistory());
-        const create_json = await agentManager.createAgent.inputChat(userInput);
+        const create_json = await agentManager.createAgent.inputChat({input: userInput});
         console.log(create_json)
         
         const eventDetailsString = JSON.stringify({

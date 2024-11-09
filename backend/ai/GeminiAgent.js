@@ -48,11 +48,17 @@ class GeminiAgent {
     return this.#system_message;
   }
 
-  async inputChat(input, context) {
+  async inputChat({input, context, file} = {}) {
     // if bot outputs a json string, it will be parsed into json
     let real_input = input
     if (context) real_input += `\n\nEvents - ${context}`
-    this.#history = [...this.#history, {role: "user", parts: [{text: real_input}]}];
+    let parts = [{text: real_input}]
+    if (file) { 
+      const filePart = {inlineData: {data: file.buffer.toString('base64'), mimeType: file.mimetype}}
+      parts.push(filePart)
+    }
+
+    this.#history = [...this.#history, {role: "user", parts: parts}];
     var result = await this.#client.generateContent({
       contents: this.#history,
       generationConfig: this.#config,
