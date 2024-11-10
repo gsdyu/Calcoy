@@ -75,7 +75,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       // Redirect to the username page if the user has no username set
       if (!user.username) {
         req.session.tempUser = { email }; // Save email in session for username setup
-        return res.redirect('http://localhost:3000/username');
+        return res.redirect('http://localhost:3000/auth/username');
       }
 
       // Otherwise, redirect to the calendar page
@@ -252,7 +252,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           // Redirect to the username page if the user is new and has no username set
           if (!user.username) {
             req.session.tempUser = { email }; // Save email in session for username setup
-            return res.redirect('http://localhost:3000/username');
+            return res.redirect('http://localhost:3000/auth/username');
           }
 
           // Otherwise, redirect to the calendar page
