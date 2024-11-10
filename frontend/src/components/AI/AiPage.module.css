@@ -458,4 +458,7 @@
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-
+.fadereplace{
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}

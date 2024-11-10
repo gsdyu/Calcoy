@@ -419,7 +419,11 @@ const AiPage = () => {
                   <Sparkles size={16} className={styles.botIcon} />
                 </div>
               )}
-              <div className={styles.messageContent}>
+              <div
+                className={`${styles.messageContent} ${
+                  !msg.isLoading ? styles.fadereplace : ''
+                }`}
+              >
                 {msg.isLoading ? (
                   <div style={{ width: '500px', margin: '0 auto' }}>
                     <LoadingBars />
