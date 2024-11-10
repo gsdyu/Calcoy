@@ -14,6 +14,27 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   const [hoveredServer, setHoveredServer] = useState(null);
 
   // Fetch servers from the backend
+  useEffect(() => {
+    const fetchServers = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/servers', {
+          credentials: 'include',
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setServers(data.servers);
+        } else {
+          console.error('Failed to fetch servers');
+        }
+      } catch (error) {
+        console.error('Error fetching servers:', error);
+      }
+    };
+
+    fetchServers();
+  }) ;
+
+  // Fetch servers from the backend
   const handleOpenCalendar = () => {
     setIsCreateCalendarOpen(true);
   };
