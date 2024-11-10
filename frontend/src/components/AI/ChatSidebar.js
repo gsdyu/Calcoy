@@ -229,12 +229,17 @@ const ChatSidebar = ({
           `}
         >
           <SquarePen size={24} />
-          {!isCollapsed && <span>New chat</span>}
+          {!isCollapsed && <span className="truncate">New chat</span>}
         </button>
       </div>
 
       {/* chat items */}
       <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 ${styles.chatScroll}`}>
+        {!isCollapsed && chats.length > 0 && (
+          <div className={`px-3 pt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'} font-bold`}>
+            Recent
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {chats.map((chat) => (
             <motion.div
