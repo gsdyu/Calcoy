@@ -44,7 +44,7 @@ const LoadingBars = () => {
 
         .loading-bar {
           height: 1.05rem;
-          border-radius: 0.5rem;
+          border-radius: 0.25rem;
           background-size: 200% auto;
           opacity: 0;
         }

@@ -222,10 +222,10 @@ const ChatSidebar = ({
           onClick={onNewChat}
           className={`
             flex items-center gap-2 m-2 p-3 rounded-xl
-            transition-colors duration-200
+            transition-colors duration-200 bg-blue-600 font-semibold
             ${darkMode
-              ? 'hover:bg-gray-700 text-blue-500 hover:text-blue-500'
-              : 'hover:bg-gray-100 text-blue-500 hover:text-blue-500'}
+              ? 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'
+              : 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'}
           `}
         >
           <SquarePen size={24} />
