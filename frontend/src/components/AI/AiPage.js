@@ -239,6 +239,9 @@ const AiPage = () => {
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
 
+    const placeholderBotMessage = { sender: 'bot', isLoading: true };
+    setMessages((prevMessages) => [...prevMessages, placeholderBotMessage]);
+
     setIsLoading(true);
 
     const payload = {
@@ -278,39 +281,43 @@ const AiPage = () => {
         setCurrentChatId(data.conversationId);
       }
       
+      let botMessage = { sender: 'bot', text: data.message };
 
       const eventDetailsMatch = data.message.match(/Details:\s*(.*)$/);
       let newEventDetails = null;
 
       if (eventDetailsMatch && eventDetailsMatch[1]) {
         try {
-          newEventDetails = JSON.parse(eventDetailsMatch[1]);
-        } catch (parseError) {
-          console.error('Failed to parse event details:', parseError);
-        }
-
-        if (newEventDetails) {
+          const newEventDetails = JSON.parse(eventDetailsMatch[1]);
           const newEventId = Date.now();
 
           setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
           setHandledEvents((prev) => ({ ...prev, [newEventId]: false }));
 
-          const botMessage = {
-            sender: 'bot', // Ensure sender is 'bot'
-            text: `Do you want to create the following event?`,
+          botMessage = {
+            sender: 'bot',
+            text: 'Do you want to create the following event?',
             eventDetails: { ...newEventDetails, id: newEventId },
           };
-
-          setMessages((prevMessages) => [...prevMessages, botMessage]);
+        } catch (parseError) {
+          console.error('Failed to parse event details:', parseError);
         }
-      } else {
-        const botMessage = { sender: 'bot', text: data.message };
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
       }
+
+      // Replace the placeholder bot message with the actual bot message
+      setMessages((prevMessages) => {
+        const messagesCopy = [...prevMessages];
+        messagesCopy[messagesCopy.length - 1] = botMessage;
+        return messagesCopy;
+      });
     } catch (error) {
       console.error('Error fetching response:', error);
       const errorMessage = { sender: 'bot', text: 'There was an error processing your request.' };
-      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setMessages((prevMessages) => {
+        const messagesCopy = [...prevMessages];
+        messagesCopy[messagesCopy.length - 1] = errorMessage;
+        return messagesCopy;
+      });
       showNotification('Failed to send message.');
     } finally {
       setIsLoading(false);
@@ -413,34 +420,34 @@ const AiPage = () => {
                 </div>
               )}
               <div className={styles.messageContent}>
-                {msg.text}
-                {msg.eventDetails && (
-                  <EventDetailsBox
-                    eventDetails={msg.eventDetails}
-                    onConfirm={handleConfirm}
-                    onDeny={handleDeny}
-                    onEdit={handleEdit}
-                    isHandled={handledEvents[msg.eventDetails.id]}
-                    darkMode={darkMode}
-                  />
+                {msg.isLoading ? (
+                  <div style={{ width: '500px', margin: '0 auto' }}>
+                    <LoadingBars />
+                  </div>
+                ) : (
+                  <>
+                    {msg.text}
+                    {msg.eventDetails && (
+                      <EventDetailsBox
+                        eventDetails={msg.eventDetails}
+                        onConfirm={handleConfirm}
+                        onDeny={handleDeny}
+                        onEdit={handleEdit}
+                        isHandled={handledEvents[msg.eventDetails.id]}
+                        darkMode={darkMode}
+                      />
+                    )}
+                  </>
                 )}
               </div>
             </div>
           ))}
-
-          {/* Removed the Sparkles icon from the loading state */}
-          {isLoading && (
-            <div className={`${styles.message} ${darkMode ? styles.botDark : styles.bot}`}>
-              <div className={styles.messageContent}>
-                <div style={{ width: '300px', margin: '0 auto', paddingTop: '50px' }}>
-                  <LoadingBars />
-                </div>
-              </div>
-            </div>
-          )}
         </div>
 
-        <form onSubmit={handleSendMessage} className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}>
+        <form
+          onSubmit={handleSendMessage}
+          className={`${styles.inputContainer} ${darkMode ? styles.inputContainerDark : ''}`}
+        >
           <textarea
             ref={textareaRef}
             value={input}
@@ -470,14 +477,14 @@ const AiPage = () => {
           }}
         />
 
-        <DeleteChatModal 
+        <DeleteChatModal
           isOpen={isDeleteModalOpen}
           onClose={() => {
             setIsDeleteModalOpen(false);
             setChatToDelete(null);
           }}
           onConfirm={handleConfirmDelete}
-          chatTitle={chats.find(c => c.id === chatToDelete)?.title}
+          chatTitle={chats.find((c) => c.id === chatToDelete)?.title}
         />
       </div>
 
