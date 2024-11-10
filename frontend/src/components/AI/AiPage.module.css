@@ -268,21 +268,21 @@
   }
 
   /* scrollbar stuff */
-  .chatWindow::-webkit-scrollbar {
+  .chatWindow::-webkit-scrollbar, .chatScroll::-webkit-scrollbar {
     width: 8px;
   }
   
-  .chatWindow::-webkit-scrollbar-track {
+  .chatWindow::-webkit-scrollbar-track, .chatScroll::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
   
-  .chatWindow::-webkit-scrollbar-thumb {
+  .chatWindow::-webkit-scrollbar-thumb, .chatScroll::-webkit-scrollbar-thumb {
     background: rgba(67, 85, 112, 0.6);
     border-radius: 10px;
   }
   
-  .chatWindow::-webkit-scrollbar-thumb:hover {
+  .chatWindow::-webkit-scrollbar-thumb:hover, .chatScroll::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
   }
 

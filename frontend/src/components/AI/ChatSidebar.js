@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import styles from './AiPage.module.css';
 
 import {
   MessageSquare,
@@ -233,7 +234,7 @@ const ChatSidebar = ({
       </div>
 
       {/* chat items */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2">
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 ${styles.chatScroll}`}>
         <AnimatePresence initial={false}>
           {chats.map((chat) => (
             <motion.div
