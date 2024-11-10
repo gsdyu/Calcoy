@@ -5,7 +5,7 @@ import styles from './AiPage.module.css';
 import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
-import LoadingCircle from './LoadingCircle';
+import LoadingBars from './LoadingCircle';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
 import ChatSidebar from './ChatSidebar';
@@ -427,13 +427,14 @@ const AiPage = () => {
               </div>
             </div>
           ))}
+
+          {/* Removed the Sparkles icon from the loading state */}
           {isLoading && (
             <div className={`${styles.message} ${darkMode ? styles.botDark : styles.bot}`}>
-              <div className={`${styles.botIconContainer} ${darkMode ? styles.botIconContainerDark : ''}`}>
-                <Sparkles size={16} className={styles.botIcon} />
-              </div>
               <div className={styles.messageContent}>
-                <LoadingCircle />
+                <div style={{ width: '300px', margin: '0 auto', paddingTop: '50px' }}>
+                  <LoadingBars />
+                </div>
               </div>
             </div>
           )}
