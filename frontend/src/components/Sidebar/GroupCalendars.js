@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Calendar, Plus, ChevronRight, ChevronLeft, Users, Calendar as CalendarIcon } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -128,13 +128,24 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
 
             {/* Tooltip on Hover */}
             {hoveredServer === server.id && (
-              <div className="absolute -left-full top-1/2 transform -translate-x-full -translate-y-1/2 p-2 bg-gray-800 text-white rounded-lg shadow-lg flex items-center space-x-2" style={{ minWidth: '150px' }}>
-                {/* Tooltip Pointer */}
-                <div className="absolute right-0 top-1/2 transform translate-x-full -translate-y-1/2">
-                  <div className="w-2 h-2 bg-gray-800 transform rotate-45" />
-                </div>
-                <div>
-                  <div className="font-semibold">{server.name}</div>
+              <div className="absolute -left-full top-1/2 transform -translate-x-full -translate-y-1/2 z-50">
+                <div className="relative bg-[#18191c] px-3 py-2 rounded-[3px] shadow-[0_8px_16px_rgba(0,0,0,0.24)]">
+                  <div className="flex flex-col gap-1">
+                    <div className="text-[15px] font-medium text-white/90">{server.name}</div>
+                    <div className="flex items-center gap-2 text-xs text-white/50">
+                      <div className="flex items-center gap-1">
+                        <Users size={12} />  {/* Connect users in server here later*/}
+                      </div>
+                      <div className="w-0.5 h-0.5 rounded-full bg-white/30" />
+                      <div className="flex items-center gap-1">
+                        <CalendarIcon size={12} />  {/* Connect events here later like events gonna be hosted or shared together for everyone*/}
+                      </div> 
+                    </div>
+                  </div>
+                  {/* Discord-style Tooltip Pointer */}
+                  <div className="absolute top-1/2 -right-[4px] -translate-y-1/2">
+                    <div className="w-[8px] h-[8px] rotate-45 bg-[#18191c]" />
+                  </div>
                 </div>
               </div>
             )}

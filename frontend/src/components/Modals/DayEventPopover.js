@@ -79,7 +79,7 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
         `}
         onClick={(e) => {
           e.stopPropagation();
-          onEventClick(event);
+          onEventClick(event, e);
         }}
       >
         <div className="flex items-center overflow-hidden">

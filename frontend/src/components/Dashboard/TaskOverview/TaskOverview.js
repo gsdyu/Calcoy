@@ -98,92 +98,143 @@ const TaskOverviewComponent = () => {
   };
 
   return (
-    <Card className={`w-full max-w-4xl mx-auto ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-      <CardHeader>
+    <Card className={`h-full rounded-xl shadow-lg ${darkMode ? 'bg-gray-800/80' : 'bg-white'} 
+      border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <CardHeader className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="flex justify-between items-center flex-wrap gap-4">
-          <CardTitle className={`text-2xl font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+          <CardTitle className={`text-2xl font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'} flex items-center gap-2`}>
+            <span>📊</span>
             {timeFrame === 'week' ? 'Weekly' : timeFrame === 'month' ? 'Monthly' : 'Yearly'} Task Overview
           </CardTitle>
-          <div className="flex space-x-2">
-            <div className="h-10">
-              <Select value={timeFrame} onValueChange={setTimeFrame}>
-                <SelectTrigger className={`w-[100px] ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-sm px-4 py-2`}>
-                  <SelectValue placeholder="Time Frame" />
-                </SelectTrigger>
-                <SelectContent className={darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'}>
-                  <SelectItem value="week" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Weekly</SelectItem>
-                  <SelectItem value="month" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Monthly</SelectItem>
-                  <SelectItem value="year" className={`${darkMode ? 'text-gray-200 hover:bg-gray-700' : 'text-gray-800 hover:bg-gray-100'}`}>Yearly</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <div className="flex items-center gap-3">
+            <Select value={timeFrame} onValueChange={setTimeFrame}>
+              <SelectTrigger className={`w-[100px] ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} 
+                rounded-xl transition-colors duration-200`}>
+                <SelectValue placeholder="Time Frame" />
+              </SelectTrigger>
+              <SelectContent className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} rounded-xl`}>
+                <SelectItem value="week">Weekly</SelectItem>
+                <SelectItem value="month">Monthly</SelectItem>
+                <SelectItem value="year">Yearly</SelectItem>
+              </SelectContent>
+            </Select>
             
-            <div className={`h-10 flex items-center ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-sm px-3 py-2`}>
-              <Button variant="ghost" size="sm" onClick={handlePrev} className="h-full">
+            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl 
+              ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border`}>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handlePrev}
+                className={`rounded-full hover:${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+              >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} mx-2`}>
+              <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
                 {timeFrame === 'week' && `Week ${currentWeek.week}, ${currentWeek.year}`}
                 {timeFrame === 'month' && selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 {timeFrame === 'year' && selectedDate.getFullYear()}
               </span>
-              <Button variant="ghost" size="sm" onClick={handleNext} className="h-full">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleNext}
+                className={`rounded-full hover:${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}
+              >
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
 
-            <div className="h-10">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-full">
-                    <Calendar className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <CalendarComponent
-                    mode="single"
-                    selected={selectedDate}
-                    onSelect={handleDateSelect}
-                    initialFocus
-                    className={`${darkMode ? 'bg-gray-800 border-gray-600' : 'bg-white border-gray-300'} rounded-md shadow-md p-3`}
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button 
+                  variant="outline" 
+                  size="icon"
+                  className={`rounded-xl ${darkMode ? 'bg-gray-900 border-gray-700 hover:bg-gray-800' : 
+                    'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                >
+                  <Calendar className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0">
+                <CalendarComponent
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={handleDateSelect}
+                  initialFocus
+                  className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} 
+                    rounded-xl shadow-lg p-3`}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} darkMode={darkMode} />}
-        {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} darkMode={darkMode} />}
-        {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} darkMode={darkMode} />}
+      <CardContent className="pt-6">
+        <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-900/50' : 'bg-gray-50'} 
+          border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+          {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} darkMode={darkMode} />}
+          {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} darkMode={darkMode} />}
+          {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} darkMode={darkMode} />}
+        </div>
 
         <div className="grid grid-cols-3 gap-4 mt-6">
-          <div className={`${darkMode ? 'bg-green-900' : 'bg-green-100'} p-3 rounded-lg`}>
+          <div className={`p-4 rounded-xl transition-all duration-200 border
+            bg-gradient-to-r ${darkMode ? 
+              'from-green-500/10 to-emerald-500/10 hover:from-green-500/20 hover:to-emerald-500/20 border-green-500/20' : 
+              'from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200'}`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className={`${darkMode ? 'text-green-200' : 'text-green-800'} font-semibold text-sm`}>Completion Rate</h3>
-                <p className={`text-2xl font-bold ${darkMode ? 'text-green-200' : 'text-green-800'}`}>{completionRate}%</p>
+                <h3 className={`${darkMode ? 'text-green-200' : 'text-green-800'} font-semibold text-sm`}>
+                  Completion Rate
+                </h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-green-200' : 'text-green-800'}`}>
+                  {completionRate}%
+                </p>
               </div>
-              <CheckCircle className={darkMode ? 'text-green-400' : 'text-green-500'} size={20} />
+              <div className={`p-2 rounded-full shrink-0
+                ${darkMode ? 'bg-green-500/20 border-green-500/30' : 'bg-green-100 border-green-200'} border`}>
+                <CheckCircle className="text-green-400" size={20} />
+              </div>
             </div>
           </div>
-          <div className={`${darkMode ? 'bg-blue-900' : 'bg-blue-100'} p-3 rounded-lg`}>
+
+          <div className={`p-4 rounded-xl transition-all duration-200 border
+            bg-gradient-to-r ${darkMode ? 
+              'from-blue-500/10 to-cyan-500/10 hover:from-blue-500/20 hover:to-cyan-500/20 border-blue-500/20' : 
+              'from-blue-50 to-cyan-50 hover:from-blue-100 hover:to-cyan-100 border-blue-200'}`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className={`${darkMode ? 'text-blue-200' : 'text-blue-800'} font-semibold text-sm`}>Completed</h3>
-                <p className={`text-2xl font-bold ${darkMode ? 'text-blue-200' : 'text-blue-800'}`}>{totalCompleted}</p>
+                <h3 className={`${darkMode ? 'text-blue-200' : 'text-blue-800'} font-semibold text-sm`}>
+                  Completed
+                </h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-blue-200' : 'text-blue-800'}`}>
+                  {totalCompleted}
+                </p>
               </div>
-              <CheckCircle className={darkMode ? 'text-blue-400' : 'text-blue-500'} size={20} />
+              <div className={`p-2 rounded-full shrink-0
+                ${darkMode ? 'bg-blue-500/20 border-blue-500/30' : 'bg-blue-100 border-blue-200'} border`}>
+                <CheckCircle className="text-blue-400" size={20} />
+              </div>
             </div>
           </div>
-          <div className={`${darkMode ? 'bg-red-900' : 'bg-red-100'} p-3 rounded-lg`}>
+
+          <div className={`p-4 rounded-xl transition-all duration-200 border
+            bg-gradient-to-r ${darkMode ? 
+              'from-red-500/10 to-orange-500/10 hover:from-red-500/20 hover:to-orange-500/20 border-red-500/20' : 
+              'from-red-50 to-orange-50 hover:from-red-100 hover:to-orange-100 border-red-200'}`}>
             <div className="flex justify-between items-center">
               <div>
-                <h3 className={`${darkMode ? 'text-red-200' : 'text-red-800'} font-semibold text-sm`}>Missed</h3>
-                <p className={`text-2xl font-bold ${darkMode ? 'text-red-200' : 'text-red-800'}`}>{totalMissed}</p>
+                <h3 className={`${darkMode ? 'text-red-200' : 'text-red-800'} font-semibold text-sm`}>
+                  Missed
+                </h3>
+                <p className={`text-2xl font-bold ${darkMode ? 'text-red-200' : 'text-red-800'}`}>
+                  {totalMissed}
+                </p>
               </div>
-              <AlertTriangle className={darkMode ? 'text-red-400' : 'text-red-500'} size={20} />
+              <div className={`p-2 rounded-full shrink-0
+                ${darkMode ? 'bg-red-500/20 border-red-500/30' : 'bg-red-100 border-red-200'} border`}>
+                <AlertTriangle className="text-red-400" size={20} />
+              </div>
             </div>
           </div>
         </div>

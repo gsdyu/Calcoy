@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon, MicrosoftIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
+import { Mail, Lock } from 'lucide-react';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -105,41 +106,75 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-purple-600">
-      <div className="bg-white p-8 rounded-lg shadow-md w-96 relative">
-        <h2 className="text-2xl font-bold mb-6 text-center">Welcome back</h2>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Email Field */}
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
+    <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-b from-sky-400 via-blue-500 to-blue-600">
+      {/* Decorative waves */}
+      <div className="absolute inset-0 overflow-hidden">
+        {/* Animated waves */}
+        <div className="absolute bottom-0 left-0 right-0 h-64">
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-white/10 rounded-full transform -translate-y-12 scale-150 blur-2xl"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-24 bg-white/20 rounded-full transform scale-150 blur-3xl"></div>
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-white/10 rounded-full transform translate-y-8 scale-150 blur-xl"></div>
+        </div>
+        
+        {/* Sun reflection */}
+        <div className="absolute top-1/4 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+          <div className="w-32 h-32 bg-yellow-200/30 rounded-full blur-3xl"></div>
+          <div className="w-24 h-24 bg-yellow-100/20 rounded-full blur-2xl"></div>
+        </div>
+      </div>
+
+      <div className="bg-white/95 backdrop-blur-lg p-8 rounded-3xl shadow-2xl w-full max-w-md m-4 relative z-10">
+        <h2 className="text-3xl font-bold mb-2 text-gray-800 text-center">Welcome Back</h2>
+        <p className="text-gray-600 mb-6 text-center">Smart scheduling starts here</p>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl">
+            <span className="text-sm">{error}</span>
           </div>
-          {/* Password Field */}
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-5">
+          {/* Email Field */}
+          <div className="space-y-1">
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+              Email
+            </label>
             <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full pl-10 pr-3 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="your@email.com"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Password Field */}
+          <div className="space-y-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type={showPassword ? 'text' : 'password'}
                 id="password"
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-10 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                placeholder="Enter your password"
                 required
               />
               <button
                 type="button"
                 onClick={togglePasswordVisibility}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 focus:outline-none"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
               >
                 {showPassword ? (
                   <EyeOffIcon className="h-5 w-5" />
@@ -149,6 +184,8 @@ const LoginPage = () => {
               </button>
             </div>
           </div>
+
+          {/* Remember Me & Forgot Password */}
           <div className="flex items-center justify-between">
             <div className="flex items-center">
               <input
@@ -159,80 +196,116 @@ const LoginPage = () => {
                 onChange={handleChange}
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
-              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-900">Remember me</label>
+              <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
+                Remember me
+              </label>
             </div>
-            <div className="text-sm">
-            <Link href="/auth/forgot-password" className="text-blue-600 hover:underline">  Forgot password?</Link>              
-         </div>
+            <Link
+              href="/auth/forgot-password"
+              className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Forgot password?
+            </Link>
           </div>
+
           {/* Submit Button */}
           <button
             type="submit"
-            className={`w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${
-              isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
             disabled={isLoggingIn}
+            className={`w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all
+              ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : 'transform hover:-translate-y-0.5'}
+            `}
           >
-            {isLoggingIn ? 'Please wait...' : 'Log in'}
+            {isLoggingIn ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
-        {/* Social Login and Sign Up Links */}
+        {/* Social Login Divider */}
         <div className="mt-6 flex items-center">
-          <div className="flex-grow border-t border-gray-300"></div>
-          <span className="flex-shrink mx-4 text-gray-500">OR</span>
-          <div className="flex-grow border-t border-gray-300"></div>
+          <div className="flex-grow border-t border-gray-200"></div>
+          <span className="flex-shrink mx-4 text-gray-400 text-sm">or continue with</span>
+          <div className="flex-grow border-t border-gray-200"></div>
         </div>
-        <div className="mt-6 space-y-4">
-          <a href="http://localhost:5000/auth/google" className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+
+        {/* Social Login Buttons */}
+        <div className="mt-6 grid grid-cols-2 gap-4">
+          <a
+            href="http://localhost:5000/auth/google"
+            className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+          >
             <GoogleIcon className="w-5 h-5 mr-2" />
-            Continue with Google
+            <span className="text-sm font-medium">Google</span>
           </a>
-          <button onClick={() => handleSocialLogin('microsoft')} className="w-full border border-gray-300 py-2 rounded-md flex items-center justify-center">
+          <button
+            onClick={() => handleSocialLogin('microsoft')}
+            className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
+          >
             <MicrosoftIcon className="w-5 h-5 mr-2" />
-            Continue with Microsoft
+            <span className="text-sm font-medium">Microsoft</span>
           </button>
         </div>
-        <p className="mt-6 text-center text-sm text-gray-600">
-          Don't have an account? <Link href="/auth/signup" className="text-blue-600 hover:underline">Register</Link>
+
+        {/* Sign Up Link */}
+        <p className="mt-8 text-center text-sm text-gray-600">
+          Don't have an account?{' '}
+          <Link href="/auth/signup" className="text-blue-600 hover:text-blue-800 font-medium transition-colors">
+            Sign up
+          </Link>
         </p>
       </div>
 
       {/* 2FA Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 flex items-center justify-center z-50">
-          {/* Modal Overlay */}
-          <div className="fixed inset-0 bg-black opacity-50" onClick={closeModal}></div>
-          {/* Modal Content */}
-          <div className="bg-white p-6 rounded-lg shadow-md z-10 w-80">
-            <h3 className="text-xl font-semibold mb-4 text-center">Two-Factor Authentication</h3>
-            {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-            <form onSubmit={handleTwoFactorSubmit} className="space-y-4">
-              <div>
-                <label htmlFor="twoFactorCode" className="block text-sm font-medium text-gray-700 mb-1">Enter 2FA Code</label>
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm" onClick={closeModal}></div>
+          <div className="bg-white p-8 rounded-3xl shadow-2xl z-10 w-full max-w-md m-4">
+            <h3 className="text-2xl font-bold mb-2 text-gray-800 text-center">
+              Two-Factor Authentication
+            </h3>
+            <p className="text-gray-600 mb-6 text-center">
+              Please enter the verification code sent to your device
+            </p>
+            
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl">
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+            
+            <form onSubmit={handleTwoFactorSubmit} className="space-y-6">
+              <div className="space-y-1">
+                <label htmlFor="twoFactorCode" className="block text-sm font-medium text-gray-700">
+                  Verification Code
+                </label>
                 <input
                   type="text"
                   id="twoFactorCode"
                   name="twoFactorCode"
                   value={formData.twoFactorCode}
                   onChange={handleChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="Enter verification code"
                   required
                 />
               </div>
-              <button
-                type="submit"
-                className="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
-              >
-                Verify Code
-              </button>
+
+              <div className="space-y-4">
+                <button
+                  type="submit"
+                  className="w-full bg-blue-600 text-white py-3 rounded-xl font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all transform hover:-translate-y-0.5"
+                >
+                  Verify Code
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="w-full bg-gray-100 text-gray-700 py-3 rounded-xl font-medium hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2 transition-all"
+                >
+                  Cancel
+                </button>
+              </div>
             </form>
-            <button
-              onClick={closeModal}
-              className="mt-4 w-full bg-gray-200 text-gray-700 py-2 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-400"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

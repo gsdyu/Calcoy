@@ -34,6 +34,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [itemColors, setItemColors] = useState({});
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
+  const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
 
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
@@ -191,14 +192,19 @@ import { useTheme } from '@/contexts/ThemeContext';
     setIsAddingEvent(true);
   };
 
-  const handleEventClick = (event) => {
+  const handleEventClick = (event, e) => {
+    const element = e.currentTarget;
+    const rect = element.getBoundingClientRect();
+    
     setSelectedEvent(event);
+    setEventModalTriggerRect(rect);
     setIsEventDetailsOpen(true);
   };
 
   const handleCloseEventDetails = () => {
     setIsEventDetailsOpen(false);
     setSelectedEvent(null);
+    setEventModalTriggerRect(null);
   };
 
   const handleEditFromDetails = () => {
@@ -577,7 +583,9 @@ import { useTheme } from '@/contexts/ThemeContext';
           onClose={handleCloseEventDetails}
           onEdit={handleEditFromDetails}
           onDelete={handleDeleteEvent}
-          onTaskComplete={handleTaskComplete}  
+          onTaskComplete={handleTaskComplete}
+          triggerRect={eventModalTriggerRect}  
+          view={view}
         />
       )}
       {isAddingEvent && (

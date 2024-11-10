@@ -5,6 +5,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import DayEventPopover from '@/components/Modals/DayEventPopover';
 import { Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
+import holidayService from '@/utils/holidayUtils';  
 
 // Create empty transparent image once, at component level
 const emptyImage = new Image();
@@ -16,12 +17,20 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   const containerRef = useRef(null);
   const [cellHeight, setCellHeight] = useState(0);
   const [eventsPerDay, setEventsPerDay] = useState(2);
+  const [holidays, setHolidays] = useState([]); 
+
+  // Add holiday fetching effect
+  useEffect(() => {
+    const monthHolidays = holidayService.getMonthHolidays(currentDate);
+    setHolidays(monthHolidays);
+  }, [currentDate]);
 
   const { getDragHandleProps, getDropTargetProps, dropPreview } = useCalendarDragDrop({
     onEventUpdate,
     darkMode,
     view: 'month',
-    emptyImage // Pass the empty image to the hook
+    emptyImage,
+    shouldAllowDrag: (event) => !event.isHoliday 
   });
 
   useEffect(() => {
@@ -100,6 +109,37 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
   };
 
   const renderEventCompact = (event) => {
+    if (event.isHoliday) {
+      return (
+        <div
+          key={event.id}
+          className={`
+            flex justify-between items-center
+            text-xs mb-1 truncate
+            rounded-full py-1 px-2
+            ${itemColors?.holidays || 'bg-yellow-500'}
+            text-white opacity-75
+            cursor-pointer hover:opacity-100 transition-opacity
+          `}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEventClick({
+              ...event,
+              description: `${event.type} Holiday in United States`,
+              date: event.date, 
+              time: '-',
+              isReadOnly: true
+            }, e);
+          }}
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="truncate">{event.title}</span>
+            <span className="ml-2 opacity-75">{event.type}</span>
+          </div>
+        </div>
+      );
+    }
+
     const calendarType = event.calendar || 'default';
   
     // Use optional chaining and provide fallback color
@@ -162,7 +202,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         `}
         onClick={(e) => {
           e.stopPropagation();
-          onEventClick(event);
+          onEventClick(event, e);
         }}
       >
         <div className="flex items-center overflow-hidden">
@@ -221,9 +261,14 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       const isWeekendDay = isWeekend(date);
       const isSelected = isSameDay(date, selectedDate);
 
-      // Sort completed tasks to the end
-      const dayEvents = events.filter(event => isSameDay(new Date(event.start_time), date))
+      // Combine holidays with regular events and sort
+      const dayEvents = [...events, ...holidays]
+        .filter(event => isSameDay(new Date(event.start_time), date))
         .sort((a, b) => {
+          // Show holidays first
+          if (a.isHoliday && !b.isHoliday) return -1;
+          if (!a.isHoliday && b.isHoliday) return 1;
+          // Then sort tasks
           if (a.calendar === 'Task' && b.calendar === 'Task') {
             if (a.completed !== b.completed) return a.completed ? 1 : -1;
           }
