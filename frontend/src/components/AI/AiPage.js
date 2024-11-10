@@ -5,7 +5,7 @@ import styles from './AiPage.module.css';
 import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
-import LoadingBars from './LoadingCircle';
+import LoadingBars from './LoadingBars';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
 import ChatSidebar from './ChatSidebar';
