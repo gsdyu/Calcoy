@@ -195,16 +195,6 @@ module.exports = (app, pool) => {
       //system prompt is in chatAll
       let conversationId = req.body.conversationId;
 
-      if (req.file && req.file.size > 0) { 
-        const imageBuffer = req.file.buffer;
-        const image = {
-          inlineData: {
-            data: imageBuffer,
-            mimeType: req.file.mimetype
-          }
-        }
-      }
-
       if (!userInput) {
 		    return res.status(400).send({error: "Input is required."} );
       }
