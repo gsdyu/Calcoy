@@ -6,46 +6,20 @@ import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents }) => {
+const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents, servers, setServers }) => {
   const { darkMode } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
-  const [servers, setServers] = useState([]);
   const [hoveredServer, setHoveredServer] = useState(null);
 
   // Fetch servers from the backend
-  useEffect(() => {
-    const fetchServers = async () => {
-      try {
-        const response = await fetch('http://localhost:5000/api/servers', {
-          credentials: 'include',
-        });
-        if (response.ok) {
-          const data = await response.json();
-          setServers(data.servers);
-        } else {
-          console.error('Failed to fetch servers');
-        }
-      } catch (error) {
-        console.error('Error fetching servers:', error);
-      }
-    };
-
-    fetchServers();
-  }, []);
-
   const handleOpenCalendar = () => {
     setIsCreateCalendarOpen(true);
   };
 
   const handleCloseCreateCalendarModal = () => {
     setIsCreateCalendarOpen(false);
-  };
-
-  // Update servers when a new one is created
-  const handleNewServer = (newServer) => {
-    setServers((prevServers) => [...prevServers, newServer]);
   };
 
   // Function to get initials from the server name

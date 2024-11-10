@@ -8,7 +8,7 @@ import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange}) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, setServers}) => {
   const { darkMode } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -22,6 +22,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
       });
 
       if (response.ok) {
+        setServers((prev) => prev.filter((server) => server.id !== serverId));
         handleChangeActiveCalendar(null); // Set to null or default calendar after leaving
       } else {
         console.error('Failed to leave server');
@@ -69,9 +70,9 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           mainCalendarDate={mainCalendarDate}
         />
         <CalendarFilter 
-        onColorChange={onColorChange}
-        itemColors={itemColors}
-        activeServer={activeCalendar}
+          onColorChange={onColorChange}
+          itemColors={itemColors}
+          activeServer={activeCalendar}
         />
         <Tasks 
           events={events}

@@ -20,6 +20,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   const { darkMode } = useTheme();
   
   const [events, setEvents] = useState([]);
+  const [servers, setServers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState(null);
@@ -550,7 +551,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
-              
+              setServers={setServers}
               onColorChange={handleColorChange}
             />
           )}
@@ -565,6 +566,8 @@ import { useTheme } from '@/contexts/ThemeContext';
           activeCalendar={activeCalendar}
           setActiveCalendar={setActiveCalendar} 
           handleChangeActiveCalendar={handleChangeActiveCalendar}
+          servers={servers}
+          setServers={setServers}
         />
         
       </div>
