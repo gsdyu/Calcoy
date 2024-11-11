@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Search, UserPlus, Calendar, X, ArrowLeft, Sparkles } from 'lucide-react';
+import { Search, UserPlus, Calendar, X, ArrowLeft, Users } from 'lucide-react';
 import Navbar from '@/components/Navigation/Navbar';
-import FriendItem from '@/components/Friends/FriendItem';
 import FriendCalendar from '@/components/Friends/FriendCalendar';
 import { fetchFriends as apiFetchFriends } from '@/utils/api';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -17,7 +16,11 @@ const FriendPage = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState('Friends');
   const [searchTerm, setSearchTerm] = useState('');
-  const [notification, setNotification] = useState({ message: '', isVisible: false });
+  const [notification, setNotification] = useState({ 
+    message: '', 
+    action: '', 
+    isVisible: false 
+  });
 
   useEffect(() => {
     const savedFriends = localStorage.getItem('friends');
@@ -25,10 +28,13 @@ const FriendPage = () => {
       setFriends(JSON.parse(savedFriends));
     } else {
       apiFetchFriends()
-        .then((data) => setFriends(data))
+        .then((data) => {
+          setFriends(data);
+          showNotification('Friends loaded successfully');
+        })
         .catch((error) => {
           console.error('Error fetching friends:', error);
-          showNotification('Failed to load friends.');
+          showNotification('Failed to load friends');
         });
     }
   }, []);
@@ -37,36 +43,52 @@ const FriendPage = () => {
     localStorage.setItem('friends', JSON.stringify(friends));
   }, [friends]);
 
-  const handleAddFriend = () => {
-    if (newFriend.trim()) {
-      const updatedFriends = [...friends, { id: Date.now(), name: newFriend }];
-      setFriends(updatedFriends);
-      setNewFriend('');
-      showNotification('Friend added successfully!');
-    }
+  const showNotification = (message) => {
+    setNotification({ message, action: '', isVisible: true });
+    setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
 
-  const showNotification = (message) => {
-    setNotification({ message, isVisible: true });
-    setTimeout(() => setNotification({ message: '', isVisible: false }), 3000);
+  const handleAddFriend = () => {
+    if (newFriend.trim()) {
+      try {
+        showNotification('Adding friend...');
+        const updatedFriends = [...friends, { id: Date.now(), name: newFriend }];
+        setFriends(updatedFriends);
+        setNewFriend('');
+        showNotification('Friend added successfully');
+      } catch (error) {
+        console.error('Error adding friend:', error);
+        showNotification('Failed to add friend');
+      }
+    }
   };
 
   const onViewCalendar = (friend) => {
     setSelectedFriend(friend);
+    showNotification(`Viewing ${friend.name}'s calendar`);
   };
 
   const onBackToFriendsList = () => {
     setSelectedFriend(null);
+    showNotification('Returned to friends list');
   };
 
   const handleCreateServer = () => {
     console.log(`Creating server for ${selectedFriend.name}'s calendar`);
+    showNotification('Creating calendar server...');
   };
 
   const onRemoveFriend = (friendId) => {
-    const updatedFriends = friends.filter(friend => friend.id !== friendId);
-    setFriends(updatedFriends);
-    showNotification('Friend removed.');
+    try {
+      showNotification('Removing friend...');
+      const friend = friends.find(f => f.id === friendId);
+      const updatedFriends = friends.filter(friend => friend.id !== friendId);
+      setFriends(updatedFriends);
+      showNotification(`${friend.name} removed from friends`);
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      showNotification('Failed to remove friend');
+    }
   };
 
   const filteredFriends = friends.filter((friend) =>
@@ -109,7 +131,7 @@ const FriendPage = () => {
             <div className="max-w-4xl mx-auto space-y-8">
               <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-2">
-                  My Friends <Sparkles className="w-6 h-6 text-purple-400" />
+                  My Friends <Users className="w-6 h-6 text-purple-400" />
                 </h1>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
