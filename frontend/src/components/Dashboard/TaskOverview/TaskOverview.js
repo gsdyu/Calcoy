@@ -11,7 +11,8 @@ import WeeklyOverviewComponent from './WeeklyOverview';
 import MonthlyCalendarView from './MonthlyOverview';
 import YearlyOverviewComponent from './YearlyOverview';
 import { generateData, getWeekNumber } from './dateutils';
- 
+import { useTheme } from '@/contexts/ThemeContext'; 
+
 const TaskOverviewComponent = () => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());

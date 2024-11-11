@@ -8,6 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
+import Image from 'next/image';
 
 // Create a transparent 1x1 pixel image once, outside the component
 const emptyImage = new Image();

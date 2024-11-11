@@ -4,7 +4,7 @@ import React from 'react';
 import TaskOverviewComponent from './Taskoverview/TaskOverview';
 import AIInsightsComponent from './AI';
 import RecentCheckIns from './CheckIns';
- 
+import { useTheme } from '@/contexts/ThemeContext'; 
 
 const DashboardHeader = ({ darkMode }) => (
   <div className="flex justify-between items-center mb-8">

@@ -6,6 +6,7 @@ import DayEventPopover from '@/components/Modals/DayEventPopover';
 import { Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
+import Image from 'next/image';
 
 // Create empty transparent image once, at component level
 const emptyImage = new Image();
