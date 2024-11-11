@@ -1,3 +1,5 @@
+const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
+
 const nextConfig = {
   output: 'export',
   distDir: 'out',
@@ -6,3 +8,5 @@ const nextConfig = {
     return config;
   },
 };
+
+module.exports = nextConfig;
