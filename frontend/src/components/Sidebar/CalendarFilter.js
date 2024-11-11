@@ -173,13 +173,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
     </div>
   );
  
-
-  
-  
-  
-  
-  
-  
   // Fetch users tied to the selected server
   useEffect(() => {
     const fetchServerUsers = async () => {
@@ -188,7 +181,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         return;
       }
       try {
-        const response = await fetch(`http://localhost:5000/servers/${activeServer.id}/users`, {
+        const response = await fetch(`http://localhost:5000/api/servers/${activeServer.id}/users`, {
           credentials: 'include',
         });
         if (!response.ok) {
@@ -196,7 +189,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         }
         const data = await response.json();
         
-        setServerUsers(data.users || []);
+        setServerUsers(data || []);
       } catch (error) {
         console.error('Error fetching server users:', error);
         setError('Error fetching server users. Please try again later.');
@@ -241,6 +234,26 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   
     
     togglePopup(item);
+  };
+
+  const ColorPicker = ({ item, colors, onSelectColor }) => {
+    return (
+      <div 
+        className="absolute z-50 right-0 top-full mt-1 bg-gray-800/95 p-2 rounded shadow-lg flex space-x-2"
+        onClick={e => e.stopPropagation()}
+      >
+        {colors.map((color) => (
+          <button
+            key={color}
+            className={`w-6 h-6 rounded-full ${color} hover:ring-2 hover:ring-white transition-all duration-200`}
+            onClick={(e) => {
+              e.stopPropagation();
+              onSelectColor(item, color);
+            }}
+          />
+        ))}
+      </div>
+    );
   };
 
   const savePreferences = async (preferences) => {
@@ -396,7 +409,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-                 {renderCalendarItem('email', username, itemColors?.email || 'bg-blue-500')}
+            {serverUsers.map(user => renderCalendarItem(user.email, user.username, itemColors?.email || 'bg-blue-500'))}
           </div>
         )}
       </div>
@@ -432,25 +445,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         )}
       </div>
       {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
-    </div>
-  );
-};
-const ColorPicker = ({ item, colors, onSelectColor }) => {
-  return (
-    <div 
-      className="absolute z-50 right-0 top-full mt-1 bg-gray-800/95 p-2 rounded shadow-lg flex space-x-2"
-      onClick={e => e.stopPropagation()}
-    >
-      {colors.map((color) => (
-        <button
-          key={color}
-          className={`w-6 h-6 rounded-full ${color} hover:ring-2 hover:ring-white transition-all duration-200`}
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelectColor(item, color);
-          }}
-        />
-      ))}
     </div>
   );
 };
