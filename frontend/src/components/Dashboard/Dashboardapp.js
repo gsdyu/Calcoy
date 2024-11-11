@@ -1,9 +1,7 @@
 'use client'
 
 import React from 'react';
-import TaskOverviewComponent from './Taskoverview/TaskOverview';
-import AIInsightsComponent from './AI';
-import RecentCheckIns from './CheckIns';
+ import RecentCheckIns from './CheckIns';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
 const DashboardHeader = ({ darkMode }) => (
@@ -22,11 +20,9 @@ const Dashboard = () => {
       <div className="max-w-7xl mx-auto">
         <DashboardHeader darkMode={darkMode} />
         <div className="grid grid-cols-1 gap-8">
-          <TaskOverviewComponent darkMode={darkMode} />
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
-              <AIInsightsComponent darkMode={darkMode} />
-            </div>
+             </div>
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
               <RecentCheckIns darkMode={darkMode} />
             </div>
