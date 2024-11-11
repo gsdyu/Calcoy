@@ -105,7 +105,7 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`http://localhost:3000/calendar?token=${accessToken}`);
+    res.redirect(`https://timewise-ashy.vercel.app?token=${accessToken}`);
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');
@@ -252,7 +252,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           }
 
           // Otherwise, redirect to the calendar page
-          res.redirect('http://localhost:3000/calendar');
+          res.redirect('https://timewise-ashy.vercel.app');
         } catch (error) {
           console.error('Azure login error:', error);
           res.status(500).send('Internal server error');
