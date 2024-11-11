@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react'; // Import Users icon
+import { Home, Calendar, Brain, Plus, Menu, Settings as SettingsIcon, Users } from 'lucide-react';
 import MenuItem from './MenuItem';
 import Profile from './Profile';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -34,7 +34,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
       case 'AI':
         router.push('/ai');
         break;
-      case 'Friends': // Add routing for Friends
+      case 'Friends':
         router.push('/friends');
         break;
       default:
@@ -51,7 +51,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
       setActiveItem && setActiveItem('Settings');
     } else if (pathname.includes('/ai')) {
       setActiveItem && setActiveItem('AI');
-    } else if (pathname.includes('/friends')) { // Track Friends page
+    } else if (pathname.includes('/friends')) {
       setActiveItem && setActiveItem('Friends');
     } else {
       setActiveItem && setActiveItem('Dashboard');
@@ -60,17 +60,17 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
 
   return (
     <div className={`fixed top-0 left-0 h-screen shadow-lg transition-all duration-300 ease-in-out flex flex-col ${isCollapsed ? "w-14" : "w-60"} ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-      <div className="flex items-center justify-between p-3">
+      <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} p-3`}>
         {!isCollapsed && (
           <h1 className="text-xl font-bold font-serif ml-2">TimeWise</h1>
         )}
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`rounded-full p-1 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+          className={`rounded-xl p-3 transition-colors duration-200 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
           onClick={toggleCollapse}
         >
-          {isCollapsed ? <ChevronRight className={`h-4 w-4 ${iconColor}`} /> : <ChevronLeft className={`h-4 w-4 ${iconColor}`} />}
+          <Menu size={24} className={iconColor} />
         </Button>
       </div>
       <Button
@@ -107,7 +107,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           darkMode={darkMode}
         />
         <MenuItem 
-          icon={Users} // Use the Users icon for Friends
+          icon={Users}
           label="Friends"
           isActive={activeItem === 'Friends'} 
           onClick={() => handleNavigation('Friends')}
