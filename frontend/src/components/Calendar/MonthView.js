@@ -7,9 +7,6 @@ import { Check } from 'lucide-react';
 import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 
-// Create empty transparent image once, at component level
-const emptyImage = new Image();
-emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
@@ -29,7 +26,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     onEventUpdate,
     darkMode,
     view: 'month',
-    emptyImage,
     shouldAllowDrag: (event) => !event.isHoliday 
   });
 
@@ -174,12 +170,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       isCompleted,
       eventTime,
       onDragStart: (e) => {
-        // Ensure the empty image is used and ghost is removed
-        e.dataTransfer.setDragImage(emptyImage, 0, 0);
-        // Additional handling if needed
-        setTimeout(() => {
-          e.dataTransfer.setDragImage(emptyImage, 0, 0);
-        }, 0);
       }
     };
   
