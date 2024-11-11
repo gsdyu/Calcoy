@@ -5,6 +5,7 @@ frontend:
       commands:
         - cd frontend
         - npm install
+        - rm -rf .next
     build:
       commands:
         - npm run build

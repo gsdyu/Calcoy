@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",
+    "case-sensitive-paths-webpack-plugin": "^2.4.0",
     "eslint": "^8",
     "eslint-config-next": "14.2.5",
     "postcss": "^8.4.41",
