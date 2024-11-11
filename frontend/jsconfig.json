@@ -5,7 +5,8 @@
       "@/hooks/*": ["src/hooks/*"],
       "@/contexts/*": ["src/contexts/*"],
       "@/components/*": ["src/components/*"],
-      "@/utils/*": ["src/utils/*"]
+      "@/utils/*": ["src/utils/*"],
+      "@/lib/*": ["src/lib/*"]
     }
   }
 }
