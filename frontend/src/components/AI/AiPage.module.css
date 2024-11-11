@@ -158,7 +158,7 @@
   }
   
   .user {
-    background-color: rgb(136, 165, 209);
+    background-color: #b7d2fa;
     align-self: flex-end;
   }
 
@@ -285,7 +285,7 @@
   }
 
   .buttonActive {
-    background-color: rgb(97, 144, 214);
+    background-color: #3e7bdf;
     color: rgb(255, 255, 255);
   }
   
@@ -302,21 +302,21 @@
   }
 
   /* scrollbar stuff */
-  .chatWindow::-webkit-scrollbar {
+  .chatWindow::-webkit-scrollbar, .chatScroll::-webkit-scrollbar {
     width: 8px;
   }
   
-  .chatWindow::-webkit-scrollbar-track {
+  .chatWindow::-webkit-scrollbar-track, .chatScroll::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
   
-  .chatWindow::-webkit-scrollbar-thumb {
+  .chatWindow::-webkit-scrollbar-thumb, .chatScroll::-webkit-scrollbar-thumb {
     background: rgba(67, 85, 112, 0.6);
     border-radius: 10px;
   }
   
-  .chatWindow::-webkit-scrollbar-thumb:hover {
+  .chatWindow::-webkit-scrollbar-thumb:hover, .chatScroll::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
   }
 
@@ -452,20 +452,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 33px;
+  height: 33px;
   border-radius: 50%;
-  background-color: #e5e7eb;
+  background-color: #3e7bdf;
   flex-shrink: 0;
 
 }
 
 .botIconContainerDark {
-  background-color: #374151;
+  background-color: #3e7bdf;
 }
 
 .botIcon {
-  color: #6b7280;
+  color: #ffffff;
 }
 
 .bot, .botDark {
@@ -492,4 +492,7 @@
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-
+.fadereplace{
+  opacity: 0;
+  animation: fadeIn 0.3s ease-out forwards;
+}

@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import styles from './AiPage.module.css';
 
 import {
   MessageSquare,
@@ -221,19 +222,24 @@ const ChatSidebar = ({
           onClick={onNewChat}
           className={`
             flex items-center gap-2 m-2 p-3 rounded-xl
-            transition-colors duration-200
+            transition-colors duration-200 bg-blue-600 font-semibold
             ${darkMode
-              ? 'hover:bg-gray-700 text-blue-500 hover:text-blue-500'
-              : 'hover:bg-gray-100 text-blue-500 hover:text-blue-500'}
+              ? 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'
+              : 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'}
           `}
         >
           <SquarePen size={24} />
-          {!isCollapsed && <span>New chat</span>}
+          {!isCollapsed && <span className="truncate">New chat</span>}
         </button>
       </div>
 
       {/* chat items */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-2">
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 ${styles.chatScroll}`}>
+        {!isCollapsed && chats.length > 0 && (
+          <div className={`px-3 pt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'} font-bold`}>
+            Recent
+          </div>
+        )}
         <AnimatePresence initial={false}>
           {chats.map((chat) => (
             <motion.div
