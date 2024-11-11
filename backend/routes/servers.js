@@ -7,6 +7,15 @@ const upload = multer({ dest: 'uploads/' });
 const { v4: uuidv4 } = require('uuid');
 module.exports = (app, pool) => {
 
+  app.get('/api/user', authenticateToken, async (req, res) => {
+    const userId = req.user.userId; // Retrieve userId directly from the token
+    if (userId) {
+      res.json({ userId });
+    } else {
+      res.status(401).json({ error: 'User not authenticated' });
+    }
+  });
+
   app.get('/api/servers/:serverId', authenticateToken, async (req, res) => {
     const { serverId } = req.params;
   
@@ -129,13 +138,13 @@ module.exports = (app, pool) => {
           [userId, server.id]
         );
     
-        res.json({ server });
+        return res.json({ server });
       } catch (err) {
         console.error('Error creating server:', err);
-        res.status(500).json({ error: 'Error creating server' });
+        return res.status(500).json({ error: 'Error creating server' });
       }
 
-      res.json({ message: 'Successfully left the server' });
+      return res.json({ message: 'Successfully left the server' });
   });
  
   app.post('/api/servers/join', authenticateToken, upload.none(), async (req, res) => {
