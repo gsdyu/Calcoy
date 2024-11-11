@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 
-const MenuItem = ({ icon: Icon, label, isActive, onClick, collapsed, darkMode }) => {
+const MenuItems = ({ icon: Icon, label, isActive, onClick, collapsed, darkMode }) => {
   const textColor = darkMode
     ? isActive ? "text-white" : "text-gray-300"
     : isActive ? "text-blue-600" : "text-gray-700";
@@ -28,4 +28,4 @@ const MenuItem = ({ icon: Icon, label, isActive, onClick, collapsed, darkMode })
   );
 };
 
-export default MenuItem;
+export default MenuItems;

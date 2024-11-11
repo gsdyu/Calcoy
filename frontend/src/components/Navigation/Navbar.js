@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react';
-import MenuItem from './MenuItem';
+import MenuItems from './MenuItems';
 import Profile from './Profile';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -80,7 +80,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         {!isCollapsed && <span className="ml-2">Create</span>}
       </Button>
       <nav className="w-full px-1 flex-grow">
-        <MenuItem 
+        <MenuItems 
           icon={Home} 
           label="Dashboard" 
           isActive={activeItem === 'Dashboard'} 
@@ -88,7 +88,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItem 
+        <MenuItems 
           icon={Calendar} 
           label="Calendar" 
           isActive={activeItem === 'Calendar'} 
@@ -96,7 +96,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItem 
+        <MenuItems 
           icon={Brain} 
           label="AI" 
           isActive={activeItem === 'AI'} 
@@ -104,7 +104,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItem 
+        <MenuItems 
           icon={Users} // Use the Users icon for Friends
           label="Friends"
           isActive={activeItem === 'Friends'} 
@@ -114,7 +114,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         />
       </nav>
       <div className="mt-auto">
-        <MenuItem 
+        <MenuItems 
           icon={SettingsIcon} 
           label="Settings" 
           isActive={activeItem === 'Settings'} 
