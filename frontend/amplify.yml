@@ -10,7 +10,7 @@ frontend:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: frontend/.next/server  # For SSR support
+    baseDirectory: frontend/out # For SSR support
     files:
       - '**/*'
   cache:

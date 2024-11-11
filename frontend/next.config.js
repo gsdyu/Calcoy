@@ -2,7 +2,8 @@
 const CaseSensitivePathsPlugin = require('case-sensitive-paths-webpack-plugin');
 
 const nextConfig = {
-  trailingSlash: true, // Optional: keeps URLs consistent
+  trailingSlash: true,
+  output: 'export',
   webpack: (config) => {
     config.plugins.push(new CaseSensitivePathsPlugin());
     return config;
