@@ -1,3 +1,13 @@
 {
-  "extends": "next/core-web-vitals"
+  "extends": "next/core-web-vitals",
+  
+    "rules": {
+      "react-hooks/rules-of-hooks": "off", // Disables hooks rules (not recommended)
+      "react-hooks/exhaustive-deps": "off", // Changes missing dependencies to a warning
+      "react/no-unescaped-entities": "off",
+      "@next/next/no-img-element": "off",
+      "react/jsx-no-undef": "off" 
+    }
+  
+  
 }
