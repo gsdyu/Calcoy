@@ -5,14 +5,14 @@ frontend:
       commands:
         - cd frontend
         - npm install
-        - rm -rf .next  # clears the local Next.js build cache
+        - rm -rf .next  # Clear cache before each build
     build:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: frontend/.next/server  # Adjust to `out` if using static export
+    baseDirectory: frontend/.next/server  # For SSR support
     files:
       - '**/*'
   cache:
     paths:
-      - 'node_modules/**/*'  # Only caching node_modules, other caches are cleared
+      - 'frontend/node_modules/**/*'
