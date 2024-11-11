@@ -4,8 +4,8 @@
     "paths": {
       "@/hooks/*": ["src/hooks/*"],
       "@/contexts/*": ["src/contexts/*"],
-      "@/components/*": ["src/components/*"]
+      "@/components/*": ["src/components/*"],
+      "@/utils/*": ["src/utils/*"]
     }
   }
 }
-
