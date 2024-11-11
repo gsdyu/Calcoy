@@ -9,10 +9,10 @@ frontend:
     build:
       commands:
         - npm run build
-artifacts:
-  baseDirectory: frontend/out
-  files:
-    - '**/*'
+  artifacts:
+    baseDirectory: frontend/out  # Ensure this matches your static output directory
+    files:
+      - '**/*'
   cache:
     paths:
-      - 'frontend/node_modules/**/*'
+      - 'frontend/node_modules/**/*'  # Only caching node_modules, other caches are cleared
