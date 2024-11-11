@@ -227,26 +227,30 @@ module.exports = (app, pool) => {
       let initial_events = ''
       if (initial_context.type === "none"){
       } else {
-        initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
+        try { 
+          initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
+        } catch (error) {
+          console.error("Error calling RAG. Possibly out of embed token", error)
+        }
       }
 
       let response = await agentManager.chatAgent.inputChat({input: userInput, context: initial_events, file: req.file});
-      //console.log(response)
 
       await agentManager.saveMessage(conversationId, 'model', typeof response === 'string' ? response : JSON.stringify(response));
 
       // if chatbot responds with a json, checks for which ai function handles
 
       if (response.type === "context") {
-        return res.send({message: JSON.stringify(response), conversationId})
+        console.log('context')
         
-      } else if (response.type === 'createEvent'){
+      } else if (response.type === "createEvent"){
         // starts workflow for chatbot creating an event
         agentManager.createAgent.setHistory(agentManager.chatAgent.getHistory());
-        const create_json = await agentManager.createAgent.inputChat({input: userInput});
+        const create_json = await agentManager.createAgent.inputChat({input: userInput, temperature: 0});
         console.log(create_json)
         
         const eventDetailsString = JSON.stringify({
+          type: "createEvent",
           title: create_json.title,
           description: create_json.description || '',
           start_time: create_json.start_time,
@@ -254,7 +258,6 @@ module.exports = (app, pool) => {
           location: create_json.location || 'N/A',
           frequency: create_json.frequency || 'Do not Repeat',
           calendar: create_json.calendar || 'Personal',
-          allDay: create_json.allDay || false,
           time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
         });
         console.log(eventDetailsString)

@@ -22,7 +22,7 @@ ______
 
       createEvent:
 
-      if a user seems to request for an event, output ONLY the following json:
+      if a user seems to request for an event, output ONLY the following json so that another bot can fill the job:
 
       {"type": "createEvent"}
 
@@ -30,20 +30,40 @@ ______
       DO NOT OUTPUT THE FOLLOWING:
 
       \`\`\`json
-	{type: "createEvent"}
+	{"type": "createEvent"}
       \`\`\`
 
       --Do not write in markdown/add comment notes lines like \`\`\`json or \`\`\`
       --Users can create events in the past
       --Do not ask for more information about the event being created         if the user insist on not specifying just output the json
       --Do not use markdown
-      --Only output this json
+      --Only output this json {type: "createEvent"}
+      --even if you know how to create the event json, do not actually create it
       --when outputting this json, do not put anything else, no 
+
         markdown, no chatbot responses
 
-      Example of bad output when the intent is createEvent:
+      Examples of bad output when the intent is createEvent:
 
       "Okay, I can help with that!  What day in November are you looking to create a new event for? I'll need to know the date, time, and a brief description of the event so I can properly add it to your schedule."  
+--------------------------------------
+
+      Example of bad output by actually creating an event when the intent is createEvent
+      "message": {
+          "title": "New Event",
+          "description": "Created on 11/11/2024",
+          "start_time": "2024-10-30T00:00",
+          "end_time": "2024-10-31T00:00",
+          "location": "N/A",
+          "frequency": "do not repeat",
+          "calendar": "Personal",
+          "allDay": false,
+          "time_zone": "America/Los_Angeles"
+      },
+------------
+    Example of desired output always when intent is createEvent
+
+    {"type": "createEvent"}
 ____
 	FOR ALL OTHER QUERIES:
 	- Provide helpful insight and feedback to the user based on their wants and their current and future events/responsibilities.
@@ -222,6 +242,7 @@ const chat_createEvent = `createevent:
    * frequency: event frequency, default is Do not Repeat
    * calendar: which calendar event is for, default is Personal unless given
 
+
    - todays date is ${new Date()}. make events relative to this date
    - users can create events before todays date.
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
@@ -232,8 +253,9 @@ const chat_createEvent = `createevent:
 	 - ensure dates are in yyyy-mm-dd format
 	 - ensure times are in hh:mm format (24-hour)
    - end_time and start_time must be in ISO 8601 format without the Z/timezone offset. This shows both date and time 
-   - if a start_time is provided, but not an end_time, make the end_time = start_time
-   - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, make the event start_time: "00:00"and end_time: "00:00".
+   - events that last all day have a start_time of "00:00" with an end_time of "00:00" but end_time is one day ahead
+     - if a time is not provided, assume the time (like how long it will take) based on the details of the event. if still unsure, consider it an all day event 
+     - if a start_time is provided, but not an end_time, consider it an all_day event 
  
 
  
@@ -250,7 +272,7 @@ example events creation response:
 user input: "middle school day starting at 6am (end_time not given but assume generally 8 hour day, location not given, assume general location schooll)"
 { "title": "school day", "description": "should sleep early to wake up early", "start_time": "2024-09-13T6:00", "end_time": "2024-09-13T6:00", "location": "school", "frequency": "Weekly", "calendar": "personal" }  
 
-{"title":"Event Today","description":"Created on 11/4/2024","start_time":"2024-11-04T00:00","end_time":"2024-11-04T00:00","location":"N/A","frequency":"do not repeat","calendar":"Personal","allDay":false,"time_zone":"America/Los_Angeles"}
+{"title":"Event Today","description":"Created on 11/4/2024","start_time":"2024-11-04T00:00","end_time":"2024-11-05T00:00","location":"N/A","frequency":"do not repeat","calendar":"Personal","allDay":false,"time_zone":"America/Los_Angeles"}
 `
 
 module.exports = {chatAll, chat_createEvent, chat_context, jsonEvent};
