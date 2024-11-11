@@ -6,7 +6,7 @@ const GroupList = ({ onGroupSelect }) => {
 
   useEffect(() => {
     setLoading(true);
-    // Fetch groups from the API
+    // Fetch groups from the PI
     fetch('/api/servers')
       .then((res) => res.json())
       .then((data) => {
