@@ -51,18 +51,19 @@ module.exports = (app, pool) => {
       }
     });
   
-  app.put('/profile/preferences', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    const { preferences } = req.body;  // Expecting visibility and colors
-
-    try {
-      await pool.query('UPDATE users SET preferences = $1 WHERE id = $2', [preferences, userId]);
-      res.json({ message: 'Preferences updated successfully' });
-    } catch (error) {
-      console.error('Error updating preferences:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
+    app.put('/profile/preferences', authenticateToken, async (req, res) => {
+      const userId = req.user.userId;
+      const { preferences } = req.body;
+    
+      try {
+        await pool.query('UPDATE users SET preferences = $1 WHERE id = $2', [preferences, userId]);
+        res.json({ message: 'Preferences updated successfully' });
+      } catch (error) {
+        console.error('Error updating preferences:', error);
+        res.status(500).json({ error: 'Internal server error' });
+      }
+    });
+    
 
   // Route to update the username
 

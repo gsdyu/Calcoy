@@ -14,7 +14,7 @@ class GeminiAgent {
   #responseSchema
   #history;
 
-  constructor({content="You are frankenstein monster as an assistant", model="gemini-1.5-flash", history=[], maxOutputTokens=300, temperature=1, candidateCount=1, responseMimeType="text/plain", responseSchema=undefined} = {}) {
+  constructor({content="You are frankenstein monster as an assistant", model="gemini-1.5-flash", history=[], maxOutputTokens=100, temperature=1, candidateCount=1, responseMimeType="text/plain", responseSchema=undefined} = {}) {
 
     this.#system_message = content
     if (history.length > 0) this.#history = history;

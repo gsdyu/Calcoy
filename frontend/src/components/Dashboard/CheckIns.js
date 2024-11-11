@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState } from 'react';
-import { ClipboardList, CheckCircle, XCircle } from 'lucide-react';
+import { ClipboardList, CheckCircle, XCircle, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 
 const RecentCheckIns = ({ darkMode }) => {
@@ -36,64 +36,111 @@ const RecentCheckIns = ({ darkMode }) => {
   };
 
   return (
-    <Card className={darkMode ? 'bg-gray-800' : 'bg-white'}>
-      <CardHeader>
+    <Card className={`h-full rounded-xl shadow-lg ${darkMode ? 'bg-gray-800/80' : 'bg-white'} 
+      border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <CardHeader className={`border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
         <div className="flex justify-between items-center">
-          <CardTitle className={darkMode ? 'text-gray-200' : 'text-gray-800'}>Recent Check-ins</CardTitle>
+          <CardTitle className={`text-xl font-bold ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+            Upcoming events
+          </CardTitle>
           <button
             onClick={() => setShowLog(!showLog)}
-            className={`flex items-center space-x-2 px-3 py-1 rounded-md ${
-              darkMode ? 'bg-gray-700 text-white' : 'bg-gray-200 text-gray-800'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full 
+              ${darkMode ? 'bg-gray-700 text-gray-200 hover:bg-gray-600' : 'bg-gray-100 text-gray-800 hover:bg-gray-200'}
+              transition-all duration-200 border ${darkMode ? 'border-gray-600' : 'border-gray-300'}`}
           >
             <ClipboardList size={16} />
-            <span>Activity Log</span>
+            <span>{showLog ? 'View Events' : 'Activity Log'}</span>
           </button>
         </div>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {!showLog ? (
-          <ul className="space-y-3">
+          <ul className="space-y-4">
             {events.map(event => (
-              <li key={event.id} className={`flex items-center justify-between p-2 rounded-md ${
-                darkMode ? 'bg-gray-700' : 'bg-gray-100'
-              }`}>
-                <div>
-                  <p className={`font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>{event.title}</p>
-                  <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{new Date(event.date).toLocaleString()}</p>
-                </div>
-                <div className="flex space-x-2">
-                  <button 
-                    onClick={() => handleEventStatus(event.id, 'completed')}
-                    className={`p-1 ${darkMode ? 'text-green-400 hover:text-green-300' : 'text-green-600 hover:text-green-500'}`}
-                    title="Mark as completed"
-                  >
-                    <CheckCircle size={20} />
-                  </button>
-                  <button 
-                    onClick={() => handleEventStatus(event.id, 'missed')}
-                    className={`p-1 ${darkMode ? 'text-red-400 hover:text-red-300' : 'text-red-600 hover:text-red-500'}`}
-                    title="Mark as missed"
-                  >
-                    <XCircle size={20} />
-                  </button>
+              <li 
+                key={event.id} 
+                className={`p-4 rounded-xl transition-all duration-200
+                  ${darkMode ? 'bg-gray-900/90 hover:bg-gray-900' : 'bg-gray-50 hover:bg-gray-100'}
+                  border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-full 
+                      ${darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-gray-100 border border-gray-200'}`}>
+                      <Clock className={darkMode ? 'text-blue-400' : 'text-blue-600'} size={20} />
+                    </div>
+                    <div>
+                      <p className={`font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                        {event.title}
+                      </p>
+                      <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                        {new Date(event.date).toLocaleString(undefined, {
+                          weekday: 'long',
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => handleEventStatus(event.id, 'completed')}
+                      className={`p-2 rounded-full hover:bg-green-500/10 text-green-400 transition-colors duration-200
+                        ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                    >
+                      <CheckCircle size={20} />
+                    </button>
+                    <button 
+                      onClick={() => handleEventStatus(event.id, 'missed')}
+                      className={`p-2 rounded-full hover:bg-red-500/10 text-red-400 transition-colors duration-200
+                        ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'}`}
+                    >
+                      <XCircle size={20} />
+                    </button>
+                  </div>
                 </div>
               </li>
             ))}
           </ul>
         ) : (
-          <div>
-            <h3 className={`text-lg font-semibold mb-3 ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>Activity Log</h3>
-            <ul className="space-y-2">
-              {activityLog.map((log, index) => (
-                <li key={index} className="text-sm flex items-start space-x-2">
-                  <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{log.timestamp}</span>
-                  <span className={darkMode ? 'text-blue-400' : 'text-blue-600'}>{log.user}</span>
-                  <span className={darkMode ? 'text-gray-200' : 'text-gray-800'}>{log.action}</span>
-                  <span className={darkMode ? 'text-gray-400' : 'text-gray-600'}>"{log.details}"</span>
-                </li>
-              ))}
-            </ul>
+          <div className="space-y-4">
+            {activityLog.map((log, index) => (
+              <div 
+                key={index} 
+                className={`p-4 rounded-xl text-sm transition-all duration-200
+                  ${darkMode ? 'bg-gray-900/90 hover:bg-gray-900' : 'bg-gray-50 hover:bg-gray-100'}
+                  border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-full shrink-0
+                    ${darkMode ? 'bg-gray-700 border border-gray-600' : 'bg-gray-100 border border-gray-200'}`}>
+                    <ClipboardList className={darkMode ? 'text-purple-400' : 'text-purple-600'} size={16} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`px-3 py-1 rounded-full text-xs
+                        ${darkMode ? 'bg-gray-700 text-gray-300 border border-gray-600' : 'bg-gray-100 text-gray-700 border border-gray-200'}`}>
+                        {new Date(log.timestamp).toLocaleString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </span>
+                      <span className={`font-medium ${darkMode ? 'text-blue-400' : 'text-blue-600'}`}>
+                        {log.user}
+                      </span>
+                    </div>
+                    <p className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                      {log.action} <span className="font-medium">"{log.details}"</span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </CardContent>

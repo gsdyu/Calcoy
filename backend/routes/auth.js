@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
-const { createEmbeddings } = require('../ai/embeddings');
 const ICAL = require('ical.js');
 
 const { authenticateToken } = require('../authMiddleware');
@@ -75,7 +74,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       // Redirect to the username page if the user has no username set
       if (!user.username) {
         req.session.tempUser = { email }; // Save email in session for username setup
-        return res.redirect('http://localhost:3000/username');
+        return res.redirect('http://localhost:3000/auth/username');
       }
 
       // Otherwise, redirect to the calendar page
@@ -129,12 +128,6 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
       throw new Error('Failed to fetch data from the provided URL');
     }
 
-    const {hostname} = new URL(url);
-    let sameEndStart= false;
-    if (hostname === "csulb.instructure.com") {
-      sameEndStart = true;
-    }
-
     const data = await response.text();
     const jcalData = ICAL.parse(data);
     const comp = new ICAL.Component(jcalData);
@@ -142,26 +135,23 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 
     const events = vevents.map(event => {
       const vEvent = new ICAL.Event(event);
-      const eventEndDay = sameEndStart ? vEvent.startDate.toJSDate(): vEvent.endDate.toJSDate();
       return {
         title: vEvent.summary || 'No Title',
         description: vEvent.description || '',
         start_time: vEvent.startDate.toJSDate(),
-        end_time: eventEndDay, 
+        end_time: vEvent.endDate.toJSDate(),
         location: vEvent.location || '',
-        calendar: 'Task',
+        calendar: 'canvas',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
-        completed: null,
       };
     });
 
     // Insert events into the database
     const insertPromises = events.map(event =>
       pool.query(
-        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone, completed)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-         ON CONFLICT DO NOTHING
-         RETURNING *;`,
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+         ON CONFLICT DO NOTHING`,
         [
           userId, // Directly use userId from the token
           event.title,
@@ -171,34 +161,8 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.location,
           event.calendar,
           event.time_zone,
-          event.completed,
         ]
-    ).then(async result => {
-       // checks for embedding on all events. can convert to function
-       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
-       // callback events will always be given even if our calendar already has it stored
-       const row = result.rows;
-       if (!row[0]) {
-         console.log('Import: Event already added')
-         return};
-       try {
-         const embed = await createEmbeddings(JSON.stringify(row)
-         ).then(embed_result => {
-           if (embed_result === null || embed_result === undefined) { 
-             console.error(`Error: No embeddings were created. Possibly out of tokens.`);
-             return
-           }
-           pool.query(`UPDATE events
-                       SET embedding = $6
-                       WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-                       [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
-         }) 
-       } catch (error) {
-           if (error.status===402) {
-             console.log("Error: Out of tokens")
-           }
-         }
-    })
+      )
     );
 
     await Promise.all(insertPromises);
@@ -252,7 +216,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           // Redirect to the username page if the user is new and has no username set
           if (!user.username) {
             req.session.tempUser = { email }; // Save email in session for username setup
-            return res.redirect('http://localhost:3000/username');
+            return res.redirect('http://localhost:3000/auth/username');
           }
 
           // Otherwise, redirect to the calendar page

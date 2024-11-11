@@ -1,10 +1,10 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { X } from "lucide-react";
+import { X, Check } from "lucide-react";
 import { useTheme } from '@/contexts/ThemeContext';
 
-const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onViewChange, onDateSelect }) => {
+const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onViewChange, onDateSelect, itemColors }) => {
   const { darkMode } = useTheme();
 
   const handleDateClick = () => {
@@ -18,18 +18,45 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
   };
 
   const isAllDayEvent = (event) => {
+    if (!event?.start_time || !event?.end_time) return false;
+    
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
-    return startDate.getHours() === 0 && startDate.getMinutes() === 0 &&
-           endDate.getHours() === 23 && endDate.getMinutes() === 59 &&
-           startDate.getDate() === endDate.getDate() &&
-           startDate.getMonth() === endDate.getMonth() &&
-           startDate.getFullYear() === endDate.getFullYear();
+    
+    // Check if event starts at midnight (00:00)
+    const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
+    
+    // Check if event ends at midnight of the next day
+    const nextDay = new Date(startDate);
+    nextDay.setDate(nextDay.getDate() + 1);
+    
+    return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
   const renderEventCompact = (event) => {
-    const eventColor = event.color || 'blue';
+    const calendarType = event.calendar || 'default';
+    
+    // Get color based on calendar type
+    const eventColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Task':
+              return itemColors?.tasks || 'bg-red-500';  
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.family || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
+
     const isAllDay = isAllDayEvent(event);
+    const isTask = event.calendar === 'Task';
+    const isCompleted = event.completed || false;
     const eventTime = isAllDay ? 'All day' : format(new Date(event.start_time), 'h:mm a');
 
     return (
@@ -41,23 +68,42 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
+          ${isCompleted ? 'opacity-50' : ''}
           ${isAllDay 
-            ? `bg-${eventColor}-500 text-white`
-            : `border border-${eventColor}-500 bg-${eventColor}-500 bg-opacity-20 text-${eventColor}-700`
+            ? `${eventColor} text-white` 
+            : `border ${eventColor} bg-opacity-20`
           }
-          ${darkMode && !isAllDay ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
+          ${darkMode && !isAllDay ? 'border-opacity-40' : ''}
           hover:bg-opacity-30 transition-colors duration-200
+          ${isTask && isCompleted ? 'line-through' : ''}
         `}
         onClick={(e) => {
           e.stopPropagation();
-          onEventClick(event);
+          onEventClick(event, e);
         }}
       >
         <div className="flex items-center overflow-hidden">
-          {!isAllDay && <span className={`inline-block w-2 h-2 rounded-full bg-${eventColor}-500 mr-1 flex-shrink-0`}></span>}
-          <span className="truncate">{event.title}</span>
+          {isTask ? (
+            <Check 
+              className={`w-3 h-3 mr-1 flex-shrink-0
+                ${isCompleted ? 'opacity-50' : ''} 
+                ${isAllDay 
+                  ? 'text-white' 
+                  : darkMode 
+                    ? `text-${eventColor.replace('bg-', '')}-400` 
+                    : `text-${eventColor.replace('bg-', '')}-500`
+                }`} 
+            />
+          ) : (
+            !isAllDay && <span className={`inline-block w-2 h-2 rounded-full ${eventColor.replace('bg-', '')} mr-1 flex-shrink-0`} />
+          )}
+          <span className={`truncate ${isTask && isCompleted ? 'line-through' : ''}`}>
+            {event.title}
+          </span>
         </div>
-        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>{eventTime}</span>
+        <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${isCompleted ? 'opacity-50' : ''}`}>
+          {eventTime}
+        </span>
       </div>
     );
   };
@@ -67,6 +113,9 @@ const DayEventPopover = ({ date, events, isOpen, onOpenChange, onEventClick, onV
     const bIsAllDay = isAllDayEvent(b);
     if (aIsAllDay && !bIsAllDay) return -1;
     if (!aIsAllDay && bIsAllDay) return 1;
+    if (a.calendar === 'Task' && b.calendar === 'Task') {
+      if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    }
     return new Date(a.start_time) - new Date(b.start_time);
   });
 

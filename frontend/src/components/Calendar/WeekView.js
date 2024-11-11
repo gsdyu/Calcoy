@@ -4,15 +4,60 @@ import React, { useState, useEffect } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { getWeekDays, isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
+import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
+import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
+import holidayService from '@/utils/holidayUtils';
+
+// Create a transparent 1x1 pixel image once, outside the component
+const emptyImage = new Image();
+emptyImage.src = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 
 const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
-  const [dragOverColumn, setDragOverColumn] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
+  const [eventPositions, setEventPositions] = useState(new Map());
+  const [holidays, setHolidays] = useState([]); 
+
+  // Initialize the enhanced drag and drop hook
+  const { 
+    draggedEvent,
+    dragOverColumn,
+    dropPreview,
+    getDragHandleProps,
+    getDropTargetProps,
+  } = useCalendarDragDrop({ 
+    onEventUpdate, 
+    darkMode,
+    view: 'week',
+    cellHeight: 60,
+    emptyImage,
+    shouldAllowDrag: (event) => !event.isHoliday
+  });
+
+  // Add holiday fetching effect
+  useEffect(() => {
+    const weekStart = getWeekStart(currentDate);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    
+    // Get holidays for both months if week spans two months
+    const monthHolidays = holidayService.getMonthHolidays(weekStart);
+    if (weekStart.getMonth() !== weekEnd.getMonth()) {
+      const nextMonthHolidays = holidayService.getMonthHolidays(weekEnd);
+      setHolidays([...monthHolidays, ...nextMonthHolidays]);
+    } else {
+      setHolidays(monthHolidays);
+    }
+  }, [currentDate]);
 
   // Helper function for getting event colors
   const getEventColor = (event) => {
+    if (event.isHoliday) {
+      return itemColors?.holidays || 'bg-yellow-500';
+    }
+
     const calendarType = event.calendar || 'default';
     
     return itemColors?.[calendarType] 
@@ -26,7 +71,7 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
             case 'Work':
               return 'bg-purple-500';
             case 'Task':
-              return 'bg-gray-400';
+              return itemColors?.tasks || 'bg-red-500';
             default:
               return 'bg-blue-500';
           }
@@ -39,6 +84,11 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    const positions = calculateEventColumns([...events, ...holidays].filter(event => !isAllDayEvent(event)));
+    setEventPositions(positions);
+  }, [events, holidays]);
   
   const getWeekStart = (date) => {
     const d = new Date(date);
@@ -78,24 +128,16 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
 const getEventStyle = (event, isNextDayPortion = false) => {
   const startDate = new Date(event.start_time);
   const endDate = new Date(event.end_time);
-  let startHour = startDate.getHours();
-  let startMinute = startDate.getMinutes();
+  let startHour = isNextDayPortion ? 0 : startDate.getHours();
+  let startMinute = isNextDayPortion ? 0 : startDate.getMinutes();
   let endHour = endDate.getHours();
   let endMinute = endDate.getMinutes();
 
   // Handle next day portion of events
-  if (isNextDayPortion) {
-    startHour = 0;
-    startMinute = 0;
-  }
-
-  // Calculate end time for events crossing midnight
   if (!isNextDayPortion && isEventCrossingMidnight(event)) {
-    // First day portion ends at midnight
     endHour = 24;
     endMinute = 0;
   } else if (endHour === 0 && endMinute === 0) {
-    // If ends at exactly midnight
     endHour = 24;
     endMinute = 0;
   }
@@ -103,18 +145,22 @@ const getEventStyle = (event, isNextDayPortion = false) => {
   const top = (startHour + startMinute / 60) * 60;
   let height = ((endHour - startHour) + (endMinute - startMinute) / 60) * 60;
 
-  // Minimum height for visibility
   const minHeight = 22;
   if (height < minHeight && event.calendar !== 'Task') {
     height = minHeight;
   }
 
+  const position = eventPositions.get(event.id) || {
+    left: '0%',
+    zIndex: 10
+  };
+
   return {
     top: `${top}px`,
     height: `${height}px`,
-    left: '0px',
+    left: position.left,
     right: '20px',
-    zIndex: 30,
+    zIndex: position.zIndex
   };
 };
 
@@ -208,29 +254,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
-    onEventClick(event);
-  };
-
-  const onDragStart = (e, eventId) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ eventId }));
-  };
-
-  const onDragOver = (e, dayIndex) => {
-    e.preventDefault();
-    setDragOverColumn(dayIndex);
-  };
-
-  const onDragLeave = () => {
-    setDragOverColumn(null);
-  };
-
-  const onDrop = (e, date, hour) => {
-    e.preventDefault();
-    const { eventId } = JSON.parse(e.dataTransfer.getData('text/plain'));
-    const newDate = new Date(date);
-    newDate.setHours(hour);
-    onEventUpdate(eventId, newDate);
-    setDragOverColumn(null);
+    onEventClick(event, e);
   };
 
   const toggleAllDayExpansion = () => {
@@ -238,16 +262,51 @@ const getEventStyle = (event, isNextDayPortion = false) => {
   };
 
   const renderAllDayEvent = (event) => {
+    if (event.isHoliday) {
+      return (
+        <div
+          key={event.id}
+          className={`
+            flex justify-between items-center
+            text-xs mb-1 truncate
+            rounded-full py-1 px-2
+            ${itemColors?.holidays || 'bg-yellow-500'}
+            text-white opacity-75
+            cursor-pointer hover:opacity-100 transition-opacity
+            mr-5
+          `}
+          onClick={(e) => {
+            e.stopPropagation();
+            onEventClick({
+              ...event,
+              description: `${event.type} Holiday in United States`,
+              date: event.date,
+              time: '-',
+              isReadOnly: true
+            }, e);
+          }}
+        >
+          <div className="flex items-center justify-between w-full">
+            <span className="truncate">{event.title}</span>
+            <span className="ml-2 opacity-75">{event.type}</span>
+          </div>
+        </div>
+      );
+    }
+
     const eventColor = getEventColor(event).replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
+    const augmentedEvent = {
+      ...event,
+      isAllDay: true
+    };
 
     if (isTask) {
       return (
         <div
           key={event.id}
-          draggable
-          onDragStart={(e) => onDragStart(e, event.id)}
+          {...getDragHandleProps(augmentedEvent)}
           className={`
             flex justify-between items-center
             text-xs mb-1 truncate cursor-pointer
@@ -281,8 +340,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     return (
       <div
         key={event.id}
-        draggable
-        onDragStart={(e) => onDragStart(e, event.id)}
+        {...getDragHandleProps(augmentedEvent)}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
@@ -305,6 +363,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
   const renderAllDayEvents = (dayEvents) => {
     const maxVisibleEvents = 3;
     const sortedEvents = [...dayEvents].sort((a, b) => {
+      if (a.isHoliday && !b.isHoliday) return -1;
+      if (!a.isHoliday && b.isHoliday) return 1;
       if (a.calendar === 'Task' && b.calendar === 'Task') {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
       }
@@ -319,30 +379,29 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     return (
       <div className={`
         transition-all duration-300 ease-in-out origin-top
-        ${isAllDayExpanded 
-          ? 'opacity-100 scale-y-100' 
-          : 'opacity-95 scale-y-95'
-        }
+        ${isAllDayExpanded ? 'max-h-none' : ''}
       `}>
-        {sortedEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
-        {!isAllDayExpanded && sortedEvents.length > maxVisibleEvents && (
-          <div 
-            className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
-            onClick={(e) => {
-              e.stopPropagation();
-              setIsAllDayExpanded(true);
-            }}
-            style={{ position: 'relative', zIndex: 50 }}
-          >
-            +{hiddenCount} more
-          </div>
-        )}
+        <div className="space-y-1">
+          {sortedEvents.slice(0, visibleCount).map(event => renderAllDayEvent(event))}
+          {!isAllDayExpanded && sortedEvents.length > maxVisibleEvents && (
+            <div 
+              className="text-xs cursor-pointer text-blue-500 hover:text-blue-600"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsAllDayExpanded(true);
+              }}
+              style={{ position: 'relative', zIndex: 50 }}
+            >
+              +{hiddenCount} more
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 
   const hasMoreThanThreeAllDayEvents = weekDays.some(day => {
-    const allDayEvents = events.filter(event => 
+    const allDayEvents = [...events, ...holidays].filter(event => 
       isAllDayEvent(event) && isSameDay(new Date(event.start_time), day)
     );
     return allDayEvents.length > 3;
@@ -352,7 +411,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
       <style>{scrollbarStyles}</style>
       
       {/* Header row with days */}
-      <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <div className={`flex border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'} min-h-[40px]`}>
         <div className="w-16 flex-shrink-0"></div>
         {weekDays.map((day, index) => {
           const isWeekendDay = isWeekend(day);
@@ -400,12 +459,15 @@ const getEventStyle = (event, isNextDayPortion = false) => {
         {weekDays.map((day, dayIndex) => {
           const isWeekendDay = isWeekend(day);
           const isSelected = isSameDay(day, selectedDate);
-          const allDayEvents = events.filter(event => isAllDayEvent(event) && isSameDay(new Date(event.start_time), day));
+          const allDayEvents = [...events, ...holidays].filter(event => 
+            isAllDayEvent(event) && isSameDay(new Date(event.start_time), day)
+          );
           
           return (
             <div
               key={`all-day-${dayIndex}`}
-              className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative p-1
+              {...getDropTargetProps(day, dayIndex)}
+              className={`flex-1 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} relative p-1 overflow-hidden
                 ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                 ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
               `}
@@ -415,21 +477,24 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                 clickedDate.setHours(0, 0, 0, 0);
                 onDateDoubleClick(clickedDate, true);
               }}
-              onDragOver={(e) => onDragOver(e, dayIndex)}
-              onDragLeave={onDragLeave}
-              onDrop={(e) => onDrop(e, day, 0)}
             >
               {isSelected && (
                 <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
               )}
               {renderAllDayEvents(allDayEvents)}
+              {/* Drop Preview for All-day events */}
+              {dropPreview && dropPreview.isAllDay && dropPreview.columnIndex === dayIndex && (
+                <div className="opacity-50">
+                  {renderAllDayEvent(dropPreview)}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
 
       {/* Time slots */}
-      <div className={`flex-1 overflow-y-auto ${darkMode ? 'dark-scrollbar' : ''} relative`}>
+      <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
         <div className="absolute top-0 left-0 w-16 h-full">
           {hours.map((hour, index) => (
             <div 
@@ -458,20 +523,14 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                 return (
                   <div
                     key={`${hour}-${dayIndex}`}
+                    {...getDropTargetProps(day, dayIndex, hour)} 
                     className={`absolute top-0 bottom-0 border-l ${darkMode ? 'border-gray-700' : 'border-gray-200'} 
                       ${isWeekendDay ? darkMode ? 'bg-gray-800 bg-opacity-50' : 'bg-gray-100 bg-opacity-50' : ''}
                       ${dragOverColumn === dayIndex ? darkMode ? 'bg-blue-900 bg-opacity-30' : 'bg-blue-100 bg-opacity-30' : ''}
                     `}
                     style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}
                     onClick={() => handleDateClick(day)}
-                    onDoubleClick={() => {
-                      const clickedDate = new Date(day);
-                      clickedDate.setHours(hour);
-                      onDateDoubleClick(clickedDate, false);
-                    }}
-                    onDragOver={(e) => onDragOver(e, dayIndex)}
-                    onDragLeave={onDragLeave}
-                    onDrop={(e) => onDrop(e, day, hour)}
+                    onDoubleClick={(e) => handleTimeSlotDoubleClick(e, day, hour, onDateDoubleClick)}
                   >
                     {isSelected && (
                       <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
@@ -507,9 +566,13 @@ const getEventStyle = (event, isNextDayPortion = false) => {
           {weekDays.map((day, dayIndex) => (
             <div key={`events-${dayIndex}`} className="absolute top-0 bottom-0" 
                  style={{ left: `${(100 / 7) * dayIndex}%`, width: `${100 / 7}%` }}>
-              {events
+              {[...events, ...holidays]
                 .filter(event => !isAllDayEvent(event) && shouldShowEventOnDay(event, day))
                 .sort((a, b) => {
+                  // Show holidays first
+                  if (a.isHoliday && !b.isHoliday) return -1;
+                  if (!a.isHoliday && b.isHoliday) return 1;
+                  // Then sort tasks
                   if (a.calendar === 'Task' && b.calendar === 'Task') {
                     if (a.completed !== b.completed) return a.completed ? 1 : -1;
                   }
@@ -519,7 +582,6 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   const eventStart = new Date(event.start_time);
                   const eventEnd = new Date(event.end_time);
                   
-                  // Determine if this is a next day portion by comparing calendar dates
                   const currentDate = new Date(day);
                   currentDate.setHours(0, 0, 0, 0);
                   const eventStartDate = new Date(eventStart);
@@ -527,6 +589,12 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   
                   const isNextDay = currentDate.getTime() > eventStartDate.getTime();
                   const isCrossingMidnight = isEventCrossingMidnight(event);
+                  const augmentedEvent = {
+                    ...event,
+                    isAllDay: false,
+                    isNextDay,
+                    isCrossingMidnight
+                  };
 
                   if (event.calendar === 'Task') {
                     const eventColor = getEventColor(event).replace('bg-', '');
@@ -534,8 +602,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     return (
                       <div
                         key={event.id}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, event.id)}
+                        {...getDragHandleProps(augmentedEvent)}
                         className={`
                           absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
                           rounded
@@ -587,25 +654,31 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
-                      draggable
-                      onDragStart={(e) => onDragStart(e, event.id)}
+                      {...(event.isHoliday ? {} : getDragHandleProps(augmentedEvent))}
                       className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer 
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
-                        ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
+                        ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                        ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}
                     >
                       <div className="w-full h-full pointer-events-auto min-h-[22px]">
                         {durationMinutes < 30 ? (
                           <div className="w-full h-full flex items-center justify-between px-1.5">
-                            <div className="truncate flex-grow text-[11px]">{event.title}</div>
+                            <div className="truncate flex-grow text-[11px]">
+                              {event.title}
+                              {event.isHoliday && <span className="ml-2 opacity-75">({event.type})</span>}
+                            </div>
                             <div className="text-[11px] ml-1 whitespace-nowrap flex-shrink-0">
                               {formatEventTime(event, isNextDay)}
                             </div>
                           </div>
                         ) : (
                           <div className="w-full h-full p-1.5 flex flex-col">
-                            <div className="font-bold truncate text-sm">{event.title}</div>
+                            <div className="font-bold truncate text-sm">
+                              {event.title}
+                              {event.isHoliday && <span className="ml-2 opacity-75">({event.type})</span>}
+                            </div>
                             <div className="text-xs whitespace-nowrap">
                               {formatEventTime(event, isNextDay)}
                             </div>
@@ -616,6 +689,35 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   );
                 })
               }
+            
+            {/* Drop Preview for Regular Events */}
+            {dropPreview && !dropPreview.isAllDay && dropPreview.columnIndex === dayIndex && (
+              <div
+                className={`absolute 
+                  ${(() => {
+                    const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                    return `
+                      bg-${eventColor} bg-opacity-20 
+                      text-xs overflow-hidden rounded cursor-pointer
+                      border border-${eventColor} pointer-events-none opacity-50
+                      ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                    `;
+                  })()}
+                `}
+                style={getEventStyle({
+                  ...dropPreview,
+                  start_time: dropPreview.start_time,
+                  end_time: dropPreview.end_time
+                })}
+              >
+                <div className="w-full h-full p-1.5 flex flex-col">
+                  <div className="font-bold truncate text-sm">{dropPreview.title}</div>
+                  <div className="text-xs whitespace-nowrap">
+                    {formatEventTime(dropPreview, dropPreview.isNextDay)}
+                  </div>
+                </div>
+              </div>
+            )}
             </div>
           ))}
         </div>
