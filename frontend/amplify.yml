@@ -10,7 +10,7 @@ frontend:
       commands:
         - npm run build
   artifacts:
-    baseDirectory: frontend/.next  # Adjust this if using a different output directory
+    baseDirectory: frontend/.next/server  # Adjust to `out` if using static export
     files:
       - '**/*'
   cache:
