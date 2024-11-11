@@ -75,11 +75,27 @@ pool
 
   );
 
-  CREATE TABLE IF NOT EXISTS user_servers (
-      user_id INT REFERENCES users(id) ON DELETE CASCADE,
-      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
-      PRIMARY KEY (user_id, server_id)
+  CREATE TABLE IF NOT EXISTS "userServers" (
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, server_id)
   );
+
+  CREATE TABLE IF NOT EXISTS "watchedCalendars" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    CONSTRAINT unique_name_source UNIQUE (name, source)
+  );
+
+  CREATE TABLE IF NOT EXISTS "usersWatchedCalendars"(
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    watched_calendar_id INT REFERENCES "watchedCalendars"(id) ON DELETE CASCADE,
+    resource_id VARCHAR(50),
+    channel_expire TIMESTAMPTZ,
+    PRIMARY KEY (user_id, watched_calendar_id)
+  );
+
 `).then(() => {
   console.log("Users and Servers table is ready");
   pool.query(`
@@ -94,7 +110,7 @@ pool
       frequency VARCHAR(50),
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
-      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+      server_ID INT REFERENCES servers(id) ON DELETE CASCADE,
 
       embedding vector(128),
       completed BOOLEAN,
@@ -152,4 +168,4 @@ app.get('/', async (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`\nServer running on port ${PORT}`));

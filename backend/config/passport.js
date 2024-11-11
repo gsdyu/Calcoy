@@ -3,6 +3,8 @@ const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const fetch = require('node-fetch');
 const express = require('express');
 const app = express(); // Assuming this is your main file
+const path = require("path");
+require('dotenv').config({ path: path.join(__dirname,'../.env') });
 const { createEmbeddings } = require('../ai/embeddings');
 
 // Helper function to find or create a user by email
@@ -184,10 +186,6 @@ module.exports = (pool) => {
       const email = profile.emails[0].value;
       try {
         const user = await findOrCreateUser(email, pool);
-        await pool.query(
-          'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
-          [accessToken, refreshToken, user.id]
-        );
         return done(null, user);
       } catch (error) {
         console.error('Google signup error:', error);
@@ -215,15 +213,25 @@ module.exports = (pool) => {
 
     // Fetch or create the user
     const user = await findOrCreateUser(email, pool);
-
+    if (refreshToken) {
+      await pool.query(
+        'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
+        [accessToken, refreshToken, user.id]
+      );
+    } else {
+      await pool.query(
+        'UPDATE users SET access_token = $1 WHERE id = $2',
+        [accessToken, user.id]
+      );
+    }
     // Save calendar events to the database
     await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
     // Webhook URL for Google Calendar notifications
-    const webhookUrl = 'https://c7f0-47-146-160-30.ngrok-free.app/webhook/google-calendar';
-    
+    const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
+     
     // Set up Google Calendar notification only once
-    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);
+    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool);
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
@@ -246,14 +254,22 @@ module.exports = (pool) => {
       done(error, null);
     }
   });
-};
-const extractUserIdFromChannelId = (channelId) => {
-  return channelId.split('-')[1]; // Assuming channelId format is `channel-<userId>`
-};
 // Helper function to subscribe to Google Calendar updates
-// Helper function to subscribe to Google Calendar updates
-const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl) => {
+// For Primary calendars only
+const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId, pool) => {
   try {
+    const userName = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId]).then(results => results?.rows[0]?.username)
+    const result = await pool.query(`SELECT "usersWatchedCalendars".channel_expire FROM "usersWatchedCalendars" 
+      INNER JOIN "watchedCalendars" ON "usersWatchedCalendars".watched_calendar_id="watchedCalendars".id
+      WHERE "watchedCalendars".name='primary' AND "watchedCalendars".source='google' AND "usersWatchedCalendars".user_id=$1;
+    `, [userId]).then(results => results?.rows[0])
+    const currentChannel = result?.channel_expire
+    if (Date.now() < new Date(currentChannel).getTime()){
+      console.log(`\nChannel for google primary already set up for user ${userName}`)
+      console.log(`The channel will expire on: ${new Date(currentChannel)}`)
+      return
+    }
+    const expiration = Date.now() + 86400000
     const response = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events/watch', {
       method: 'POST',
       headers: {
@@ -263,78 +279,30 @@ const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl) => {
       body: JSON.stringify({
         id: `channel-${Date.now()}`,
         type: 'web_hook',
-        address: webhookUrl
+        address: webhookUrl,
+        expiration: expiration 
       })
     });
-
     if (!response.ok) {
       const errorDetails = await response.json();
       console.error('Failed to set up Google Calendar notifications:', errorDetails);
       throw new Error(`Failed to set up Google Calendar notifications: ${errorDetails.error.message}`);
     }
+
+    const responseJson = await response.json()
+    let resourceId = responseJson.resourceId
+    await pool.query(`INSERT INTO "watchedCalendars" (name, source) VALUES ('primary', 'google') 
+      ON CONFLICT ON CONSTRAINT unique_name_source DO NOTHING`)
+    const watchedCalendarId = await pool.query(`SELECT id FROM "watchedCalendars" WHERE name = 'primary' AND source = 'google';`).then(async result => {return result.rows[0]?.id}) 
+    await pool.query(`INSERT INTO "usersWatchedCalendars" (user_id, watched_calendar_id, resource_id, channel_expire) VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '1 day')
+      ON CONFLICT ON CONSTRAINT "usersWatchedCalendars_pkey" DO UPDATE SET resource_id=EXCLUDED.resource_id, channel_expire=CURRENT_TIMESTAMP+INTERVAL '1 day'`, [userId, watchedCalendarId, resourceId])
+
+    console.log(`\nChannel for watched calendar set up for user ${userName}`)
+    console.log(`The channel will expire on: ${new Date(expiration)}`)
+
   } catch (error) {
     console.error('Error setting up calendar notifications:', error.message);
     throw error; // Rethrow to handle it in the calling function
   }
 };
-
-
-// Webhook endpoint for handling calendar update notifications
-app.post('/webhook/google-calendar', async (req, res) => {
-  const channelId = req.headers['x-goog-channel-id'];
-  const resourceId = req.headers['x-goog-resource-id'];
-
-  if (!channelId || !resourceId) {
-    return res.status(400).send('Missing required headers');
-  }
-
-  try {
-    const userId = extractUserIdFromChannelId(channelId);
-    const accessToken = await getUserAccessToken(userId, pool);
-
-    const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${resourceId}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    if (eventResponse.ok) {
-      const event = await eventResponse.json();
-      await saveOrUpdateEventInDatabase(userId, event, pool);
-      res.status(200).send('Event received and processed');
-    } else {
-      const errorDetails = await eventResponse.json();
-      console.error('Failed to fetch event details:', errorDetails);
-      res.status(401).send(`Failed to fetch event details: ${errorDetails.error.message}`);
-    }
-  } catch (error) {
-    console.error('Error processing Google Calendar webhook:', error);
-    res.status(500).send('Internal Server Error');
-  }
- 
-
-
-
-  
-  try {
-    const userId = extractUserIdFromChannelId(channelId); // Implement based on your channel ID format
-    const accessToken = await getUserAccessToken(userId, pool); // Retrieve access token for the user
-
-    // Fetch updated event details
-    const eventResponse = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${resourceId}`, {
-      method: 'GET',
-      headers: { Authorization: `Bearer ${accessToken}` }
-    });
-
-    if (eventResponse.ok) {
-      const event = await eventResponse.json();
-      console.error('Failed to fetch event details:', errorDetails); // Log detailed error response
-      await saveOrUpdateEventInDatabase(userId, event, pool); // Update your DB with the latest event data
-      res.status(200).send('Event received and processed');
-    } else {
-      throw new Error('Failed to fetch event details');
-    }
-  } catch (error) {
-    console.error('Error processing Google Calendar webhook:', error);
-    res.status(500).send('Internal Server Error');
-  }
-});
+}
