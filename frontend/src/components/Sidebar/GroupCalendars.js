@@ -30,9 +30,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         console.error('Error fetching servers:', error);
       }
     };
-
     fetchServers();
-  }) ;
+  }, [setServers]) ;
 
   // Fetch servers from the backend
   const handleOpenCalendar = () => {
