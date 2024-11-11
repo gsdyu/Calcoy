@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import NavBar from './NavBar';
-import SearchBar from './SearchBar';
+import SearchBars from './SearchBars';
 import Profile from './Profile';
 import CustomizationPage from './CustomizationPage';
 
@@ -31,7 +31,7 @@ const Settings = () => {
           <h2 className="text-lg font-bold">Settings</h2>
         </div>
         <div className="p-4">
-          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+          <SearchBars searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
         </div>
         <NavBar currentSection={currentSection} setCurrentSection={setCurrentSection} />
       </div>
