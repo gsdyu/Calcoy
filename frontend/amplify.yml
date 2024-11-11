@@ -8,11 +8,11 @@ frontend:
         - rm -rf .next  # Clear cache before each build
     build:
       commands:
-        - npm run build
+        - npm run build  # Only 'next build' is needed as 'next export' is now handled by 'output: export'
   artifacts:
-    baseDirectory: frontend/out  # Ensure this matches your static output directory
+    baseDirectory: frontend/out  # Set this to match the output directory specified in `next.config.js`
     files:
       - '**/*'
   cache:
     paths:
-      - 'frontend/node_modules/**/*'  # Only caching node_modules, other caches are cleared
+      - 'frontend/node_modules/**/*'  # Only caching node_modules
