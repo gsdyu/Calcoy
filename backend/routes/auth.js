@@ -78,7 +78,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       }
 
       // Otherwise, redirect to the calendar page
-      res.redirect('http://localhost:3000/calendar');
+      res.redirect('https://timewise-ashy.vercel.app/calendar');
     } catch (error) {
       console.error('Google login error:', error);
       res.status(500).send('Internal server error');
