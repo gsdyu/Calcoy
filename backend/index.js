@@ -16,7 +16,7 @@ app.use(cookieParser())
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: { rejectUnauthorized: false },
 });
 
 // Load passport configuration after defining the pool
@@ -94,8 +94,7 @@ pool.query(`
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
 
-      embedding vector(128),
-      completed BOOLEAN,
+       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
