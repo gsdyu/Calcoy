@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import styles from './AiPage.module.css';
-import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX, Paperclip } from 'lucide-react';
+import { MoveUp, ArrowUp, Sparkles, CirclePlus, CircleX, Paperclip, X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import EventDetailsBox from './EventDetailsBox';
 import LoadingBars from './LoadingBars';
@@ -120,6 +120,7 @@ const AiPage = () => {
     setCurrentChatId(null);
     setMessages([]);
     setShowPrompts(true);
+    setSelectedFile(null);
   };
 
   const handleRenameChat = async (chatId, newTitle) => {
@@ -172,6 +173,7 @@ const AiPage = () => {
         setCurrentChatId(null);
         setMessages([]);
         setShowPrompts(true);
+        setSelectedFile(null);
       }
   
       showNotification('Conversation deleted successfully.');
@@ -183,7 +185,6 @@ const AiPage = () => {
       setChatToDelete(null);
     }
   };
-  
 
   const handleExampleClick = (text) => {
     setInput(text);
@@ -199,7 +200,7 @@ const AiPage = () => {
   };
 
   const handleFileChange = (e) => {
-    setSelectedFile(event.target.files[0]);
+    setSelectedFile(e.target.files[0]);
   };
 
   const handleEdit = async (eventId, editedDetails) => {
@@ -236,12 +237,27 @@ const AiPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    if (!input.trim() && !selectedFile) return;
 
     setShowPrompts(false);
 
-    const userMessage = { sender: 'user', text: input };
-    setMessages((prevMessages) => [...prevMessages, userMessage]);
+    if (input.trim()) {
+      const userMessage = { sender: 'user', text: input };
+      setMessages((prevMessages) => [...prevMessages, userMessage]);
+    }
+
+    if (selectedFile) {
+      const imageMessage = {
+        sender: 'user',
+        image: URL.createObjectURL(selectedFile),
+        file: selectedFile,
+      };
+      setMessages((prevMessages) => [...prevMessages, imageMessage]);
+    }
+
+    setInput('');
+    setSelectedFile(null);
+
     const check = await fetch('http://localhost:5000/auth/check', {
       method: 'GET',
       credentials: 'include',
@@ -253,16 +269,14 @@ const AiPage = () => {
 
     setIsLoading(true);
     
-    // gemini api
-
     const placeholderBotMessage = { sender: 'bot', isLoading: true };
     setMessages((prevMessages) => [...prevMessages, placeholderBotMessage]);
 
-    setIsLoading(true);
-
     const payload = new FormData();
     payload.append('text', input);
-    payload.append('file', selectedFile);
+    if (selectedFile) {
+      payload.append('file', selectedFile);
+    }
     if (currentChatId) {
       payload.append('conversationId', currentChatId);
     }
@@ -446,6 +460,11 @@ const AiPage = () => {
                 ) : (
                   <>
                     {msg.text}
+                    {msg.image && (
+                      <div className={styles.imageMessage}>
+                        <img src={msg.image} alt="Attached" className={styles.imagePreview} />
+                      </div>
+                    )}
                     {msg.eventDetails && (
                       <EventDetailsBox
                         eventDetails={msg.eventDetails}
@@ -469,12 +488,11 @@ const AiPage = () => {
         >
           <button
             className={`${styles.clip}`}
-            type="submit" 
+            type="button" 
             onClick={() => document.getElementById('fileInput').click()}
           >
-            <span 
-              className={`${styles.clipTip}`}>Insert a file</span>
-            <Paperclip className={styles.clipIcon}/>
+            <Paperclip className={styles.clipIcon} />
+            <span className={`${styles.clipTip}`}>Attach file</span>
           </button>
           <input 
             id="fileInput"
@@ -482,7 +500,7 @@ const AiPage = () => {
             accept="image/*"
             onChange={handleFileChange}
             style={{display: 'none'}}
-            />
+          />
           <textarea
             ref={textareaRef}
             value={input}
@@ -492,26 +510,37 @@ const AiPage = () => {
             className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`}
             rows={1}
           />
+          {selectedFile && (
+            <div className={styles.attachedImageContainer}>
+              <div className={styles.attachedImage}>
+                {selectedFile.type.startsWith('image/') ? (
+                  <img 
+                    src={URL.createObjectURL(selectedFile)} 
+                    alt="File Preview" 
+                    className={styles.attachedImagePreview} 
+                  />
+                ) : (
+                  <p>Unsupported file type. Please upload an image file.</p>
+                )}
+                <button 
+                  className={styles.removeImageButton} 
+                  onClick={() => setSelectedFile(null)}
+                  aria-label="Remove attached image"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+          )}
           <button
             type="submit"
             disabled={!input.trim()}
             className={`${styles.button} ${
-              input.trim() ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
+              input.trim() || selectedFile ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
             } ${darkMode ? styles.buttonDark : styles.buttonLight}`}
           >
             <ArrowUp strokeWidth={2.5} className={styles.sendicon} />
           </button>
-          {selectedFile && (
-            <div>
-              {selectedFile.type.startsWith('image/') ? (
-                <div style={{width: '75px', height: '75px', overflow: 'hidden'}}>
-                  <img src={URL.createObjectURL(selectedFile)} alt="File Preview" style={{width: "100%", height: "100%",'object-fit': 'cover'}} />
-                </div>
-              ) : (
-                <p>Unsupported file type. Please upload an image file.</p>
-              )}
-            </div>
-      )}
         </form>
 
         <NotificationSnackbar
