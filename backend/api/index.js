@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const session = require('express-session');
+const session = require('cookie-session');
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
@@ -104,7 +104,22 @@ pool.query(`
       ALTER TABLE servers ADD COLUMN IF NOT EXISTS invite_link VARCHAR(255) UNIQUE;
   `).then(() => console.log("Events table is ready"))
     .catch(err => console.error('Error creating events table:', err));
-}).catch(err => console.error('Error creating users table:', err));
+  }).catch(err => console.error('Error creating users table:', err));
+
+  pool.query(`
+    CREATE TABLE IF NOT EXISTS sessions (
+    sid VARCHAR NOT NULL COLLATE "default",
+    sess json NOT NULL,
+    expire timestamp(6) NOT NULL
+    )
+    WITH (OIDS=FALSE);
+
+    ALTER TABLE session ADD CONSTRAINT session_pkey
+    PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE;
+
+    CREATE INDEX IDX_session_expire ON session (expire);`).then(() => console.log("Sessions table is ready")
+    ).catch(err => console.error("Error creating sessions table:", err));
+
 // Additional routes
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool);

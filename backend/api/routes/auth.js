@@ -2,19 +2,25 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer'); 
 const msal = require('@azure/msal-node');
-const session = require('express-session');
+const expressSession = require('express-session');
+const pgSession = require('connect-pg-simple')(expressSession);
 const passport = require('passport');
 const ICAL = require('ical.js');
 
 const { authenticateToken } = require('../authMiddleware');
 
 module.exports = (app, pool) => {
-  // Configure session middleware
+  // Configure expressSession middleware
   app.use(
-    session({
-      secret: 'your-session-secret', // Replace with a strong secret
+    expressSession({
+      store: new pgSession({
+        pool: pool,
+        tableName: 'user_sessions'
+      }),
+      secret: process.env.COOKIE_SECRET,
       resave: false,
       saveUninitialized: true,
+      cookie: { maxAge: 30*24*60*60*1000}
     })
   );
 
@@ -46,7 +52,7 @@ module.exports = (app, pool) => {
 
 // Initialize Passport middleware
 app.use(passport.initialize());
-app.use(passport.session());
+app.use(passport.expressSession());
 
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -62,8 +68,8 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       // Create JWT token
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-      // Store the token in the session or cookies
-      req.session.token = token;
+      // Store the token in the expressSession or cookies
+      req.expressSession.token = token;
       res.cookie('auth_token', token, {
         httpOnly: true,
         sameSite: 'strict',
@@ -73,7 +79,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 
       // Redirect to the username page if the user has no username set
       if (!user.username) {
-        req.session.tempUser = { email }; // Save email in session for username setup
+        req.expressSession.tempUser = { email }; // Save email in expressSession for username setup
         return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
       }
 
@@ -99,7 +105,7 @@ async (req, res) => {console.log("User authenticated:", req.user);}
 );
 
 // Google Auth Callback Route for Importing Calendar Events
-app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
+app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', expressSession: false }),
 async (req, res) => {
   try {
       const accessToken = req.user.accessToken; 
@@ -181,7 +187,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
     cryptoProvider
       .generatePkceCodes()
       .then(({ verifier, challenge }) => {
-        req.session.codeVerifier = verifier;
+        req.expressSession.codeVerifier = verifier;
 
         const authCodeUrlParameters = {
           scopes: ['openid', 'profile', 'email'],
@@ -212,7 +218,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
       code: req.query.code,
       scopes: ['openid', 'profile', 'email'],
       redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
-      codeVerifier: req.session.codeVerifier,
+      codeVerifier: req.expressSession.codeVerifier,
     };
 
     pca
@@ -237,7 +243,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           // Create JWT token for your application
           const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-          // Store the token in the session or cookies
+          // Store the token in the expressSession or cookies
           res.cookie('auth_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
@@ -246,8 +252,11 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           });
 
           // Redirect to the username page if the user is new and has no username set
+          console.log('cat', user)
           if (!user.username) {
-            req.session.tempUser = { email }; // Save email in session for username setup
+            req.expressSession.tempUser = { email }; // Save email in expressSession for username setup
+            console.log(req.expressSession)
+            console.log("DOG")
             return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
           }
 
@@ -268,7 +277,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 // Route to handle setting the username for first-time login users
 app.post('/auth/set-username', async (req, res) => {
     const { username } = req.body;
-    const { email } = req.session.tempUser;  // Get email stored in session
+    const { email } = req.expressSession.tempUser;  // Get email stored in expressSession
   
     try {
       const result = await pool.query(
@@ -276,8 +285,8 @@ app.post('/auth/set-username', async (req, res) => {
         [username, email]
       );
   
-      // Clear the tempUser session
-      req.session.tempUser = null;
+      // Clear the tempUser expressSession
+      req.expressSession.tempUser = null;
   
       // Send the updated user data
       res.json({ user: result.rows[0] });

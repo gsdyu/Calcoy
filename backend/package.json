@@ -15,12 +15,12 @@
     "bcryptjs": "^2.4.3",
     "buffer-crc32": "^1.0.0",
     "cookie-parser": "^1.0.0",
+    "cookie-session": "^2.1.0",
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "debug": "~2.6.9",
     "dotenv": "^16.4.5",
     "express": "^4.21.0",
-    "express-session": "^1.0.0",
     "googleapis": "^144.0.0",
     "groq-sdk": "^0.7.0",
     "helmet": "^8.0.0",
@@ -37,7 +37,6 @@
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.12.0",
     "readline-sync": "^1.4.10",
-    "vercel": "^37.14.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {
