@@ -54,9 +54,9 @@ const SignUpPage = () => {
 
     const handleSocialLogin = (provider) => {
         if (provider === 'google') {
-            window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google`;
+            window.location.href = `${process.env.SERVER_URL}/auth/google`;
         } else if (provider === 'microsoft') {
-            window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/azure`;
+            window.location.href = `${process.env.SERVER_URL}/auth/azure`;
         }
     };
 
@@ -70,7 +70,7 @@ const SignUpPage = () => {
 
         if (Object.keys(formErrors).length === 0) {
             try {
-                const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/signup`, {
+                const response = await fetch(`${process.env.SERVER_URL}/auth/signup`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',
@@ -241,7 +241,7 @@ const SignUpPage = () => {
 
                 <div className="mt-6 grid grid-cols-2 gap-4">
                     <a
-                        href={`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google`}
+                        href={`${process.env.SERVER_URL}/auth/google`}
                         className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
                     >
                         <GoogleIcon className="w-5 h-5 mr-2" />

@@ -28,9 +28,9 @@ const LoginPage = () => {
   // Handle social logins like Google and Microsoft (Azure)
   const handleSocialLogin = (provider) => {
     if (provider === 'google') {
-      window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google`;
+      window.location.href = `${process.env.SERVER_URL}/auth/google`;
     } else if (provider === 'microsoft') {
-      window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/azure`; // Redirect to Azure login
+      window.location.href = `${process.env.SERVER_URL}/auth/azure`; // Redirect to Azure login
     }
   };
 
@@ -41,7 +41,7 @@ const LoginPage = () => {
     setIsLoggingIn(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/login`, {
+      const response = await fetch(`${process.env.SERVER_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: formData.email, password: formData.password }),
@@ -70,7 +70,7 @@ const LoginPage = () => {
     setError('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/verify-2fa`, {
+      const response = await fetch(`${process.env.SERVER_URL}/auth/verify-2fa`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -230,7 +230,7 @@ const LoginPage = () => {
         {/* Social Login Buttons */}
         <div className="mt-6 grid grid-cols-2 gap-4">
           <a
-            href={`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google`}
+            href={`${process.env.SERVER_URL}/auth/google`}
             className="flex items-center justify-center px-4 py-2.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-colors"
           >
             <GoogleIcon className="w-5 h-5 mr-2" />
