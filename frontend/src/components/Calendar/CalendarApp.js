@@ -52,8 +52,10 @@ import { useTheme } from '@/contexts/ThemeContext';
   socket.on('eventDeleted', ({ eventId }) => {
     setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
   });
+  
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
+    
     const fetchPreferences = async () => {
       try {
         const check = await fetch('http://localhost:5000/auth/check', {
@@ -103,7 +105,27 @@ import { useTheme } from '@/contexts/ThemeContext';
 
     fetchEvents();
   }, [displayName, activeCalendar]); 
-
+  useEffect(() => {
+    socket.on('eventCreated', (newEvent) => {
+      console.log("Received 'eventCreated' event for event ID:", newEvent.id);
+  
+      setEvents((prevEvents) => {
+        // Prevent duplicates by checking if the event already exists
+        if (prevEvents.some(event => event.id === newEvent.id)) {
+          return prevEvents;
+        }
+        return [...prevEvents, newEvent];
+      });
+    });
+  
+    // Cleanup the socket event on component unmount
+    return () => {
+      socket.off('eventCreated');
+    };
+  }, [socket]);
+  
+  
+    
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
@@ -278,19 +300,11 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to update task');
     }
   };
-
- 
   const handleSaveEvent = async (event) => {
-    if (isSaving) return; // Prevent multiple executions
-    setIsSaving(true); // Disable further clicks
-  
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
-    if (!check.ok) {
-      setIsSaving(false);
-      return;
-    }
+    if (!check.ok) return;
   
     const isTask = event.calendar === 'Task';
     showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
@@ -320,6 +334,10 @@ import { useTheme } from '@/contexts/ThemeContext';
   
         if (savedEvent) {
           setEvents((prevEvents) => {
+            // Prevent duplicates by ensuring no other event has the same ID
+            if (prevEvents.some(e => e.id === savedEvent.id)) {
+              return prevEvents;
+            }
             if (event.id) {
               return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
             } else {
@@ -329,7 +347,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
   
-          // Emit WebSocket event
+          // Emit WebSocket event only after saving completes
           socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
@@ -340,14 +358,9 @@ import { useTheme } from '@/contexts/ThemeContext';
     } catch (error) {
       console.error(`Error saving ${isTask ? 'task' : 'event'}:`, error);
       showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
-    } finally {
-      setIsSaving(false); // Re-enable the button
     }
   };
   
-
-  
- 
  
 
   const handleDeleteEvent = async (eventId) => {
