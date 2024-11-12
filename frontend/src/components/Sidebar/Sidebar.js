@@ -16,7 +16,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
   // Define the onLeave function
   const onLeave = async (serverId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/servers/${serverId}/leave`, {
+      const response = await fetch(`${process.env.SERVER_URL}/api/servers/${serverId}/leave`, {
         method: 'DELETE',
         credentials: 'include',
       });

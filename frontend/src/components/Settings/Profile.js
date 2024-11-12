@@ -21,7 +21,7 @@ const Profile = () => {
   useEffect(() => {
     // Fetch user data from backend
     const fetchProfile = async () => {
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) {
@@ -31,7 +31,7 @@ const Profile = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/profile', {
+        const response = await fetch(`${process.env.SERVER_URL}/profile`, {
           credentials: 'include',
         });
 
@@ -61,7 +61,7 @@ const Profile = () => {
   const handleNameSave = async () => {
     setIsEditingName(false);
 
-    const check = await fetch('http://localhost:5000/auth/check', {
+    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) {
@@ -74,7 +74,7 @@ const Profile = () => {
 	  if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
 	  if (displayName.length==0) throw new Error('Username cannot be empty');
 
-      const response = await fetch('http://localhost:5000/profile/name', {
+      const response = await fetch(`${process.env.SERVER_URL}/profile/name`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -102,7 +102,7 @@ const Profile = () => {
       const formData = new FormData();
       formData.append('profile_image', file);
 
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) {
@@ -111,7 +111,7 @@ const Profile = () => {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/profile/picture', {
+        const response = await fetch(`${process.env.SERVER_URL}/profile/picture`, {
           method: 'PUT',
           credentials: 'include',
           body: formData,
@@ -156,7 +156,7 @@ const Profile = () => {
         <div className="relative w-24 h-24 rounded-full flex items-center justify-center mr-6"
              style = {{zIndex: 1}}>
           {profileImage ? (
-            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            <img src={`${process.env.SERVER_URL}/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
           ) : (
             <DefaultProfileIcon />
           )}

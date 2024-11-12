@@ -142,27 +142,6 @@ const schema = {
   }
 }
 
-const contextAgent = new GeminiAgent({content: chat_context})
-const createAgent = new GeminiAgent({content:chat_createEvent, responseSchema:jsonEvent, responseMimeType: "application/json"});
-//const chatAgent = new GeminiAgent({content:chatAll});
-
-//(async () => {
-  //console.log(await createAgent.inputChat("new event on tuesday"))
-
-  
-//  rag.inputChat(user1).then(value=>(console.log(rag.getHistory()))).catch(reason=>console.log(reason));
-  /*
-  const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    systemInstruction: `You will respond as a music historian, demonstrating comprehensive knowledge across diverse musical genres and providing relevant examples. Your tone will be upbeat and enthusiastic, spreading the joy of music. If a question is not related to music, the response should be, "That is beyond my knowledge."`
-  })
-  const response = await model.generateContent("If a person was born in the sixties, what was the most popular music genre being played? List five songs by bullet points")
-  const res = await response.response.text()
-  console.log(res)
-  */
-//})();
-
-
 module.exports = {GeminiAgent, handleContext};
 
 

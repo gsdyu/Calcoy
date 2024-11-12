@@ -74,11 +74,11 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       // Redirect to the username page if the user has no username set
       if (!user.username) {
         req.session.tempUser = { email }; // Save email in session for username setup
-        return res.redirect('https://timewise-ashy.vercel.app/auth/username');
+        return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
       }
 
       // Otherwise, redirect to the calendar page
-      res.redirect('https://timewise-ashy.vercel.app/calendar');
+      res.redirect(`${process.env.CLIENT_URL}/calendar`);
     } catch (error) {
       console.error('Google login error:', error);
       res.status(500).send('Internal server error');
@@ -105,7 +105,7 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`https://timewise-ashy.vercel.app?token=${accessToken}`);
+    res.redirect(`${process.env.CLIENT_URL}?token=${accessToken}`);
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');
@@ -185,7 +185,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 
         const authCodeUrlParameters = {
           scopes: ['openid', 'profile', 'email'],
-          redirectUri: 'http://localhost:5000/auth/azure/callback',
+          redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
           codeChallenge: challenge,
           codeChallengeMethod: 'S256',
         };
@@ -211,7 +211,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
     const tokenRequest = {
       code: req.query.code,
       scopes: ['openid', 'profile', 'email'],
-      redirectUri: 'http://localhost:5000/auth/azure/callback',
+      redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
       codeVerifier: req.session.codeVerifier,
     };
 
@@ -248,11 +248,11 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           // Redirect to the username page if the user is new and has no username set
           if (!user.username) {
             req.session.tempUser = { email }; // Save email in session for username setup
-            return res.redirect('https://timewise-ashy.vercel.app/auth/username');
+            return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
           }
 
           // Otherwise, redirect to the calendar page
-          res.redirect('https://timewise-ashy.vercel.app');
+          res.redirect(`${process.env.CLIENT_URL}`);
         } catch (error) {
           console.error('Azure login error:', error);
           res.status(500).send('Internal server error');

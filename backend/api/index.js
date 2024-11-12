@@ -1,5 +1,5 @@
 const path = require("path");
-require('dotenv').config({ path: path.join(__dirname,".env") });
+require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
@@ -25,7 +25,7 @@ require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
-    origin: 'https://timewise-ashy.vercel.app/',
+  origin: ['https://timewise-ashy.vercel.app/', "http://localhost:3000"],
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -117,6 +117,6 @@ app.get('/', async (req, res) => {
 
 // Start the server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running`));
+console.log("Server is running")
 
 module.exports = app;

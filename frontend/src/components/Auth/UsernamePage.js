@@ -21,7 +21,7 @@ const UsernamePage = () => {
 
       setIsLoading(true);
       try {
-          const response = await fetch('https://backend-three-puce-56.vercel.app/auth/set-username', {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/set-username`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ username }),
