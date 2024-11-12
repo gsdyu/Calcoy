@@ -67,7 +67,7 @@ const ChatItem = ({
         onClick={() => onSelect(chat.id)}
         className="flex-1 flex items-center gap-3 min-w-0"
       >
-        <MessageSquare size={20} className="flex-shrink-0" />
+        <MessageSquare size={20} className={`flex-shrink-0 transition-colors duration-200 ${isActive ? 'text-blue-500' : ''}`}  />
         {!isCollapsed && (
           <div className="flex-1 min-w-0 text-left pl-1">
             {isEditing ? (
@@ -218,25 +218,27 @@ const ChatSidebar = ({
           <Menu size={24} />
         </button>
 
-        <button
-          onClick={onNewChat}
-          className={`
-            flex items-center gap-2 m-2 p-3 rounded-xl
-            transition-colors duration-200 bg-blue-600 font-semibold
-            ${darkMode
-              ? 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'
-              : 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'}
-          `}
-        >
-          <SquarePen size={24} />
-          {!isCollapsed && <span className="truncate">New chat</span>}
-        </button>
+        <div className="w-full px-2">
+          <button
+            onClick={onNewChat}
+            className={`
+              flex items-center justify-center gap-2 w-full p-3 rounded-xl
+              transition-colors duration-200 bg-blue-600 font-semibold
+              ${darkMode
+                ? 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'
+                : 'hover:bg-blue-700 text-blue-200 hover:text-blue-200'}
+            `}
+          >
+            <SquarePen size={24} />
+            {!isCollapsed && <span className="truncate">New chat</span>}
+          </button>
+        </div>
       </div>
 
       {/* chat items */}
       <div className={`flex-1 overflow-y-auto overflow-x-hidden px-2 ${styles.chatScroll}`}>
         {!isCollapsed && chats.length > 0 && (
-          <div className={`px-3 pt-4 ${darkMode ? 'text-gray-300' : 'text-gray-600'} font-bold`}>
+          <div className={`px-3 pt-5 ${darkMode ? 'text-gray-500' : 'text-gray-600'} font-bold`}>
             Recent
           </div>
         )}

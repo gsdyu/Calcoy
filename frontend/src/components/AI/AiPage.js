@@ -125,7 +125,7 @@ const AiPage = () => {
   const handleRenameChat = async (chatId, newTitle) => {
     try {
       const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
-        method: 'PATCH',
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
