@@ -17,7 +17,7 @@ module.exports = (app, pool) => {
         pool: pool,
         tableName: 'user_sessions'
       }),
-      secret: process.env.COOKIE_SECRET,
+      secret: process.env.COOKIE_SECRET || "secrety key" ,
       resave: false,
       saveUninitialized: true,
       cookie: { maxAge: 30*24*60*60*1000}
@@ -52,7 +52,7 @@ module.exports = (app, pool) => {
 
 // Initialize Passport middleware
 app.use(passport.initialize());
-app.use(passport.expressSession());
+app.use(passport.session());
 
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
@@ -69,7 +69,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
       // Store the token in the expressSession or cookies
-      req.expressSession.token = token;
+      req.session.token = token;
       res.cookie('auth_token', token, {
         httpOnly: true,
         sameSite: 'strict',
@@ -79,7 +79,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 
       // Redirect to the username page if the user has no username set
       if (!user.username) {
-        req.expressSession.tempUser = { email }; // Save email in expressSession for username setup
+        req.session.tempUser = { email }; // Save email in expressSession for username setup
         return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
       }
 
@@ -105,7 +105,7 @@ async (req, res) => {console.log("User authenticated:", req.user);}
 );
 
 // Google Auth Callback Route for Importing Calendar Events
-app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', expressSession: false }),
+app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
 async (req, res) => {
   try {
       const accessToken = req.user.accessToken; 
@@ -277,7 +277,8 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 // Route to handle setting the username for first-time login users
 app.post('/auth/set-username', async (req, res) => {
     const { username } = req.body;
-    const { email } = req.expressSession.tempUser;  // Get email stored in expressSession
+    console.log(req.session.tempUser)
+    const { email } = req.session.tempUser;  // Get email stored in session
   
     try {
       const result = await pool.query(
@@ -286,7 +287,7 @@ app.post('/auth/set-username', async (req, res) => {
       );
   
       // Clear the tempUser expressSession
-      req.expressSession.tempUser = null;
+      req.session.tempUser = null;
   
       // Send the updated user data
       res.json({ user: result.rows[0] });

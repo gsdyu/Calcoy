@@ -3,12 +3,12 @@ require('dotenv').config({ path: path.join(__dirname,"../.env") });
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
-const session = require('cookie-session');
+const expressSession = require('express-session');
+const pgSession = require('connect-pg-simple')(expressSession);
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
 
-console.log(process.env.BAA)
 // Initialize express app
 const app = express();
 
@@ -31,11 +31,18 @@ app.use(cors({
 }));
 
 // Set up session management
-app.use(session({
-  secret: process.env.SESSION_SECRET || 'some_secret_key',
-  resave: false,
-  saveUninitialized: true
-}));
+  app.use(
+    expressSession({
+      store: new pgSession({
+        pool: pool,
+        tableName: "userSessions"
+      }),
+      secret: process.env.COOKIE_SECRET,
+      resave: false,
+      saveUninitialized: true,
+      cookie: { maxAge: 30*24*60*60*1000}
+    })
+  );
 
 
 // Routes for authentication and events
@@ -107,17 +114,16 @@ pool.query(`
   }).catch(err => console.error('Error creating users table:', err));
 
   pool.query(`
-    CREATE TABLE IF NOT EXISTS sessions (
+    CREATE TABLE IF NOT EXISTS "userSessions" (
     sid VARCHAR NOT NULL COLLATE "default",
     sess json NOT NULL,
-    expire timestamp(6) NOT NULL
+    expire timestamp(6) NOT NULL,
+    token VARCHAR(200),
+    CONSTRAINT session_pkey PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE
     )
     WITH (OIDS=FALSE);
 
-    ALTER TABLE session ADD CONSTRAINT session_pkey
-    PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE;
-
-    CREATE INDEX IDX_session_expire ON session (expire);`).then(() => console.log("Sessions table is ready")
+    CREATE INDEX IF NOT EXISTS IDX_session_expire ON "userSessions" (expire);`).then(() => console.log("Sessions table is ready")
     ).catch(err => console.error("Error creating sessions table:", err));
 
 // Additional routes
