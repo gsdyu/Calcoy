@@ -105,7 +105,7 @@ const FriendPage = () => {
       />
       
       <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 
-        ${darkMode ? 'bg-[#0F1116]' : 'bg-gray-50'}`}>
+        ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
         
         <div className="h-full p-8">
           {selectedFriend ? (
@@ -113,7 +113,7 @@ const FriendPage = () => {
               <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={onBackToFriendsList}
-                  className="p-2 rounded-full hover:bg-gray-800/40 transition-colors text-gray-400 hover:text-gray-200"
+                  className="p-2 rounded-full hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-200"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -140,14 +140,13 @@ const FriendPage = () => {
                     placeholder="Search friends..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 rounded-full bg-gray-900/50 border border-gray-700/50 focus:outline-none focus:ring-2 
+                    className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
                       focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                   />
                 </div>
               </div>
 
-              <div className="relative p-6 rounded-2xl bg-gray-900/50 border border-gray-800/50 backdrop-blur-sm">
-                <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+              <div className="relative p-6 rounded-2xl bg-gray-800 border border-gray-700">
                 <div className="relative">
                   <h2 className="text-xl font-semibold text-gray-200 mb-4">Add New Friend</h2>
                   <div className="flex gap-3">
@@ -156,7 +155,7 @@ const FriendPage = () => {
                       placeholder="Enter friend's name"
                       value={newFriend}
                       onChange={(e) => setNewFriend(e.target.value)}
-                      className="flex-1 px-4 py-2 rounded-full bg-gray-800/50 border border-gray-700/50 text-gray-200
+                      className="flex-1 px-4 py-2 rounded-full bg-gray-900 border border-gray-700 text-gray-200
                         placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500/50"
                     />
                     <button
@@ -177,8 +176,8 @@ const FriendPage = () => {
                 {filteredFriends.map((friend) => (
                   <div
                     key={friend.id}
-                    className="group p-4 rounded-2xl bg-gray-900/50 border border-gray-800/50 backdrop-blur-sm 
-                      hover:bg-gray-800/50 transition-all duration-200"
+                    className="group p-4 rounded-2xl bg-gray-800 border border-gray-700 
+                      hover:bg-gray-700 transition-all duration-200"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
@@ -192,7 +191,7 @@ const FriendPage = () => {
                       <div className="flex items-center gap-3">
                         <button
                           onClick={() => onViewCalendar(friend)}
-                          className="p-2 rounded-full hover:bg-gray-700/50 text-gray-400 hover:text-gray-200 transition-colors"
+                          className="p-2 rounded-full hover:bg-gray-600 text-gray-400 hover:text-gray-200 transition-colors"
                         >
                           <Calendar className="w-5 h-5" />
                         </button>
