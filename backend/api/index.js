@@ -8,6 +8,7 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
 
+console.log(process.env.BAA)
 // Initialize express app
 const app = express();
 
@@ -117,3 +118,5 @@ app.get('/', async (req, res) => {
 // Start the server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+module.exports = app;

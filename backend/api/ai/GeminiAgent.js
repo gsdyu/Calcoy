@@ -122,9 +122,7 @@ let user3 = "I need help ";
 let user1 = "{content: 'context', time: 'past'}";
 let user2 = "When is Christmas";
 
-genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-schema = {
+const schema = {
   "type": "ARRAY",
   "items": {
     "type": "OBJECT",
