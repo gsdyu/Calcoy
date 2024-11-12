@@ -1,4 +1,5 @@
 'use client';
+import { io } from 'socket.io-client';
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
@@ -14,11 +15,13 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
+
  const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
-  
+  const [isSaving, setIsSaving] = useState(false);
+
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
@@ -35,7 +38,20 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-
+  const socket = io('http://localhost:5000');
+  socket.on('eventCreated', (event) => {
+    setEvents((prevEvents) => [...prevEvents, event]);
+  });
+  
+  socket.on('eventUpdated', (updatedEvent) => {
+    setEvents((prevEvents) =>
+      prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
+    );
+  });
+  
+  socket.on('eventDeleted', ({ eventId }) => {
+    setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+  });
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
     const fetchPreferences = async () => {
@@ -211,6 +227,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     setIsEventDetailsOpen(false);
     setIsAddingEvent(true);
   };
+ 
 
   const handleCloseModal = () => {
     setIsAddingEvent(false);
@@ -223,16 +240,16 @@ import { useTheme } from '@/contexts/ThemeContext';
       credentials: 'include',
     });
     if (!check.ok) return;
-
+  
     try {
       const eventToUpdate = events.find(event => event.id === taskId);
       if (!eventToUpdate) return;
-
+  
       const updatedEvent = {
         ...eventToUpdate,
         completed
       };
-
+  
       const response = await fetch(`http://localhost:5000/events/${taskId}`, {
         method: 'PUT',
         headers: {
@@ -241,7 +258,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         credentials: 'include',
         body: JSON.stringify(updatedEvent),
       });
-
+  
       if (response.ok) {
         setEvents(prevEvents =>
           prevEvents.map(event =>
@@ -250,6 +267,9 @@ import { useTheme } from '@/contexts/ThemeContext';
         );
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         handleCloseEventDetails();
+  
+        // Emit a WebSocket event for real-time update
+        socket.emit('taskCompleted', { taskId, completed });
       } else {
         throw new Error('Failed to update task');
       }
@@ -258,11 +278,19 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to update task');
     }
   };
+
+ 
   const handleSaveEvent = async (event) => {
+    if (isSaving) return; // Prevent multiple executions
+    setIsSaving(true); // Disable further clicks
+  
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
-    if (!check.ok) return;
+    if (!check.ok) {
+      setIsSaving(false);
+      return;
+    }
   
     const isTask = event.calendar === 'Task';
     showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
@@ -274,7 +302,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       const eventData = {
         ...event,
         server_id: activeCalendar?.id || null,
-        include_in_personal: event.include_in_personal ?? true  // Explicitly set `include_in_personal`
+        include_in_personal: event.include_in_personal ?? true,
       };
   
       const response = await fetch(url, {
@@ -288,34 +316,21 @@ import { useTheme } from '@/contexts/ThemeContext';
   
       if (response.ok) {
         const savedEventResponse = await response.json();
-        console.log("Server response:", savedEventResponse);
-  
-        // Directly access the single returned event object
         const savedEvent = savedEventResponse.event;
-        if (savedEvent) {
-          const startTime = new Date(savedEvent.start_time);
-          const endTime = new Date(savedEvent.end_time);
-          const formattedEvent = {
-            ...savedEvent,
-            date: startTime.toLocaleDateString(),
-            startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isTask: event.calendar === 'Task',
-            completed: event.completed || false,
-            server_id: eventData.server_id,
-          };
   
+        if (savedEvent) {
           setEvents((prevEvents) => {
             if (event.id) {
-              return prevEvents.map((e) => (e.id === event.id ? formattedEvent : e));
+              return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
             } else {
-              return [...prevEvents, formattedEvent];
+              return [...prevEvents, savedEvent];
             }
           });
   
-          setIsAddingEvent(false);
-          setSelectedEvent(null);
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
+  
+          // Emit WebSocket event
+          socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
         }
@@ -325,31 +340,38 @@ import { useTheme } from '@/contexts/ThemeContext';
     } catch (error) {
       console.error(`Error saving ${isTask ? 'task' : 'event'}:`, error);
       showNotification(`Failed to save ${isTask ? 'task' : 'event'}`);
+    } finally {
+      setIsSaving(false); // Re-enable the button
     }
   };
   
+
+  
+ 
+ 
 
   const handleDeleteEvent = async (eventId) => {
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
     if (!check.ok) return;
-
+  
     const eventToDelete = events.find(e => e.id === eventId);
     const isTask = eventToDelete?.calendar === 'Task';
     showNotification(`Deleting ${isTask ? 'task' : 'event'}...`);
-
+  
     try {
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
-
+  
       if (response.ok) {
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
-        setIsEventDetailsOpen(false);
-        setSelectedEvent(null);
         showNotification(`${isTask ? 'Task' : 'Event'} deleted successfully`, 'Undo');
+  
+        // Emit a WebSocket event for real-time deletion
+        socket.emit('eventDeleted', { eventId });
       } else {
         throw new Error(`Failed to delete ${isTask ? 'task' : 'event'}`);
       }
@@ -358,59 +380,61 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification(`Failed to delete ${isTask ? 'task' : 'event'}`);
     }
   };
+  
 
   const handleEventUpdate = async (eventId, newDate, newTime) => {
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
     });
     if (!check.ok) return;
-
+  
     const eventToUpdate = events.find(event => event.id === eventId);
     if (!eventToUpdate) return;
-
+  
     const isTask = eventToUpdate.calendar === 'Task';
     showNotification(`Updating ${isTask ? 'task' : 'event'}...`);
-
+  
     try {
       setLastUpdatedEvent({ ...eventToUpdate });
-
+  
       const startTime = new Date(eventToUpdate.start_time);
       const endTime = new Date(eventToUpdate.end_time);
       const duration = endTime - startTime;
-
-      // Create new start time with the dropped time
+  
+      // Create new start time with the updated date and time
       const newStartTime = new Date(newDate);
       if (newTime) {
-        // If we have specific time info (from vertical drag)
         newStartTime.setHours(newTime.hours);
         newStartTime.setMinutes(newTime.minutes);
       } else {
-        // Otherwise keep the original time (horizontal drag)
         newStartTime.setHours(startTime.getHours(), startTime.getMinutes());
       }
-      
-      // Calculate new end time preserving duration
+  
+      // Calculate new end time while preserving the event duration
       const newEndTime = new Date(newStartTime.getTime() + duration);
-
+  
       const updatedEvent = {
         ...eventToUpdate,
         start_time: newStartTime.toISOString(),
         end_time: newEndTime.toISOString(),
       };
-
-      setEvents(prevEvents => 
-        prevEvents.map(event => 
-          event.id === eventId ? {
-            ...updatedEvent,
-            date: newStartTime.toLocaleDateString(),
-            startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isTask: eventToUpdate.calendar === 'Task',
-            completed: eventToUpdate.completed || false
-          } : event
+  
+      // Update the events state to reflect the new start and end times locally
+      setEvents(prevEvents =>
+        prevEvents.map(event =>
+          event.id === eventId
+            ? {
+                ...updatedEvent,
+                date: newStartTime.toLocaleDateString(),
+                startTime: newStartTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                endTime: newEndTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                isTask: eventToUpdate.calendar === 'Task',
+                completed: eventToUpdate.completed || false,
+              }
+            : event
         )
       );
-
+  
       const response = await fetch(`http://localhost:5000/events/${eventId}`, {
         method: 'PUT',
         headers: {
@@ -419,10 +443,13 @@ import { useTheme } from '@/contexts/ThemeContext';
         credentials: 'include',
         body: JSON.stringify(updatedEvent),
       });
-
+  
       if (response.ok) {
         const savedEvent = await response.json();
         showNotification(`${isTask ? 'Task' : 'Event'} updated`, 'Undo');
+  
+        // Emit a WebSocket event to notify all clients about the update
+        socket.emit('eventUpdated', savedEvent.event); // Emit the updated event
       } else {
         throw new Error(`Failed to update ${isTask ? 'task' : 'event'}`);
       }
@@ -432,6 +459,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       fetchEvents();
     }
   };
+  
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {

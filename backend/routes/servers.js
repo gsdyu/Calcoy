@@ -6,7 +6,14 @@ const { authenticateToken } = require('../authMiddleware');
 const upload = multer({ dest: 'uploads/' });
 const { v4: uuidv4 } = require('uuid');
 module.exports = (app, pool) => {
-
+  app.get('/api/user', authenticateToken, async (req, res) => {
+    const userId = req.user.userId; // Retrieve userId directly from the token
+    if (userId) {
+      res.json({ userId });
+    } else {
+      res.status(401).json({ error: 'User not authenticated' });
+    }
+  });
   app.get('/api/servers/:serverId', authenticateToken, async (req, res) => {
     const { serverId } = req.params;
   
