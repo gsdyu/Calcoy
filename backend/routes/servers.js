@@ -15,7 +15,7 @@ module.exports = (app, pool) => {
         'SELECT id, name, image_url, created_by, invite_link FROM servers WHERE id = $1',
         [serverId]
       );
-  //d 
+  
       if (rows.length === 0) {
         return res.status(404).json({ error: 'Server not found' });
       }
