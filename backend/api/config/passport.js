@@ -222,7 +222,7 @@ module.exports = (pool) => {
     await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
 
     // Webhook URL for Google Calendar notifications
-    const webhookUrl = 'https://c7f0-47-146-160-30.ngrok-free.app/webhook/google-calendar';
+    const webhookUrl = process.env.WEBHOOK_DOMAIN_URL;
     
     // Set up Google Calendar notification only once
     await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl);

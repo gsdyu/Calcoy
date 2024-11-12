@@ -33,7 +33,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   // Fetch profile information
   useEffect(() => {
     const fetchProfile = async () => {
-      const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) {
@@ -42,7 +42,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         return;
       }
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/profile`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -88,7 +88,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/api/servers`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers`, {
           credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch servers');
@@ -132,7 +132,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         {/* Display server image or fallback initial */}
         {server.image_url ? (
           <img 
-            src={`${process.env.SERVER_URL}${server.image_url}`} 
+            src={`${process.env.NEXT_PUBLIC_SERVER_URL}${server.image_url}`} 
             alt={`${server.name} icon`} 
             className="w-4 h-4 mr-2 rounded-full"
             onError={(e) => { e.target.style.display = 'none'; }} // Fallback if image fails
@@ -188,7 +188,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         return;
       }
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/servers/${activeServer.id}/users`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/servers/${activeServer.id}/users`, {
           credentials: 'include',
         });
         if (!response.ok) {
@@ -245,7 +245,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
 
   const savePreferences = async (preferences) => {
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/profile/preferences`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

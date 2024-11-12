@@ -23,7 +23,7 @@ const ForgotPasswordPage = () => {
     setMessage('');
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/forgot-password`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NEXT_PUBLIC_SERVER_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
@@ -57,7 +57,7 @@ const ForgotPasswordPage = () => {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/reset-password`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_NEXT_PUBLIC_SERVER_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

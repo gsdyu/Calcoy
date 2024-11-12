@@ -17,7 +17,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/api/servers`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers`, {
           credentials: 'include',
         });
         if (response.ok) {
@@ -56,7 +56,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
 
   const leaveServer = async (serverId) => {
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/api/servers/${serverId}/leave`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${serverId}/leave`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -102,7 +102,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
               <Avatar className="w-10 h-10">
                 {server.image_url ? (
                   <AvatarImage 
-                    src={`${process.env.SERVER_URL}${server.image_url}`} 
+                    src={`${process.env.NEXT_PUBLIC_SERVER_URL}${server.image_url}`} 
                     alt={server.name} 
                     className="object-cover w-full h-full rounded-full" 
                     onError={(e) => { e.target.style.display = 'none'; }}

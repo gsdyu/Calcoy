@@ -82,7 +82,7 @@ const AiPage = () => {
   
     const userMessage = { sender: 'user', text: input };
     setMessages((prevMessages) => [...prevMessages, userMessage]);
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       method: 'GET',
       credentials: 'include',
     })
@@ -96,7 +96,7 @@ const AiPage = () => {
   
     // groq api
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/ai`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/ai`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -153,7 +153,7 @@ const AiPage = () => {
 
     try {
       showNotification(`Saving event...`);
-      const response = await fetch(`${process.env.SERVER_URL}/events`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

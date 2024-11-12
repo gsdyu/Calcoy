@@ -41,7 +41,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   useEffect(() => {
     const fetchPreferences = async () => {
       try {
-        const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+        const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
           credentials: 'include',
         });
         if (!check.ok) {
@@ -50,7 +50,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           return;
         }
 
-        const response = await fetch(`${process.env.SERVER_URL}/profile`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           headers: {
             'Content-Type': 'application/json',
           },
@@ -100,7 +100,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     
     // Save to server in background
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/profile/preferences`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -127,15 +127,15 @@ import { useTheme } from '@/contexts/ThemeContext';
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) return;
   
     try {
       const url = activeCalendar !== null 
-        ? `${process.env.SERVER_URL}/events?server_id=${activeCalendar.id}` 
-        : '${process.env.SERVER_URL}/events';
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events?server_id=${activeCalendar.id}` 
+        : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
       
       const response = await fetch(url, {
         credentials: 'include',
@@ -220,7 +220,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   // handle task completion
   const handleTaskComplete = async (taskId, completed) => {
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) return;
@@ -234,7 +234,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         completed
       };
 
-      const response = await fetch(`${process.env.SERVER_URL}/events/${taskId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${taskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -260,7 +260,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     }
   };
   const handleSaveEvent = async (event) => {
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) return;
@@ -270,7 +270,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   
     try {
       const method = event.id ? 'PUT' : 'POST';
-      const url = event.id ? `${process.env.SERVER_URL}/events/${event.id}` : '${process.env.SERVER_URL}/events';
+      const url = event.id ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}` : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
   
       const eventData = {
         ...event,
@@ -331,7 +331,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   
 
   const handleDeleteEvent = async (eventId) => {
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) return;
@@ -341,7 +341,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     showNotification(`Deleting ${isTask ? 'task' : 'event'}...`);
 
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/events/${eventId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${eventId}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -361,7 +361,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   };
 
   const handleEventUpdate = async (eventId, newDate, newTime) => {
-    const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) return;
@@ -412,7 +412,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         )
       );
 
-      const response = await fetch(`${process.env.SERVER_URL}/events/${eventId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${eventId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -436,7 +436,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {
-      const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) return;
@@ -444,7 +444,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       const isTask = lastUpdatedEvent.calendar === 'Task';
 
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/events/${lastUpdatedEvent.id}`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${lastUpdatedEvent.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',

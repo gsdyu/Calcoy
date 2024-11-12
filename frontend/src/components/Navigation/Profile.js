@@ -19,7 +19,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
 
   const toggleLogout = async () => {
     try {
-      const response = await fetch(`${process.env.SERVER_URL}/auth/logout`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/logout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json'},
         credentials: 'include',
@@ -39,7 +39,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
 
   useEffect(() => {
     const fetchProfile = async () => {
-      const check = await fetch(`${process.env.SERVER_URL}/auth/check`, {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -50,7 +50,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
       }
 
       try {
-        const response = await fetch(`${process.env.SERVER_URL}/profile`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'
@@ -83,7 +83,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
         <div className="flex items-center">
           <Avatar className="h-8 w-8">
             {profileImage ? (
-              <AvatarImage src={`${process.env.SERVER_URL}/${profileImage}`} alt={userName} />
+              <AvatarImage src={`${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`} alt={userName} />
             ) : (
               <AvatarFallback className={darkMode ? 'text-white bg-gray-600' : ''}>
                 {getInitials(userName)}
