@@ -174,38 +174,6 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
   }
 });
 
-  // Azure AD Authentication route
-  app.get('/auth/azure', (req, res) => {
-    const cryptoProvider = new msal.CryptoProvider();
-
-    cryptoProvider
-      .generatePkceCodes()
-      .then(({ verifier, challenge }) => {
-        req.session.codeVerifier = verifier;
-
-        const authCodeUrlParameters = {
-          scopes: ['openid', 'profile', 'email'],
-          redirectUri: 'http://localhost:5000/auth/azure/callback',
-          codeChallenge: challenge,
-          codeChallengeMethod: 'S256',
-        };
-
-        pca
-          .getAuthCodeUrl(authCodeUrlParameters)
-          .then((response) => {
-            res.redirect(response);
-          })
-          .catch((error) => {
-            console.error('AuthCodeUrl Error:', error);
-            res.status(500).send('Error generating auth code URL');
-          });
-      })
-      .catch((error) => {
-        console.error('PKCE Code Generation Error:', error);
-        res.status(500).send('Error generating PKCE codes');
-      });
-  });
-
   // Azure AD Authentication callback route
   app.get('/auth/azure/callback', (req, res) => {
     const tokenRequest = {
