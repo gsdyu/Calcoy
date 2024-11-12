@@ -115,14 +115,14 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
 
               {/* Right Border Effect */}
               <div
-                className={`absolute right-0 top-1/2 transform -translate-y-1/2 transition-all duration-200 origin-center ${
-                  activeCalendar?.id === server.id
-                    ? 'bg-white w-1 h-full scale-y-100' 
-                    : hoveredServer === server.id
-                    ? 'bg-white w-1 h-4 scale-y-125' 
-                    : 'w-0 h-1'  
-                }`}
-              />
+              className={`absolute -right-1 top-1/2 transform -translate-y-1/2 transition-all duration-300 ${
+                activeCalendar?.id === server.id
+                  ? 'h-10 bg-white w-1 rounded-l-full' 
+                  : hoveredServer === server.id
+                  ? 'h-5 bg-white w-1 rounded-l-full'  
+                  : 'h-0 w-0'                          
+              }`}
+            />
             </button>
 
             {/* Tooltip on Hover */}
