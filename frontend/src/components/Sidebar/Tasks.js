@@ -62,11 +62,11 @@ const Tasks = ({ events, selectedDate, onTaskComplete }) => {
       <div className="flex items-center justify-between mb-4">
         <h3 className={`text-sm font-semibold ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Tasks</h3>
         
-        {/* Compact Mode Switcher */}
-        <div className={`text-xs ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-md overflow-hidden flex`}>
+        {/* Mode Switcher */}
+        <div className={`text-xs ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} rounded-full overflow-hidden flex p-0.5`}>
           <button
             onClick={() => setDisplayMode('upcoming')}
-            className={`px-2 py-1 transition-colors ${
+            className={`px-3 py-1 rounded-full transition-colors ${
               displayMode === 'upcoming'
                 ? 'bg-blue-500 text-white'
                 : `${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`
@@ -76,7 +76,7 @@ const Tasks = ({ events, selectedDate, onTaskComplete }) => {
           </button>
           <button
             onClick={() => setDisplayMode('selected')}
-            className={`px-2 py-1 transition-colors ${
+            className={`px-3 py-1 rounded-full transition-colors ${
               displayMode === 'selected'
                 ? 'bg-blue-500 text-white'
                 : `${darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'}`
@@ -92,7 +92,7 @@ const Tasks = ({ events, selectedDate, onTaskComplete }) => {
           No tasks {displayMode === 'selected' ? 'for selected day' : 'scheduled'}
         </p>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[400px] overflow-y-auto custom-scrollbar">
           {tasks.map(task => (
             <div
               key={task.id}
@@ -133,6 +133,22 @@ const Tasks = ({ events, selectedDate, onTaskComplete }) => {
           ))}
         </div>
       )}
+
+      <style jsx global>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(107, 114, 128, 0.3);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(107, 114, 128, 0.5);
+        }
+      `}</style>
     </div>
   );
 };
