@@ -24,7 +24,7 @@ require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
-    origin: 'http://localhost:3000',
+    origin: 'https://timewise-ashy.vercel.app/',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
@@ -94,7 +94,7 @@ pool.query(`
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
 
-       completed BOOLEAN,
+      completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
