@@ -11,16 +11,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 // Configure multer for profile picture uploads
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${req.user.userId}_${Date.now()}${ext}`);
-  }
-});
-const upload = multer({ storage });
+ 
 
 module.exports = (app, pool) => {
   // Route to fetch user profile
@@ -91,20 +82,7 @@ module.exports = (app, pool) => {
       return res.status(500).json({ error: 'Internal server error' });
     }
   });
-
-  // Route to upload profile picture
-  app.put('/profile/picture', authenticateToken, upload.single('profile_image'), async (req, res) => {
-    const userId = req.user.userId;
-    const profileImagePath = req.file.path;
-
-    try {
-      await pool.query('UPDATE users SET profile_image = $1 WHERE id = $2', [profileImagePath, userId]);
-      res.json({ message: 'Profile picture updated', profile_image: profileImagePath });
-    } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
+ 
   // Route to update dark mode preference
   app.put('/profile/dark-mode', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
@@ -120,5 +98,4 @@ module.exports = (app, pool) => {
   });
 
   // Serve uploaded profile pictures statically
-  app.use('/uploads', express.static('uploads'));
-};
+ };
