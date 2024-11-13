@@ -235,6 +235,11 @@ const AiPage = () => {
     }
   };
 
+  const handleRemoveImage = () => {
+    setSelectedFile(null);
+    document.getElementById('fileInput').value='';
+  }
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!input.trim() && !selectedFile) return;
@@ -256,7 +261,8 @@ const AiPage = () => {
     }
 
     setInput('');
-    setSelectedFile(null);
+    handleRemoveImage();
+
 
     const check = await fetch('http://localhost:5000/auth/check', {
       method: 'GET',
@@ -350,7 +356,7 @@ const AiPage = () => {
     } finally {
       setIsLoading(false);
       setInput('');
-      setSelectedFile(null);
+      handleRemoveImage();
       if (textareaRef.current) {
         textareaRef.current.style.height = 'auto';
       }
@@ -524,7 +530,7 @@ const AiPage = () => {
                 )}
                 <button 
                   className={styles.removeImageButton} 
-                  onClick={() => setSelectedFile(null)}
+                  onClick={() => handleRemoveImage()}
                   aria-label="Remove attached image"
                 >
                   <X size={14} />
