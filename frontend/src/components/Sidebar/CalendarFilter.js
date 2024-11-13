@@ -110,12 +110,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
  
   
   
-  
-  const renderPersonalCalendarEvents = (events) => {
-    return events
-      .filter(event => serverColors[event.server_id] === selectedColor) // Filter by color
-      .map(event => <EventComponent key={event.id} event={event} />);
-  };
   const renderServerItem = (server, showEyeIcon = true,color) => (
     <div
       key={server.id}
