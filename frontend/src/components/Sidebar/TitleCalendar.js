@@ -223,7 +223,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
                 <X size={20} />
               </button>
             </div>
-            <p className="mb-4 text-gray-400">Use this ics file to export Timewise's calendar to your other ones:</p>
+            <p className="mb-4 text-gray-400">Use this ics file to export ALL your timewise events  from Main Calendar:</p>
             <div className="flex items-center space-x-3">
               <a href="#" 
                 readOnly
