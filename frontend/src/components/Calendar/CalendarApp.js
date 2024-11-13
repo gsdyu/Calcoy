@@ -38,20 +38,30 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-  const socket = io('http://localhost:5000');
-  socket.on('eventCreated', (event) => {
-    setEvents((prevEvents) => [...prevEvents, event]);
-  });
-  
-  socket.on('eventUpdated', (updatedEvent) => {
-    setEvents((prevEvents) =>
-      prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
-    );
-  });
-  
-  socket.on('eventDeleted', ({ eventId }) => {
-    setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
-  });
+  useEffect(() => {
+    const socket = io('http://localhost:5000');
+    socket.removeAllListeners();
+    socket.on('eventCreated', (event) => {
+      const eventList = Array.isArray(event) ? event : [event]
+      setEvents((prevEvents) => [...prevEvents, ...eventList]);
+    });
+    
+    socket.on('eventUpdated', (updatedEvent) => {
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
+      );
+    });
+    
+    socket.on('eventDeleted', ({ eventId }) => {
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+    });
+
+    return () => {
+      socket.off('eventCreated');
+      socket.off('eventUpdated');
+      socket.off('eventDeleted');
+    };
+  }, []);
   
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
@@ -105,24 +115,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 
     fetchEvents();
   }, [displayName, activeCalendar]); 
-  useEffect(() => {
-    socket.on('eventCreated', (newEvent) => {
-      console.log("Received 'eventCreated' event for event ID:", newEvent.id);
-  
-      setEvents((prevEvents) => {
-        // Prevent duplicates by checking if the event already exists
-        if (prevEvents.some(event => event.id === newEvent.id)) {
-          return prevEvents;
-        }
-        return [...prevEvents, newEvent];
-      });
-    });
-  
-    // Cleanup the socket event on component unmount
-    return () => {
-      socket.off('eventCreated');
-    };
-  }, [socket]);
   
   
     
@@ -290,8 +282,8 @@ import { useTheme } from '@/contexts/ThemeContext';
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         handleCloseEventDetails();
   
-        // Emit a WebSocket event for real-time update
-        socket.emit('taskCompleted', { taskId, completed });
+        // not implemented yet
+        //socket.emit('taskCompleted', { taskId, completed });
       } else {
         throw new Error('Failed to update task');
       }
@@ -348,7 +340,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
   
           // Emit WebSocket event only after saving completes
-          socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
+          //socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
         }
@@ -383,8 +375,6 @@ import { useTheme } from '@/contexts/ThemeContext';
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
         showNotification(`${isTask ? 'Task' : 'Event'} deleted successfully`, 'Undo');
   
-        // Emit a WebSocket event for real-time deletion
-        socket.emit('eventDeleted', { eventId });
       } else {
         throw new Error(`Failed to delete ${isTask ? 'task' : 'event'}`);
       }
@@ -461,8 +451,6 @@ import { useTheme } from '@/contexts/ThemeContext';
         const savedEvent = await response.json();
         showNotification(`${isTask ? 'Task' : 'Event'} updated`, 'Undo');
   
-        // Emit a WebSocket event to notify all clients about the update
-        socket.emit('eventUpdated', savedEvent.event); // Emit the updated event
       } else {
         throw new Error(`Failed to update ${isTask ? 'task' : 'event'}`);
       }

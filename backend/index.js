@@ -29,7 +29,7 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool);
+require('./config/passport')(pool, io);
 
 app.use(express.json());
 app.use(cors({
