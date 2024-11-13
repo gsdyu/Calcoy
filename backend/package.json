@@ -25,6 +25,7 @@
     "helmet": "^8.0.0",
     "http-errors": "~1.6.3",
     "ical": "^0.8.0",
+    "ical-generator": "^8.0.1",
     "ical.js": "^2.1.0",
     "jade": "^0.29.0",
     "jsonwebtoken": "^9.0.2",
