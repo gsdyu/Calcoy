@@ -64,6 +64,15 @@ class GeminiAgent {
       generationConfig: this.#config,
     });
     let message = result.response.text(); 
+    /** Miles part, need to comment out since wordCount here counts characters, not words
+     * also, the max tokens is not necessarily based of words.
+     * also, problem is not that the model will go above 100 tokens, but it will not finish a 
+     *   its sentence with 100 tokens
+    const wordCount = message.split('').length;
+    if (wordCount > 100) {
+      message = message.split('').slice(0,100).join('')+'...Sorry, I cannot provide a response that is beyond 100 words. Please try again.';
+    }
+     **/
     this.#history = [...this.#history, {role: "model", parts: [{text: message}]}];
     try {
       message=JSON.parse(message);
