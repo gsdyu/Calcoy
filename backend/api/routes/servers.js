@@ -1,10 +1,8 @@
 const express = require('express');
-const multer = require('multer');
-const path = require('path');
+ const path = require('path');
 const { Pool } = require('pg');
 const { authenticateToken } = require('../authMiddleware');
-const upload = multer({ dest: 'uploads/' });
-const { v4: uuidv4 } = require('uuid');
+ const { v4: uuidv4 } = require('uuid');
 module.exports = (app, pool) => {
   app.get('/api/user', authenticateToken, async (req, res) => {
     const userId = req.user.userId; // Retrieve userId directly from the token
@@ -57,7 +55,7 @@ module.exports = (app, pool) => {
       }
     });
  
-    app.post('/api/servers/join', authenticateToken, upload.none(), async (req, res) => {
+    app.post('/api/servers/join', authenticateToken,   async (req, res) => {
       const { inviteLink } = req.body;
       const userId = req.user.userId;
     
@@ -95,14 +93,13 @@ module.exports = (app, pool) => {
     });
     
 
-    app.post('/api/servers/create', authenticateToken, upload.single('icon'), async (req, res) => {
+    app.post('/api/servers/create', authenticateToken, async (req, res) => {
       const { serverName } = req.body;
       const userId = req.user.userId;
       const icon = req.file;
     
       try {
-        const iconPath = icon ? `/uploads/${icon.filename}` : null;
-        const inviteLink = uuidv4(); // Generate a unique invite link
+         const inviteLink = uuidv4(); // Generate a unique invite link
     
         const { rows } = await pool.query(
           `INSERT INTO servers (name, image_url, created_by, invite_link) VALUES ($1, $2, $3, $4) RETURNING *`,
