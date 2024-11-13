@@ -172,7 +172,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
 
 
 // Set up the Google OAuth strategies for login and calendar access
-module.exports = (pool, io) => {
+module.exports = (pool) => {
   // Google OAuth Strategy for login
   passport.use(new GoogleStrategy(
     {

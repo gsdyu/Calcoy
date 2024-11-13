@@ -107,7 +107,7 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`http://localhost:3000/calendar?token=${accessToken}`);
+    res.redirect(`http://localhost:3000/calendar`);
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');

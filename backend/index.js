@@ -29,7 +29,7 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool, io);
+require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
@@ -166,7 +166,7 @@ require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool, io); // Pass `io` to events for WebSocket broadcasting
 require('./routes/ai')(app, pool);
 
-app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool));
+app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool, io));
 
 app.get('/', async (req, res) => {
   res.send({ "status": "ready" });
@@ -184,4 +184,4 @@ io.on('connection', (socket) => {
 
 // Start the server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`\nServer running on port ${PORT}`));
+server.listen(PORT, () => console.log(`\nServer running on port ${PORT}`));
