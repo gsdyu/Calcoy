@@ -339,7 +339,7 @@ module.exports = (app, pool) => {
   });
 
   // Rename conversation
-  app.patch('/conversations/:conversationId', authenticateToken, async (req, res) => {
+  app.put('/conversations/:conversationId', authenticateToken, async (req, res) => {
     const { conversationId } = req.params;
     const { title } = req.body;
     const userId = req.user.userId;
