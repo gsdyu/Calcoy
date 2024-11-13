@@ -2,7 +2,7 @@
 import React from 'react';
 
 const Googleapi = () => {
-  // Redirect to initiate Google OAuth flow for Calendar access
+  // Redirect to initiate Google OAuth flow for Calendar access s
   const handleGoogleCalendarAuth = async () => {
     try {
       window.location.href = 'http://localhost:5000/auth/google/calendar';
