@@ -10,10 +10,10 @@ import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import WeeklyOverviewComponent from './WeeklyOverview';
 import MonthlyCalendarView from './MonthlyOverview';
 import YearlyOverviewComponent from './YearlyOverview';
-import { generateData, getWeekNumber } from './dateutils';
+import { transformTaskData, getWeekNumber } from './dateutils';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
-const TaskOverviewComponent = () => {
+const TaskOverviewComponent = ({ events }) => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({ week: 0, year: 0 });
@@ -22,16 +22,21 @@ const TaskOverviewComponent = () => {
   const [yearlyData, setYearlyData] = useState([]);
   const { darkMode } = useTheme(); 
 
+  const tasks = useMemo(() => {
+    return events?.filter(event => event.calendar === 'Task') || [];
+  }, [events]);
+
   useEffect(() => {
     const { week, year } = getWeekNumber(selectedDate);
     setCurrentWeek({ week, year });
   }, [selectedDate]);
 
   useEffect(() => {
-    setWeeklyData(generateData('week', selectedDate.getFullYear(), selectedDate.getMonth()));
-    setMonthlyData(generateData('month', selectedDate.getFullYear(), selectedDate.getMonth()));
-    setYearlyData(generateData('year', selectedDate.getFullYear(), selectedDate.getMonth()));
-  }, [selectedDate]);
+    // Transform data based on timeframe
+    setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
+    setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
+    setYearlyData(transformTaskData(tasks, 'year', selectedDate));
+  }, [tasks, selectedDate]);
 
   const data = useMemo(() => {
     switch (timeFrame) {
