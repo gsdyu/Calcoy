@@ -5,12 +5,6 @@ const { authenticateToken } = require('../authMiddleware');
 const multer = require('multer');
 
 // Ensure 'uploads' directory exists
-const uploadDir = path.join(__dirname, '..', 'uploads');
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-}
-
-// Configure multer for profile picture uploads
  
 
 module.exports = (app, pool) => {
