@@ -6,10 +6,10 @@ import { ChevronDown, ChevronUp, CheckCircle, XCircle, Clock } from 'lucide-reac
 
 const MAX_VISIBLE_TASKS = 3;
 
-const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
+const WeeklyOverviewComponent = ({ data, tasks, onUpdateData, darkMode }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
   const today = new Date();
-  
+
   const isCurrentWeek = () => {
     if (!data || data.length === 0) return false;
     
@@ -37,28 +37,57 @@ const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
     return weekdays[today.getDay()] === dayName;
   };
 
-  const onDragStart = (e, dayIndex, fromCategory, taskIndex) => {
-    e.dataTransfer.setData('text/plain', JSON.stringify({ dayIndex, fromCategory, taskIndex }));
+  // Helper function to find tasks for a specific day
+  const getTasksForDay = (dayData, category) => {
+    return tasks.filter(task => {
+      const taskDate = new Date(task.start_time);
+      const dayDate = new Date(dayData.date);
+      return (
+        taskDate.getDate() === dayDate.getDate() &&
+        taskDate.getMonth() === dayDate.getMonth() &&
+        taskDate.getFullYear() === dayDate.getFullYear() &&
+        ((category === 'completed' && task.completed) ||
+         (category === 'missed' && !task.completed && taskDate < today) ||
+         (category === 'upcoming' && !task.completed && taskDate >= today))
+      );
+    });
+  };
+
+  const onDragStart = (e, dayIndex, fromCategory, task) => {
+    e.dataTransfer.setData('text/plain', JSON.stringify({ 
+      dayIndex, 
+      fromCategory, 
+      taskId: task.id 
+    }));
   };
 
   const onDragOver = (e) => {
     e.preventDefault();
   };
 
-  const onDrop = (e, toDayIndex, toCategory) => {
+  const onDrop = async (e, toDayIndex, toCategory) => {
     e.preventDefault();
-    const { dayIndex: fromDayIndex, fromCategory, taskIndex } = JSON.parse(e.dataTransfer.getData('text/plain'));
+    const { dayIndex: fromDayIndex, fromCategory, taskId } = JSON.parse(e.dataTransfer.getData('text/plain'));
     
     if (fromDayIndex === toDayIndex && fromCategory !== toCategory) {
+      const task = tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      // Create new data with updated counts
       const newData = [...data];
       newData[toDayIndex] = {
         ...newData[toDayIndex],
         [fromCategory]: newData[toDayIndex][fromCategory] - 1,
         [toCategory]: newData[toDayIndex][toCategory] + 1
       };
-      onUpdateData(newData);
+
+      // Call onUpdateData with both the new counts and the task to update
+      await onUpdateData(newData, task, {
+        completed: toCategory === 'completed',
+        status: toCategory  
+      });
     }
-  };
+};
 
   const toggleCategory = (dayIndex, category) => {
     setExpandedCategories(prev => ({
@@ -105,7 +134,8 @@ const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
 
   const renderTaskList = (dayData, dayIndex, category) => {
     const isExpanded = expandedCategories[`${dayIndex}-${category}`];
-    const tasksToShow = isExpanded ? dayData[category] : Math.min(dayData[category], MAX_VISIBLE_TASKS);
+    const dayTasks = getTasksForDay(dayData, category);
+    const tasksToShow = isExpanded ? dayTasks.length : Math.min(dayTasks.length, MAX_VISIBLE_TASKS);
     const IconComponent = category === 'completed' ? CheckCircle : category === 'missed' ? XCircle : Clock;
     const styles = getCategoryStyles(category);
 
@@ -116,26 +146,26 @@ const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
       >
         <div className="flex items-center justify-between mb-3">
           <h5 className={`font-medium text-sm ${styles.text}`}>
-            {category.charAt(0).toUpperCase() + category.slice(1)} ({dayData[category]})
+            {category.charAt(0).toUpperCase() + category.slice(1)} ({dayTasks.length})
           </h5>
           <div className={`p-1.5 rounded-full ${styles.iconBg}`}>
             <IconComponent className={styles.icon} size={14} />
           </div>
         </div>
         <div className="space-y-2">
-          {[...Array(tasksToShow)].map((_, taskIndex) => (
+          {dayTasks.slice(0, tasksToShow).map((task) => (
             <div
-              key={taskIndex}
+              key={task.id}
               draggable
-              onDragStart={(e) => onDragStart(e, dayIndex, category, taskIndex)}
+              onDragStart={(e) => onDragStart(e, dayIndex, category, task)}
               className={`p-3 rounded-2xl text-sm ${styles.taskBg} ${styles.hoverBg}
                 cursor-move transition-colors duration-200 ${styles.text}`}
             >
-              Task {taskIndex + 1}
+              {task.title}
             </div>
           ))}
         </div>
-        {dayData[category] > MAX_VISIBLE_TASKS && (
+        {dayTasks.length > MAX_VISIBLE_TASKS && (
           <button 
             onClick={() => toggleCategory(dayIndex, category)}
             className={`mt-3 text-xs font-medium flex items-center justify-center w-full 
@@ -144,7 +174,7 @@ const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
             {isExpanded ? (
               <>Show Less <ChevronUp size={14} className="ml-1" /></>
             ) : (
-              <>Show More ({dayData[category] - MAX_VISIBLE_TASKS}) <ChevronDown size={14} className="ml-1" /></>
+              <>Show More ({dayTasks.length - MAX_VISIBLE_TASKS}) <ChevronDown size={14} className="ml-1" /></>
             )}
           </button>
         )}

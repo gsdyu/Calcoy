@@ -13,7 +13,7 @@ import YearlyOverviewComponent from './YearlyOverview';
 import { transformTaskData, getWeekNumber } from './dateutils';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
-const TaskOverviewComponent = ({ events }) => {
+const TaskOverviewComponent = ({ events, onUpdateTask }) => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({ week: 0, year: 0 });
@@ -51,12 +51,55 @@ const TaskOverviewComponent = ({ events }) => {
     }
   }, [timeFrame, weeklyData, monthlyData, yearlyData]);
 
-  const handleWeeklyDataUpdate = (newData) => {
+  const handleWeeklyDataUpdate = async (newData, fromTask, updates) => {
+    // Optimistically update UI
     setWeeklyData(newData);
+    
+    // If we have task details, update the backend
+    if (fromTask && onUpdateTask) {
+      try {
+        const success = await onUpdateTask(fromTask.id, {
+          completed: updates.completed,
+          missed: updates.status === 'missed',
+          // Add any other status updates needed
+          status: updates.status
+        });
+        
+        if (!success) {
+          // Revert to original data if update failed
+          setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
+        }
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        // Revert to original data on error
+        setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
+      }
+    }
   };
 
-  const handleMonthlyDataUpdate = (newData) => {
+  const handleMonthlyDataUpdate = async (newData, fromTask, toCategory) => {
+    // Optimistically update UI
     setMonthlyData(newData);
+    
+    // If we have task details, update the backend
+    if (fromTask && onUpdateTask) {
+      try {
+        const success = await onUpdateTask(fromTask.id, {
+          completed: toCategory === 'completed',
+          missed: toCategory === 'missed',
+          category: toCategory
+        });
+        
+        if (!success) {
+          // Revert to original data if update failed
+          setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
+        }
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        // Revert to original data on error
+        setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
+      }
+    }
   };
 
   const handleYearlyDataUpdate = (newData) => {
@@ -177,9 +220,31 @@ const TaskOverviewComponent = ({ events }) => {
       <CardContent className="pt-6">
         <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-900/50' : 'bg-gray-50'} 
           border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} darkMode={darkMode} />}
-          {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} darkMode={darkMode} />}
-          {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} darkMode={darkMode} />}
+          {timeFrame === 'week' && (
+            <WeeklyOverviewComponent 
+              data={weeklyData} 
+              tasks={tasks}
+              onUpdateData={handleWeeklyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
+          {timeFrame === 'month' && (
+            <MonthlyCalendarView 
+              data={monthlyData} 
+              tasks={tasks}
+              year={selectedDate.getFullYear()} 
+              month={selectedDate.getMonth()} 
+              onUpdateData={handleMonthlyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
+          {timeFrame === 'year' && (
+            <YearlyOverviewComponent 
+              data={yearlyData} 
+              onUpdateData={handleYearlyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-4 mt-6">
