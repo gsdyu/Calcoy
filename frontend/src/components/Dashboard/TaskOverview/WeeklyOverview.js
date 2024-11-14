@@ -8,6 +8,34 @@ const MAX_VISIBLE_TASKS = 3;
 
 const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
   const [expandedCategories, setExpandedCategories] = useState({});
+  const today = new Date();
+  
+  const isCurrentWeek = () => {
+    if (!data || data.length === 0) return false;
+    
+    const currentDate = new Date();
+    const firstDayOfWeek = new Date(currentDate);
+    firstDayOfWeek.setDate(currentDate.getDate() - currentDate.getDay()); 
+    
+    const lastDayOfWeek = new Date(firstDayOfWeek);
+    lastDayOfWeek.setDate(firstDayOfWeek.getDate() + 6); 
+    
+    const dataWeek = data[0].weekNumber;
+    const dataYear = data[0].year;
+    
+    const currentWeek = {
+      week: Math.ceil((currentDate - new Date(currentDate.getFullYear(), 0, 1)) / (7 * 24 * 60 * 60 * 1000)),
+      year: currentDate.getFullYear()
+    };
+    
+    return currentWeek.week === dataWeek && currentWeek.year === dataYear;
+  };
+
+  const isToday = (dayName) => {
+    if (!isCurrentWeek()) return false;
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    return weekdays[today.getDay()] === dayName;
+  };
 
   const onDragStart = (e, dayIndex, fromCategory, taskIndex) => {
     e.dataTransfer.setData('text/plain', JSON.stringify({ dayIndex, fromCategory, taskIndex }));
@@ -147,11 +175,19 @@ const WeeklyOverviewComponent = ({ data, onUpdateData, darkMode }) => {
         {data.map((dayData, index) => (
           <Tooltip key={dayData.name}>
             <TooltipTrigger asChild>
-              <div className={`p-4 rounded-3xl transition-all duration-200 
+              <div className={`p-4 rounded-3xl transition-all duration-200 relative
                 ${darkMode ? 'bg-gray-900/90 hover:bg-gray-900' : 'bg-gray-50 hover:bg-gray-100'}
                 border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
+                ${isToday(dayData.name) ? `ring-2 ${darkMode ? 'ring-blue-500' : 'ring-blue-400'}` : ''}
                 cursor-pointer group`}
               >
+                {isToday(dayData.name) && (
+                  <div className={`absolute -top-2 left-1/2 transform -translate-x-1/2 px-2 py-0.5 
+                    rounded-full text-xs font-medium
+                    ${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
+                    Today
+                  </div>
+                )}
                 <h3 className={`text-lg font-semibold ${darkMode ? 'text-gray-200' : 'text-gray-800'} mb-3`}>
                   {dayData.name}
                 </h3>
