@@ -15,6 +15,14 @@ const MonthlyCalendarView = ({ data, year, month, onUpdateData, darkMode }) => {
 
   const days = [...Array(firstDayOfMonth).fill(null), ...data];
 
+  const isToday = (day) => {
+    if (!day) return false;
+    const today = new Date();
+    return today.getDate() === day.day && 
+           today.getMonth() === month && 
+           today.getFullYear() === year;
+  };
+
   const onDragStart = (e, dayIndex, fromCategory, taskIndex) => {
     e.dataTransfer.setData('text/plain', JSON.stringify({ dayIndex, fromCategory, taskIndex }));
   };
@@ -166,11 +174,19 @@ const MonthlyCalendarView = ({ data, year, month, onUpdateData, darkMode }) => {
             <Tooltip key={index}>
               <TooltipTrigger asChild>
                 {day ? (
-                  <div className={`p-3 rounded-3xl transition-all duration-200 h-28
+                  <div className={`p-3 rounded-3xl transition-all duration-200 h-28 relative
                     ${darkMode ? 'bg-gray-900/90 hover:bg-gray-900' : 'bg-gray-50 hover:bg-gray-100'}
                     border ${darkMode ? 'border-gray-700' : 'border-gray-200'}
+                    ${isToday(day) ? `ring-2 ${darkMode ? 'ring-blue-500' : 'ring-blue-400'}` : ''}
                     cursor-pointer group`}
                   >
+                    {isToday(day) && (
+                      <div className={`absolute -top-2 left-1/2 transform -translate-x-1/2 px-2 py-0.5 
+                        rounded-full text-xs font-medium
+                        ${darkMode ? 'bg-blue-500 text-white' : 'bg-blue-400 text-white'}`}>
+                        Today
+                      </div>
+                    )}
                     <h3 className={`text-xs font-medium ${darkMode ? 'text-gray-200' : 'text-gray-800'} mb-2`}>
                       {day.day}
                     </h3>
