@@ -105,6 +105,21 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+ 
+  app.get('/api/users/search', async (req, res) => {
+    const { query } = req.query;
+    try {
+      const result = await pool.query(
+        `SELECT id, username FROM users WHERE username ILIKE $1 LIMIT 10`,
+        [`%${query}%`]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error searching users:', error);
+      res.status(500).json({ message: 'Failed to search users' });
+    }
+  });
+  
   // Route to update dark mode preference
   app.put('/profile/dark-mode', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
@@ -118,7 +133,78 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  app.post('/api/friend-request', authenticateToken, async (req, res) => {
+    const { receiverUsername } = req.body;
+    const senderId = req.user.userId;  
+  
+    try {
+      const receiver = await pool.query('SELECT id FROM users WHERE username = $1', [receiverUsername]);
+      if (receiver.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      const receiverId = receiver.rows[0].id;
+      await pool.query(
+        `INSERT INTO friend_requests (sender_id, receiver_id, status) VALUES ($1, $2, 'pending')`,
+        [senderId, receiverId]
+      );
+      res.json({ message: 'Friend request sent' });
+    } catch (error) {
+      console.error('Error sending friend request:', error);
+      res.status(500).json({ message: 'Failed to send friend request' });
+    }
+  });
+  app.get('/api/friend-income', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;  
+  
+    try {
+      const result = await pool.query(
+        `SELECT fr.id, u.username AS sender 
+         FROM friend_requests fr 
+         JOIN users u ON fr.sender_id = u.id 
+         WHERE fr.receiver_id = $1 AND fr.status = 'pending'`,
+        [userId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching friend requests:', error);
+      res.status(500).json({ message: 'Failed to fetch friend requests' });
+    }
+  });
+  
+  app.post('/api/friend-request/accept', authenticateToken, async (req, res) => {
+    const { requestId } = req.body;
+  
+    try {
+      await pool.query(
+        `UPDATE friend_requests SET status = 'accepted' WHERE id = $1`,
+        [requestId]
+      );
+      res.json({ message: 'Friend request accepted' });
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      res.status(500).json({ message: 'Failed to accept friend request' });
+    }
+  });
 
+  app.post('/api/friend-request/decline', authenticateToken, async (req, res) => {
+    const { requestId } = req.body;
+  
+    try {
+      await pool.query(
+        `UPDATE friend_requests SET status = 'declined' WHERE id = $1`,
+        [requestId]
+      );
+      res.json({ message: 'Friend request declined' });
+    } catch (error) {
+      console.error('Error declining friend request:', error);
+      res.status(500).json({ message: 'Failed to decline friend request' });
+    }
+  });
+  
+
+ 
+ 
   // Serve uploaded profile pictures statically
   app.use('/uploads', express.static('uploads'));
 };
