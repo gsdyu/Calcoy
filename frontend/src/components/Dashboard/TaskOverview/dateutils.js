@@ -45,6 +45,9 @@ const transformWeeklyTasks = (tasks, selectedDate) => {
   const startOfWeek = new Date(selectedDate);
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Start from Sunday
   
+  // Get week number for the selected date
+  const { week, year } = getWeekNumber(selectedDate);
+  
   return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day, index) => {
     const currentDate = new Date(startOfWeek);
     currentDate.setDate(currentDate.getDate() + index);
@@ -53,6 +56,9 @@ const transformWeeklyTasks = (tasks, selectedDate) => {
     
     return {
       name: day,
+      date: currentDate,
+      weekNumber: week,
+      year: year,
       completed,
       missed,
       upcoming
@@ -71,6 +77,7 @@ const transformMonthlyTasks = (tasks, selectedDate) => {
     
     return {
       day: i + 1,
+      date: currentDate,
       completed,
       missed,
       upcoming
@@ -119,4 +126,16 @@ export const getWeekNumber = (d) => {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   return { week: weekNo, year: d.getUTCFullYear() };
+};
+
+// Helper function to check if two dates are in the same week
+export const isSameWeek = (date1, date2) => {
+  const { week: week1, year: year1 } = getWeekNumber(date1);
+  const { week: week2, year: year2 } = getWeekNumber(date2);
+  return week1 === week2 && year1 === year2;
+};
+
+// Helper function to format date as YYYY-MM-DD
+export const formatDate = (date) => {
+  return date.toISOString().split('T')[0];
 };
