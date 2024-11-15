@@ -29,7 +29,16 @@ const FriendPage = ({ userId }) => {
     action: '', 
     isVisible: false 
   });
- 
+
+  const handleSearchBlur = () => {
+    if (!searchTerm) {
+      setShowFriendsList(false);
+    }
+  };
+  const handleSearchFocus = () => {
+    setShowFriendsList(true); 
+    setFilteredFriends(friends);  
+  };
   
   useEffect(() => {
     if (searchTerm) {
@@ -188,31 +197,18 @@ const FriendPage = ({ userId }) => {
     showNotification('Creating calendar server...');
   };
 
-  const onRemoveFriend = async (friendId) => {
+  const onRemoveFriend = (friendId) => {
     try {
       showNotification('Removing friend...');
-  
-      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
-        method: 'DELETE',
-        credentials: 'include', 
-      });
-  
-      if (response.ok) {
-        const friend = friends.find(f => f.id === friendId);
-        const updatedFriends = friends.filter(friend => friend.id !== friendId);
-        setFriends(updatedFriends);  
-        setFilteredFriends(updatedFriends);  
-        showNotification(`${friend.name} removed from friends`);
-      } else {
-        const data = await response.json();
-        showNotification(data.message || 'Failed to remove friend');
-      }
+      const friend = friends.find(f => f.id === friendId);
+      const updatedFriends = friends.filter(friend => friend.id !== friendId);
+      setFriends(updatedFriends);
+      showNotification(`${friend.name} removed from friends`);
     } catch (error) {
       console.error('Error removing friend:', error);
       showNotification('Failed to remove friend');
     }
   };
-  
 
   return (
     <div className="flex h-screen">
@@ -260,7 +256,8 @@ const FriendPage = ({ userId }) => {
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                 
+                      onFocus={handleSearchFocus}
+                      onBlur={handleSearchBlur}
                       className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
                         focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                     />
@@ -275,7 +272,26 @@ const FriendPage = ({ userId }) => {
                 </div>
               </div>
   
-           
+              {showFriendsList && (
+              <div className="space-y-4 mt-4">
+                {filteredFriends.length > 0 ? (
+                  filteredFriends.map(friend => (
+                    <div key={friend.id} className="p-4 rounded-2xl bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all duration-200">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
+                            {friend.name[0].toUpperCase()}
+                          </div>
+                          <span className="font-medium text-gray-200">{friend.name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-400">No friends found</div>
+                )}
+              </div>
+            )}
  
   
               {activeTab === 'inbox' ? (
