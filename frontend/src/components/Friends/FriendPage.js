@@ -23,7 +23,7 @@ const FriendPage = ({ userId }) => {
   const [showFriendsList, setShowFriendsList] = useState(false);
   const [filteredFriends, setFilteredFriends] = useState([]);
   const [acceptedFriends, setAcceptedFriends] = useState([]);
-
+   const [pendingRequests, setPendingRequests] = useState(0);
   const [notification, setNotification] = useState({ 
     message: '', 
     action: '', 
@@ -51,45 +51,57 @@ const FriendPage = ({ userId }) => {
       setFilteredFriends(friends);  
     }
   }, [searchTerm, friends, showFriendsList]);
+  
+  const fetchPendingRequests = () => {
+    fetch('http://localhost:5000/api/friend-income', {
+      method: 'GET',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Failed to fetch friend requests');
+        }
+        return response.json();
+      })
+      .then((data) => {
+        setInbox(data);
+        setPendingRequests(data.length); // Set the count of pending requests
+      })
+      .catch((error) => console.error('Error fetching friend requests:', error));
+  };
+
+  useEffect(() => {
+     fetchPendingRequests();
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'inbox') {
-      fetch('http://localhost:5000/api/friend-income', {
-        method: 'GET',
-        credentials: 'include',  
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      })
-        .then(response => {
-          if (!response.ok) {
-            throw new Error('Failed to fetch friend requests');
-          }
-          return response.json();
-        })
-        .then(data => setInbox(data))
-        .catch(error => console.error('Error fetching friend requests:', error));
+       fetchPendingRequests();
     }
   }, [activeTab]);
-  
+ 
   const handleBackToMainTab = () => {
     setActiveTab('friends');
   };
- 
 
   const handleAcceptRequest = async (requestId) => {
     try {
       const response = await fetch('http://localhost:5000/api/friend-request/accept', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',  
+        credentials: 'include',
         body: JSON.stringify({ requestId }),
       });
   
       if (response.ok) {
         showNotification('Friend request accepted');
-        setInbox(inbox.filter(request => request.id !== requestId));
-        
-        fetchFriendsList();  
+        setInbox((prevInbox) => {
+          const updatedInbox = prevInbox.filter(request => request.id !== requestId);
+          setPendingRequests(updatedInbox.length); // Update pendingRequests count
+          return updatedInbox;
+        });
+        fetchFriendsList();
       } else {
         const data = await response.json();
         showNotification(data.message || 'Failed to accept request');
@@ -121,19 +133,22 @@ const FriendPage = ({ userId }) => {
   }, []);
   
   
-
   const handleDeclineRequest = async (requestId) => {
     try {
       const response = await fetch('http://localhost:5000/api/friend-request/decline', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',  
+        credentials: 'include',
         body: JSON.stringify({ requestId }),
       });
   
       if (response.ok) {
-        setInbox(inbox.filter(request => request.id !== requestId));
         showNotification('Friend request declined');
+        setInbox((prevInbox) => {
+          const updatedInbox = prevInbox.filter(request => request.id !== requestId);
+          setPendingRequests(updatedInbox.length); // Update pendingRequests count
+          return updatedInbox;
+        });
       } else {
         const data = await response.json();
         showNotification(data.message || 'Failed to decline request');
@@ -259,7 +274,7 @@ const FriendPage = ({ userId }) => {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-2">
                   My Friends <Users className="w-6 h-6 text-purple-400" />
                 </h1>
-                <div className="flex gap-4">
+                <div className="relative flex gap-4">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
@@ -267,21 +282,26 @@ const FriendPage = ({ userId }) => {
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-              
                       className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
                         focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                     />
                   </div>
-                  <button 
-                    onClick={() => setActiveTab('inbox')} 
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors 
-                      ${activeTab === 'inbox' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'}`}
-                  >
-                    Inbox <Inbox className="w-5 h-5" />
-                  </button>
+                  <div className="relative flex items-center">
+                    <button
+                      onClick={() => setActiveTab('inbox')}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors 
+                        ${activeTab === 'inbox' ? 'bg-blue-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700'}`}
+                    >
+                      Inbox <Inbox className="w-5 h-5" />
+                    </button>
+                    {pendingRequests > 0 && (
+                      <span className="absolute top-0 right-0 bg-red-600 text-white text-xs font-bold rounded-full h-4 w-4 flex items-center justify-center">
+                        {pendingRequests}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-  
               {showFriendsList && (
               <div className="space-y-4 mt-4">
                 {filteredFriends.length > 0 ? (
