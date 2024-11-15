@@ -100,6 +100,12 @@ pool.query(`
     channel_expire TIMESTAMPTZ,
     PRIMARY KEY (user_id, watched_calendar_id)
   );
+  CREATE TABLE IF NOT EXISTS friend_requests (
+    id SERIAL PRIMARY KEY,
+    sender_id INT REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending'
+  );
 
 `).then(() => {
   console.log("Users and Servers table is ready");
