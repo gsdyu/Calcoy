@@ -65,7 +65,7 @@ module.exports = (app, pool, io) => {
 
     try {
       const userServers = await pool.query(
-        'SELECT server_id FROM user_servers WHERE user_id = $1',
+        'SELECT server_id FROM "userServers" WHERE user_id = $1',
         [userId]
       );
       const accessibleServerIds = userServers.rows.map(row => row.server_id);
