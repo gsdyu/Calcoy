@@ -197,19 +197,30 @@ const FriendPage = ({ userId }) => {
     showNotification('Creating calendar server...');
   };
 
-  const onRemoveFriend = (friendId) => {
+  const onRemoveFriend = async (friendId) => {
     try {
       showNotification('Removing friend...');
-      const friend = friends.find(f => f.id === friendId);
-      const updatedFriends = friends.filter(friend => friend.id !== friendId);
-      setFriends(updatedFriends);
-      showNotification(`${friend.name} removed from friends`);
+  
+      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+        method: 'DELETE',
+        credentials: 'include', 
+      });
+  
+      if (response.ok) {
+        const friend = friends.find(f => f.id === friendId);
+        const updatedFriends = friends.filter(friend => friend.id !== friendId);
+        setFriends(updatedFriends);  
+        setFilteredFriends(updatedFriends); 
+        showNotification(`${friend.name} removed from friends`);
+      } else {
+        const data = await response.json();
+        showNotification(data.message || 'Failed to remove friend');
+      }
     } catch (error) {
       console.error('Error removing friend:', error);
       showNotification('Failed to remove friend');
     }
   };
-
   return (
     <div className="flex h-screen">
       <Navbar
@@ -256,8 +267,7 @@ const FriendPage = ({ userId }) => {
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
-                      onFocus={handleSearchFocus}
-                      onBlur={handleSearchBlur}
+              
                       className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
                         focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                     />

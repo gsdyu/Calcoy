@@ -135,25 +135,41 @@ module.exports = (app, pool) => {
   });
   app.post('/api/friend-request', authenticateToken, async (req, res) => {
     const { receiverUsername } = req.body;
-    const senderId = req.user.userId;  
+    const senderId = req.user.userId; // Extract userId from the token
   
     try {
-      const receiver = await pool.query('SELECT id FROM users WHERE username = $1', [receiverUsername]);
-      if (receiver.rows.length === 0) {
+      // Check if the receiver exists
+      const receiverResult = await pool.query('SELECT id FROM users WHERE username = $1', [receiverUsername]);
+      if (receiverResult.rows.length === 0) {
         return res.status(404).json({ message: 'User not found' });
       }
+      const receiverId = receiverResult.rows[0].id;
   
-      const receiverId = receiver.rows[0].id;
+      // Check if a friend request already exists in either direction
+      const existingRequest = await pool.query(
+        `SELECT id FROM friend_requests 
+         WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1))
+           AND status IN ('pending', 'accepted')`,
+        [senderId, receiverId]
+      );
+  
+      if (existingRequest.rows.length > 0) {
+        return res.status(400).json({ message: 'Friend request already exists' });
+      }
+  
+      // Insert the new friend request if no existing request was found
       await pool.query(
         `INSERT INTO friend_requests (sender_id, receiver_id, status) VALUES ($1, $2, 'pending')`,
         [senderId, receiverId]
       );
+  
       res.json({ message: 'Friend request sent' });
     } catch (error) {
       console.error('Error sending friend request:', error);
       res.status(500).json({ message: 'Failed to send friend request' });
     }
   });
+  
   app.get('/api/friend-income', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
   
