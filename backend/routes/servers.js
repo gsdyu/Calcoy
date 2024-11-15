@@ -39,9 +39,9 @@ module.exports = (app, pool) => {
   
     try {
       const { rows } = await pool.query(
-       `SELECT users.username, users.email FROM user_servers 
-        INNER JOIN users ON user_servers.user_id = users.id
-        WHERE user_servers.server_id = $1`, [serverId]
+       `SELECT users.username, users.email FROM "userServers" 
+        INNER JOIN users ON "userServers".user_id = users.id
+        WHERE "userServers".server_id = $1`, [serverId]
       );
       if (rows.rowCount === 0) {
         return res.status(404).json({error: "Server not found or there are no users."});
@@ -62,7 +62,7 @@ module.exports = (app, pool) => {
     try {
       // Delete the association between the user and the server
       const result = await pool.query(
-        `DELETE FROM user_servers WHERE user_id = $1 AND server_id = $2 RETURNING *`,
+        `DELETE FROM "userServers" WHERE user_id = $1 AND server_id = $2 RETURNING *`,
         [userId, serverId]
       );
 
@@ -97,7 +97,7 @@ module.exports = (app, pool) => {
       const serverId = serverResult.rows[0].id;
   
       const userServerCheck = await pool.query(
-        'SELECT 1 FROM user_servers WHERE user_id = $1 AND server_id = $2',
+        'SELECT 1 FROM "userServers" WHERE user_id = $1 AND server_id = $2',
         [userId, serverId]
       );
   
@@ -105,7 +105,7 @@ module.exports = (app, pool) => {
         return res.status(200).json({ message: 'Already joined' });
       }
   
-      await pool.query('INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)', [userId, serverId]);
+      await pool.query('INSERT INTO "userServers" (user_id, server_id) VALUES ($1, $2)', [userId, serverId]);
   
       res.status(201).json({ message: 'Successfully joined the server', serverId });
     } catch (error) {
@@ -132,7 +132,7 @@ module.exports = (app, pool) => {
       const server = rows[0];
   
       await pool.query(
-        `INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)`,
+        `INSERT INTO "userServers" (user_id, server_id) VALUES ($1, $2)`,
         [userId, server.id]
       );
   
@@ -150,8 +150,8 @@ module.exports = (app, pool) => {
     try {
       const { rows } = await pool.query(
         `SELECT servers.* FROM servers
-         JOIN user_servers ON servers.id = user_servers.server_id
-         WHERE user_servers.user_id = $1`, 
+         JOIN "userServers" ON servers.id = "userServers".server_id
+         WHERE "userServers".user_id = $1`, 
         [userId]
       );
 
