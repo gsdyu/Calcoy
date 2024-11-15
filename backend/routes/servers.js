@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 const { authenticateToken } = require('../authMiddleware');
 const upload = multer({ dest: 'uploads/' });
 const { v4: uuidv4 } = require('uuid');
-module.exports = (app, pool) => {
+module.exports = (app, pool, io) => {
   app.get('/api/user', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
     if (userId) {
@@ -69,6 +69,7 @@ module.exports = (app, pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Server not found or user not a member' });
       }
+      io.emit('serverLeft', serverId)
 
       res.json({ message: 'Successfully left the server' });
     } catch (err) {

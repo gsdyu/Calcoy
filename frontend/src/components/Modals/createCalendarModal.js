@@ -12,13 +12,13 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
   const [inviteLink, setInviteLink] = useState('');
   const [showEventPopup, setShowEventPopup, handleInviteLinkChange] = useState(false);
   const [eventDisplayOption, setEventDisplayOption] = useState('dont_show');
-
   const [serverInfo, setServerInfo] = useState({
     serverName: '',
     description: '',
     icon: null,
     iconPreview: null 
   });
+
 
   const handleClickOutside = (e) => {
     if (e.target.classList.contains('modal-overlay')) {

@@ -54,17 +54,28 @@ import { useTheme } from '@/contexts/ThemeContext';
           prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
         );
       });
-      
-      socket.on('eventDeleted', ({ eventId }) => {
+
+      socket.on('eventDeleted', ( eventId ) => {
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
       });
-    }
+
+      socket.on('serverLeft', ( serverId ) => {
+        serverId = Number(serverId)
+        setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
+
+        if (activeCalendar === serverId) {
+          setActiveCalendar(null);
+        };
+      });
+    };
 
     return () => {
       if (socket) {
         socket.off('eventCreated');
         socket.off('eventUpdated');
         socket.off('eventDeleted');
+        socket.off('serverJoined');
+        socket.off('socketLeft');
       }
       setSocketConnect(false);
     };
