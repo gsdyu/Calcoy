@@ -25,9 +25,9 @@ require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
-  origin: [process.env.CLIENT_URL, "http://localhost:3000"],
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
+  origin: 'https://timewise-ashy.vercel.app', // Replace with your frontend URL
+  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+  credentials: true
 }));
 
 // Set up session management
