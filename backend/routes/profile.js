@@ -257,6 +257,40 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to remove friend' });
     }
   });
+  app.get('/api/friends/:friendId/events', authenticateToken, async (req, res) => {
+    const friendId = parseInt(req.params.friendId, 10);
+    const userId = req.user.userId;
+  
+    try {
+      // Check if the users are friends
+      const friendCheck = await pool.query(
+        `SELECT * FROM friend_requests 
+         WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)) 
+           AND status = 'accepted'`,
+        [userId, friendId]
+      );
+  
+      if (friendCheck.rows.length === 0) {
+        console.error('Access denied: Not friends');
+        return res.status(403).json({ message: 'Access denied: Not friends' });
+      }
+  
+       const events = await pool.query(
+        `SELECT * FROM events 
+         WHERE user_id = $1 AND server_id IS NULL
+         ORDER BY start_time`,
+        [friendId]
+      );
+  
+      res.json(events.rows);
+    } catch (error) {
+      console.error('Error fetching friend events:', error);
+      res.status(500).json({ message: 'Failed to fetch friend events' });
+    }
+  });
+
+  
+
   // Serve uploaded profile pictures statically
   app.use('/uploads', express.static('uploads'));
 };
