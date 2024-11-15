@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
+const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, setServerUsers }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -24,11 +24,9 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   const [popupVisible, setPopupVisible] = useState({});
   const [visibleItems, setVisibleItems] = useState({});
   const [showImportPopup, setShowImportPopup] = useState(false);
-  const [serverUsers, setServerUsers] = useState([]);
   const [showUsers, setShowUsers] = useState(true); // New state for Users dropdown
   const [servers, setServers] = useState([]);  
   const [showServers, setShowServers] = useState(true);  
-  const [serverColors, setServerColors] = useState({}); 
   
   // Fetch profile information
   useEffect(() => {
@@ -57,7 +55,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         setEmail(data.email);
         setUsername(data.username || 'My Calendar');
         setVisibleItems(data.preferences.visibility || {});
-        setServerColors(data.preferences.serverColors || {});  
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');

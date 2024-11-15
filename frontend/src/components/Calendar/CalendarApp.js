@@ -1,7 +1,7 @@
 'use client';
 import { io } from 'socket.io-client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 import CalendarHeader from '@/components/Calendar/CalendarHeader';
@@ -21,9 +21,9 @@ import { useTheme } from '@/contexts/ThemeContext';
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
-
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
+  const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState(null);
@@ -39,33 +39,46 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
   const [socketConnect, setSocketConnect] = useState(false);
+  const currentUser = useRef(null);
+
   useEffect(() => {
     let socket = null
     if (!socketConnect) { 
       socket = io('http://localhost:5000');
       socket.removeAllListeners();
       socket.on('eventCreated', (event) => {
+        if (event.userId != currentUser.current) return;
         const eventList = Array.isArray(event) ? event : [event]
         setEvents((prevEvents) => [...prevEvents, ...eventList]);
       });
       
       socket.on('eventUpdated', (updatedEvent) => {
+        if (event.userId != currentUser.current) return;
         setEvents((prevEvents) =>
           prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
         );
       });
 
       socket.on('eventDeleted', ( eventId ) => {
+        if (event.userId != currentUser.current) return;
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
       });
 
-      socket.on('serverLeft', ( serverId ) => {
-        serverId = Number(serverId)
+      socket.on('serverLeft', async ( server ) => {
+        //const currentUser = Number(localStorage.getItem('userId'))
+        if (!(server.userId === currentUser.current)) return;
+        const serverId = Number(server.serverId)
         setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
 
         if (activeCalendar === serverId) {
           setActiveCalendar(null);
         };
+
+        socket.on('userJoined', async (userInfo) => {
+          if (Number(userInfo[1].serverId) != activeCalendar) return;
+          console.log('is active', userInfo)
+          setServerUsers((prevUsers) => [...prevUsers, userInfo[0]])
+        })
       });
     };
 
@@ -94,6 +107,9 @@ import { useTheme } from '@/contexts/ThemeContext';
           setPreferencesLoading(false);
           return;
         }
+        const checkJson = await check.json();
+        //localStorage.setItem('userId', Number(checkJson.userId));
+        currentUser.current=checkJson.userId;
 
         const response = await fetch('http://localhost:5000/profile', {
           headers: {
@@ -604,8 +620,10 @@ import { useTheme } from '@/contexts/ThemeContext';
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
-              setServers={setServers}
               onColorChange={handleColorChange}
+              setServers={setServers}
+              serverUsers={serverUsers}
+              setServerUsers={setServerUsers}
             />
           )}
         </div>
