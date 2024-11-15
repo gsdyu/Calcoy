@@ -186,6 +186,7 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to accept friend request' });
     }
   });
+  
 
   app.post('/api/friend-request/decline', authenticateToken, async (req, res) => {
     const { requestId } = req.body;
@@ -200,11 +201,46 @@ module.exports = (app, pool) => {
       console.error('Error declining friend request:', error);
       res.status(500).json({ message: 'Failed to decline friend request' });
     }
-  });
+  });  
   
-
- 
- 
+  app.get('/api/friends', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+  
+    try {
+      const result = await pool.query(
+        `SELECT u.id, u.username AS name
+         FROM users u
+         JOIN friend_requests fr ON (fr.sender_id = u.id OR fr.receiver_id = u.id)
+         WHERE (fr.sender_id = $1 OR fr.receiver_id = $1) 
+           AND fr.status = 'accepted' 
+           AND u.id != $1`,
+        [userId]
+      );
+      res.json(result.rows);
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+      res.status(500).json({ message: 'Failed to fetch friends' });
+    }
+  });
+  app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;  
+    const friendId = parseInt(req.params.friendId, 10);  
+  
+    try {
+    
+      await pool.query(
+        `DELETE FROM friend_requests 
+         WHERE (sender_id = $1 AND receiver_id = $2) 
+            OR (sender_id = $2 AND receiver_id = $1)`,
+        [userId, friendId]
+      );
+      
+      res.json({ message: 'Friend removed successfully' });
+    } catch (error) {
+      console.error('Error removing friend:', error);
+      res.status(500).json({ message: 'Failed to remove friend' });
+    }
+  });
   // Serve uploaded profile pictures statically
   app.use('/uploads', express.static('uploads'));
 };

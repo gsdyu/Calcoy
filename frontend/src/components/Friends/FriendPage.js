@@ -20,16 +20,28 @@ const FriendPage = ({ userId }) => {
   const [activeItem, setActiveItem] = useState('Friends');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('friends');  
+  const [showFriendsList, setShowFriendsList] = useState(false);
+  const [filteredFriends, setFilteredFriends] = useState([]);
+  const [acceptedFriends, setAcceptedFriends] = useState([]);
 
   const [notification, setNotification] = useState({ 
     message: '', 
     action: '', 
     isVisible: false 
   });
-
  
- 
-
+  
+  useEffect(() => {
+    if (searchTerm) {
+      setFilteredFriends(
+        friends.filter(friend =>
+          friend.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      );
+    } else if (showFriendsList) {
+      setFilteredFriends(friends);  
+    }
+  }, [searchTerm, friends, showFriendsList]);
   useEffect(() => {
     if (activeTab === 'inbox') {
       fetch('http://localhost:5000/api/friend-income', {
@@ -55,23 +67,74 @@ const FriendPage = ({ userId }) => {
   };
  
 
-  const handleAcceptRequest = (requestId) => {
-    axios.post('/api/friend-request/accept', { requestId })
-      .then(() => {
-        setInbox(inbox.filter(request => request.id !== requestId));
+  const handleAcceptRequest = async (requestId) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/friend-request/accept', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  
+        body: JSON.stringify({ requestId }),
+      });
+  
+      if (response.ok) {
         showNotification('Friend request accepted');
-      })
-      .catch(() => showNotification('Failed to accept request'));
+        setInbox(inbox.filter(request => request.id !== requestId));
+        
+        fetchFriendsList();  
+      } else {
+        const data = await response.json();
+        showNotification(data.message || 'Failed to accept request');
+      }
+    } catch (error) {
+      console.error('Error accepting friend request:', error);
+      showNotification('Failed to accept request');
+    }
   };
+  
+ 
+  const fetchFriendsList = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/api/friends', {
+        method: 'GET',
+        credentials: 'include',
+      });
+      const data = await response.json();
+      setFriends(data); // Set all friends in state
+      setFilteredFriends(data); // Initially, set filtered friends to include all friends
+    } catch (error) {
+      console.error('Error fetching friends:', error);
+    }
+  };
+  
+  
+  useEffect(() => {
+    fetchFriendsList(); 
+  }, []);
+  
+  
 
-  const handleDeclineRequest = (requestId) => {
-    axios.post('/api/friend-request/decline', { requestId })
-      .then(() => {
+  const handleDeclineRequest = async (requestId) => {
+    try {
+      const response = await fetch('http://localhost:5000/api/friend-request/decline', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',  
+        body: JSON.stringify({ requestId }),
+      });
+  
+      if (response.ok) {
         setInbox(inbox.filter(request => request.id !== requestId));
         showNotification('Friend request declined');
-      })
-      .catch(() => showNotification('Failed to decline request'));
+      } else {
+        const data = await response.json();
+        showNotification(data.message || 'Failed to decline request');
+      }
+    } catch (error) {
+      console.error('Error declining friend request:', error);
+      showNotification('Failed to decline request');
+    }
   };
+  
   
   const showNotification = (message) => {
     setNotification({ message, isVisible: true });
@@ -125,22 +188,32 @@ const FriendPage = ({ userId }) => {
     showNotification('Creating calendar server...');
   };
 
-  const onRemoveFriend = (friendId) => {
+  const onRemoveFriend = async (friendId) => {
     try {
       showNotification('Removing friend...');
-      const friend = friends.find(f => f.id === friendId);
-      const updatedFriends = friends.filter(friend => friend.id !== friendId);
-      setFriends(updatedFriends);
-      showNotification(`${friend.name} removed from friends`);
+  
+      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+        method: 'DELETE',
+        credentials: 'include', 
+      });
+  
+      if (response.ok) {
+        const friend = friends.find(f => f.id === friendId);
+        const updatedFriends = friends.filter(friend => friend.id !== friendId);
+        setFriends(updatedFriends);  
+        setFilteredFriends(updatedFriends);  
+        showNotification(`${friend.name} removed from friends`);
+      } else {
+        const data = await response.json();
+        showNotification(data.message || 'Failed to remove friend');
+      }
     } catch (error) {
       console.error('Error removing friend:', error);
       showNotification('Failed to remove friend');
     }
   };
+  
 
-  const filteredFriends = friends.filter((friend) =>
-    friend.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
   return (
     <div className="flex h-screen">
       <Navbar
@@ -187,6 +260,7 @@ const FriendPage = ({ userId }) => {
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
+                 
                       className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
                         focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                     />
@@ -201,40 +275,43 @@ const FriendPage = ({ userId }) => {
                 </div>
               </div>
   
+           
+ 
+  
               {activeTab === 'inbox' ? (
-              <div className="space-y-4 mt-4">
-                <button
-                  onClick={handleBackToMainTab}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-gray-200"
-                >
-                  <ArrowLeft className="w-5 h-5" /> Back
-                </button>
-                {inbox.map((request) => (
-                  <div key={request.id} className="flex items-center justify-between p-4 bg-gray-800 border border-gray-700 rounded-2xl">
-                    <span className="font-medium text-gray-200">Request from {request.sender}</span>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleAcceptRequest(request.id)}
-                        className="px-4 py-2 rounded-full bg-green-500 text-white font-medium hover:bg-green-600 transition"
-                      >
-                        Accept
-                      </button>
-                      <button
-                        onClick={() => handleDeclineRequest(request.id)}
-                        className="px-4 py-2 rounded-full bg-red-500 text-white font-medium hover:bg-red-600 transition"
-                      >
-                        Decline
-                      </button>
+                <div className="space-y-4 mt-4">
+                  <button
+                    onClick={handleBackToMainTab}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-gray-200"
+                  >
+                    <ArrowLeft className="w-5 h-5" /> Back
+                  </button>
+                  {inbox.map((request) => (
+                    <div key={request.id} className="flex items-center justify-between p-4 bg-gray-800 border border-gray-700 rounded-2xl">
+                      <span className="font-medium text-gray-200">Request from {request.sender}</span>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={() => handleAcceptRequest(request.id)}
+                          className="px-4 py-2 rounded-full bg-green-500 text-white font-medium hover:bg-green-600 transition"
+                        >
+                          Accept
+                        </button>
+                        <button
+                          onClick={() => handleDeclineRequest(request.id)}
+                          className="px-4 py-2 rounded-full bg-red-500 text-white font-medium hover:bg-red-600 transition"
+                        >
+                          Decline
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {inbox.length === 0 && (
-                  <div className="text-center py-12 text-gray-400">
-                    No friend requests at the moment
-                  </div>
-                )}
-              </div>
-            ) : (
+                  ))}
+                  {inbox.length === 0 && (
+                    <div className="text-center py-12 text-gray-400">
+                      No friend requests at the moment
+                    </div>
+                  )}
+                </div>
+              ) : (
                 <>
                   <div className="relative p-6 rounded-2xl bg-gray-800 border border-gray-700">
                     <div className="relative">
@@ -261,7 +338,6 @@ const FriendPage = ({ userId }) => {
                       </div>
                     </div>
                   </div>
-              )
   
                   <div className="space-y-4">
                     {filteredFriends.map((friend) => (
@@ -316,6 +392,5 @@ const FriendPage = ({ userId }) => {
       </div>
     </div>
   );
-};
-  
+};  
 export default FriendPage;
