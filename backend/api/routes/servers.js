@@ -117,6 +117,7 @@ module.exports = (app, pool) => {
     const { serverName } = req.body;
     const userId = req.user.userId;
     console.log(req.body)
+    console.log(req)
     try {
       const inviteLink = uuidv4(); // Generate a unique invite link
     

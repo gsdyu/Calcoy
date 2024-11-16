@@ -74,6 +74,9 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
         body: formData,
       });
