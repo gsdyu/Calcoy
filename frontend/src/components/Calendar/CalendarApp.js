@@ -270,7 +270,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   
     try {
       const method = event.id ? 'PUT' : 'POST';
-      const url = event.id ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}` : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
+      const url = event.id ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}` : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
   
       const eventData = {
         ...event,
