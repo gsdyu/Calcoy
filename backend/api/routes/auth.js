@@ -72,7 +72,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       req.session.token = token;
       res.cookie('auth_token', token, {
         httpOnly: true,
-        sameSite: 'strict',
+        sameSite: 'lax',
         secure: process.env.node_env === 'production',
         path: '/',
       });
