@@ -12,13 +12,28 @@ const RecentCheckIns = ({ darkMode, events, onTaskComplete }) => {
     if (!events) return [];
 
     const now = new Date();
+    // Set today to beginning of day for date comparison
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    
     const twoHoursAgo = new Date(now.getTime() - (2 * 60 * 60 * 1000));
 
     return events
       .filter(event => {
         if (event.calendar !== 'Task') return false;
         const taskTime = new Date(event.start_time);
-        return taskTime > twoHoursAgo || !event.completed;
+        const taskDay = new Date(taskTime);
+        taskDay.setHours(0, 0, 0, 0);
+
+        // Only show tasks that are:
+        // 1. From today or future days
+        // 2. If from today, they should be either:
+        //    - Within the 2-hour buffer window
+        //    - Or upcoming
+        return taskDay >= today && (
+          taskDay > today || // Future days
+          taskTime > twoHoursAgo // Today's tasks within buffer or upcoming
+        );
       })
       .sort((a, b) => {
         const dateA = new Date(a.start_time);
