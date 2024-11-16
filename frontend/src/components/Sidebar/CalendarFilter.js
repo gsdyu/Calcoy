@@ -92,12 +92,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
 
         const data = await response.json();
         setServers(data.servers || []);
-        setServerColors(
-          data.servers.reduce((acc, server) => {
-            acc[server.id] = colorOptions[server.id % colorOptions.length];  
-            return acc;
-          }, {})
-        );
       } catch (error) {
         console.error('Error fetching servers:', error);
       }
@@ -212,12 +206,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
 
   const changeColor = (item, color) => {
      
-    setServerColors((prevColors) => ({
-      ...prevColors,
-      [item]: color,
-      
-    }));
-  
    
     if (onColorChange) {
       onColorChange(item, color);  
@@ -400,7 +388,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(user.email, user.username, itemColors?.email || 'bg-blue-500'))}
+            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || 'bg-blue-500'))}
           </div>
         )}
       </div>

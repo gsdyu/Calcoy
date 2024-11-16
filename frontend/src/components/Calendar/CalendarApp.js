@@ -578,6 +578,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              serverUsers={serverUsers}
             />
           )}
           {view === 'Week' && (

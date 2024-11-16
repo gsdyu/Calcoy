@@ -8,7 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, serverUsers }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
@@ -139,7 +139,18 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const calendarType = event.calendar || 'default';
   
     // Use optional chaining and provide fallback color
-    const eventColor = itemColors?.[calendarType] 
+    
+    //choosing eventColor will be based of users first (if there are). else (if no user, must be on default calendar) 
+    //decide base of the calendar type
+    const otherColor = [];
+    let eventColor; 
+    let tempColor;
+
+    if (!(serverUsers.length === 0)){
+      eventColor = itemColors?.[`user${event.user_id}`]
+    }
+
+    tempColor = itemColors?.[calendarType] 
     ? itemColors[calendarType]
     : (() => {
         switch (calendarType) {
@@ -155,7 +166,19 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
             return 'bg-gray-400'; 
         }
       })();
-    
+
+    otherColor.push(tempColor)
+
+
+    eventColor = otherColor.shift()
+   
+
+    const bgGradientOther = otherColor.length > 0
+      ? `bg-gradient-to-b from-${otherColor[0]}/25 ${otherColor.slice(1, otherColor.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColor[otherColor.length - 1]}/25`
+      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+    console.log(bgGradientOther,'dog')
+
+
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
@@ -203,8 +226,9 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           ${darkMode && !isAllDay ? `border-${eventColor.replace('bg-', '')}-400 text-${eventColor.replace('bg-', '')}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
           ${isTask && isCompleted ? 'line-through' : ''}
+          ${bgGradientOther}
         `}
-        onClick={(e) => {
+      onClick={(e) => {
           e.stopPropagation();
           onEventClick(event, e);
         }}

@@ -39,7 +39,7 @@ module.exports = (app, pool, io) => {
   
     try {
       const { rows } = await pool.query(
-       `SELECT users.username, users.email FROM "userServers" 
+       `SELECT users.username, users.email, users.id FROM "userServers" 
         INNER JOIN users ON "userServers".user_id = users.id
         WHERE "userServers".server_id = $1`, [serverId]
       );
