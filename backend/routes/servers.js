@@ -46,7 +46,7 @@ module.exports = (app, pool, io) => {
       if (rows.rowCount === 0) {
         return res.status(404).json({error: "Server not found or there are no users."});
       }
-      
+      rows.map(row => row.server_id=serverId)
       return(res.json(rows))
     } catch (error) {
       console.error('Error:', error)

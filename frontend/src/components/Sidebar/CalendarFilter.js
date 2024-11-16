@@ -99,17 +99,17 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     fetchServers();
   }, []);
  
-  const renderServerItem = (server, showEyeIcon = true,color) => (
+  const renderServerItem = (server, color , showEyeIcon = true) => (
     <div
-      key={server.id}
+      key={`server${server.id}`}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
-        visibleItems[server.id] ? '' : 'opacity-50'
+        visibleItems[`server${server.id}`] ? '' : 'opacity-50'
       }`}
       onClick={(e) => {
         e.preventDefault();
-        toggleVisibility(server.id, e);
+        toggleVisibility(`server${server.id}`, e);
       }}
-      onContextMenu={(e) => togglePopup(server.id, e)} // Open color picker on right-click
+      onContextMenu={(e) => togglePopup(`server${server.id}`, e)} // Open color picker on right-click
     >
       <div className="flex items-center">
         {/* Display server image or fallback initial */}
@@ -127,7 +127,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         )}
         {/* Color circle and server name */}
         <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[server.id] || 'bg-gray-400'}`}></div>
+          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[`server${server.id}`] || 'bg-gray-400'}`}></div>
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{server.name}</p>
         </div>
       </div>
@@ -138,20 +138,61 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
           className="p-2 hover:bg-gray-500/20 rounded"
           onClick={(e) => {
             e.stopPropagation();
-            toggleVisibility(server.id, e);
+            toggleVisibility(`server${server.id}`, e);
           }}
         >
-          {visibleItems[server.id] ? <FiEye /> : <FiEyeOff />}
+          {visibleItems[`server${server.id}`] ? <FiEye /> : <FiEyeOff />}
         </button>
       )}
   
       {/* Color picker popup */}
-      {popupVisible[server.id] && (
-        <ColorPicker 
-          item={server.id} 
-          colors={colorOptions} 
-          onSelectColor={changeColor} 
-        />
+      {popupVisible[`server${server.id}`] && (
+        <div 
+          className={`
+            absolute z-50 right-0 top-full mt-1 
+            ${darkMode ? 'bg-gray-900' : 'bg-white'} 
+            p-3 rounded-xl shadow-xl 
+            border ${darkMode ? 'border-gray-800/10' : 'border-gray-200'}
+            backdrop-blur-sm
+          `}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex flex-wrap gap-2 min-w-[140px]">
+            {colorOptions.map(({ value, label }) => (
+              <button
+                key={value}
+                className={`
+                  group relative w-7 h-7 rounded-full ${value}
+                  transition-all duration-200
+                  hover:scale-110
+                  ${itemColors?.[`server${server.id}`] === value ? 
+                    'ring-2 ring-blue-400 ring-offset-2 ' + 
+                    (darkMode ? 'ring-offset-gray-900' : 'ring-offset-white')
+                    : ''
+                  }
+                  before:absolute before:inset-0 
+                  before:rounded-full before:transition-opacity
+                  before:duration-200 before:opacity-0
+                  hover:before:opacity-100
+                  before:bg-gradient-to-br before:from-white/20 before:to-transparent
+                `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeColor(`server${server.id}`, value);
+                }}
+              >
+                <span className={`
+                  absolute -top-6 left-1/2 -translate-x-1/2 text-xs
+                  opacity-0 group-hover:opacity-100 whitespace-nowrap 
+                  ${darkMode ? 'text-gray-400' : 'text-gray-600'}
+                  transition-opacity duration-200 z-50
+                `}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -211,26 +252,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
   
     
     togglePopup(item);
-  };
-
-  const ColorPicker = ({ item, colors, onSelectColor }) => {
-    return (
-      <div 
-        className="absolute z-50 right-0 top-full mt-1 bg-gray-800/95 p-2 rounded shadow-lg flex space-x-2"
-        onClick={e => e.stopPropagation()}
-      >
-        {colors.map((color) => (
-          <button
-            key={color}
-            className={`w-6 h-6 rounded-full ${color} hover:ring-2 hover:ring-white transition-all duration-200`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectColor(item, color);
-            }}
-          />
-        ))}
-      </div>
-    );
   };
 
   const savePreferences = async (preferences) => {
@@ -369,7 +390,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             </div>
             {showServers && (
               <div className="space-y-1 pl-2">
-                {servers.map((server) => renderServerItem(server))}
+                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || 'bg-purple-500'))}
                 
               </div>
             )}
@@ -386,7 +407,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || 'bg-blue-500'))}
+            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || itemColors?.[`server${user.server_id}`]||'bg-blue-500'))}
           </div>
         )}
       </div>
