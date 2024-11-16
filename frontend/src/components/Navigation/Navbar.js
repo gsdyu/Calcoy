@@ -82,7 +82,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         {!isCollapsed && <span className="ml-2">Create</span>}
       </Button>
       <nav className="w-full px-1 flex-grow">
-        <MenuItems 
+        <MenuItem 
           icon={Home} 
           label="Dashboard" 
           isActive={activeItem === 'Dashboard'} 
@@ -90,7 +90,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItems 
+        <MenuItem 
           icon={Calendar} 
           label="Calendar" 
           isActive={activeItem === 'Calendar'} 
@@ -98,7 +98,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItems 
+        <MenuItem 
           icon={Brain} 
           label="AI" 
           isActive={activeItem === 'AI'} 
@@ -116,7 +116,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
         />
       </nav>
       <div className="mt-auto">
-        <MenuItems 
+        <MenuItem 
           icon={SettingsIcon} 
           label="Settings" 
           isActive={activeItem === 'Settings'} 
