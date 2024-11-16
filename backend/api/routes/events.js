@@ -1,7 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
 
-module.exports = (app, pool, io) => {
+module.exports = (app, pool) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
     const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
@@ -18,6 +18,7 @@ module.exports = (app, pool, io) => {
     }
 
     try {
+      /**
       let embed = '';
       try {
         embed = await createEmbeddings(JSON.stringify(req.body));
@@ -39,12 +40,7 @@ module.exports = (app, pool, io) => {
           WHERE id = $2
         `, [JSON.stringify(embed[0]), result.rows[0].id]);
       }
-
-      // Debug log before emitting event
-      console.log("Emitting 'eventCreated' WebSocket event for event ID:", result.rows[0].id);
-
-      // Emit WebSocket event only if event creation is successful
-      io.emit('eventCreated', result.rows[0]);
+       **/
 
       res.status(201).json({
         message: 'Event created successfully',
@@ -126,9 +122,6 @@ module.exports = (app, pool, io) => {
         return importedEvent.rows[0];
       }));
 
-      // Emit the imported events to WebSocket clients
-      io.emit('eventsImported', importedEvents);
-
       res.status(200).json({ message: 'Events imported successfully', importedCount: importedEvents.length });
     } catch (error) {
       console.error('Event import error:', error);
@@ -164,8 +157,6 @@ module.exports = (app, pool, io) => {
       );
       
       if (updateResult.rowCount > 0) {
-        // Emit the updated event to WebSocket clients
-        io.emit('eventUpdated', updateResult.rows[0]);
         
         res.json({ message: 'Event updated successfully', event: updateResult.rows[0] });
       } else {
@@ -192,8 +183,6 @@ module.exports = (app, pool, io) => {
       const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
       
       if (deleteResult.rowCount > 0) {
-        // Emit the deleted event ID to WebSocket clients
-        io.emit('eventDeleted', { eventId });
 
         res.json({ message: 'Event deleted successfully' });
       } else {

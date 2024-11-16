@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
+const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
   try {
     const events = calendarData.items.filter(event => {
       if (event.status === 'cancelled') return false;
@@ -54,7 +54,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
       // callback events will always be given even if our calendar already has it stored
       const rows = result.rows;
-      io.emit('eventCreated', rows)
+      //io.emit('eventCreated', rows)
         if (!rows[0]) {
           console.log('Import: Event already added')
           return};

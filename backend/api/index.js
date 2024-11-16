@@ -7,20 +7,17 @@ const expressSession = require('express-session');
 const pgSession = require('connect-pg-simple')(expressSession);
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
-const http = require('http');
-const { Server } = require('socket.io');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
 
 // Initialize express app
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST'],
-  },
-});
 
+app.use(express.json())
+app.use(cors({
+    origin: process.env.CLIENT_URL,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true
+}));
 app.use(cookieParser());
 
 // Initialize PostgreSQL connection pool
@@ -32,12 +29,6 @@ const pool = new Pool({
 // Load passport configuration after defining the pool
 require('./config/passport')(pool);
 
-app.use(express.json());
-app.use(cors({
-  origin: process.env.CLIENT_URL, 
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  credentials: true
-}));
 
 // Set up session management
   app.use(
@@ -55,13 +46,15 @@ app.use(cors({
 
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool, io); // Pass `io` to the routes for real-time events
+require('./routes/events')(app, pool); 
 require('./routes/profile')(app, pool);
-require('./routes/servers')(app, pool, io); // Pass `io` to the servers route
+require('./routes/servers')(app, pool); 
 
+/**
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
   .then(() => { console.log("Vector extension ready"); })
   .catch(err => { console.error('Error creating vector extension: ', err); });
+ **/
 
 // Create or alter users table to add 2FA columns
 pool.query(`
@@ -181,27 +174,15 @@ pool.query(`
     ).catch(err => console.error("Error creating sessions table:", err));
 
 // Additional routes
-require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool, io); // Pass `io` to events for WebSocket broadcasting
-require('./routes/ai')(app, pool);
 
-app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool, io));
+app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool));
 
 app.get('/', async (req, res) => {
   res.send({ "status": "ready" });
 });
 
-// WebSocket connection handling
-io.on('connection', (socket) => {
-  console.log('User connected to WebSocket');
-
-  // Handle disconnect
-  socket.on('disconnect', () => {
-    console.log('User disconnected from WebSocket');
-  });
-});
 
 // Start the server
 console.log("Server is running")
 
-module.exports = server;
+module.exports = app;
