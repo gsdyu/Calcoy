@@ -160,10 +160,10 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
                 rounded-xl transition-colors duration-200`}>
                 <SelectValue placeholder="Time Frame" />
               </SelectTrigger>
-              <SelectContent className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} rounded-xl`}>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-                <SelectItem value="year">Yearly</SelectItem>
+              <SelectContent className={`${darkMode ? 'bg-gray-900 border-gray-700 text-gray-200' : 'bg-white border-gray-200'} rounded-xl`}>
+                <SelectItem value="week" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Weekly</SelectItem>
+                <SelectItem value="month" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Monthly</SelectItem>
+                <SelectItem value="year" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Yearly</SelectItem>
               </SelectContent>
             </Select>
             
@@ -203,7 +203,9 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
                   <Calendar className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent 
+                className={`w-auto p-0 ${darkMode ? 'bg-gray-900 border-gray-700 text-gray-200' : 'bg-white border-gray-200 text-gray-800'}`}
+              >
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
@@ -211,6 +213,13 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
                   initialFocus
                   className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} 
                     rounded-xl shadow-lg p-3`}
+                  classNames={{
+                    day_selected: "bg-blue-500 text-white hover:bg-blue-500",
+                    day: darkMode ? "text-gray-200 hover:bg-gray-800" : "text-gray-800 hover:bg-gray-100",
+                    day_today: "bg-blue-500/20 text-blue-500",
+                    day_outside: darkMode ? "text-gray-500" : "text-gray-400",
+                    head_cell: darkMode ? "text-gray-400" : "text-gray-500",
+                  }}
                 />
               </PopoverContent>
             </Popover>
