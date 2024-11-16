@@ -29,7 +29,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
   useEffect(() => {
     const fetchUserId = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/user', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user`, {
           credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch user ID');
@@ -64,16 +64,19 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     const formData = new FormData();
     formData.append('serverName', serverInfo.serverName);
     formData.append('userId', userId);
-    if (serverInfo.icon) formData.append('icon', serverInfo.icon);
-  
+    
+   
     if (!userId) {
       console.error('User ID is missing');
       return;
     }
   
     try {
-      const response = await fetch('http://localhost:5000/api/servers/create', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         credentials: 'include',
         body: formData,
       });
@@ -101,7 +104,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
 
     if (option !== 'dont_show') {
       try {
-        const response = await fetch('http://localhost:5000/events/import', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/import`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -163,7 +166,7 @@ const handleJoinServer = async () => {
   formData.append('inviteLink', inviteLink);
 
   try {
-    const response = await fetch('http://localhost:5000/api/servers/join', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/join`, {
       method: 'POST',
       credentials: 'include',
       body: formData,
@@ -181,7 +184,7 @@ const handleJoinServer = async () => {
       }
 
       // Fetch the full server details using the server ID
-      const serverResponse = await fetch(`http://localhost:5000/api/servers/${serverId}`, {
+      const serverResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${serverId}`, {
         method: 'GET',
         credentials: 'include',
       });

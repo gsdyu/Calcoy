@@ -116,30 +116,29 @@ module.exports = (app, pool) => {
   app.post('/api/servers/create', authenticateToken, async (req, res) => {
     const { serverName } = req.body;
     const userId = req.user.userId;
-    const icon = req.file;
-  
+    console.log(req.body)
+    console.log(req)
     try {
-      const iconPath = icon ? `/uploads/${icon.filename}` : null;
       const inviteLink = uuidv4(); // Generate a unique invite link
-  
+    
       const { rows } = await pool.query(
         `INSERT INTO servers (name, created_by, invite_link) VALUES ($1, $2, $3) RETURNING *`,
         [serverName, userId, inviteLink]
       );
-  
+    
       const server = rows[0];
-  
+    
       await pool.query(
         `INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)`,
         [userId, server.id]
       );
-  
+    
       res.json({ server });
     } catch (err) {
       console.error('Error creating server:', err);
       res.status(500).json({ error: 'Error creating server' });
     }
-  });
+  });    
 
   // Route to get all servers for a user
   app.get('/api/servers', authenticateToken, async (req, res) => {
