@@ -25,7 +25,7 @@ require('./config/passport')(pool);
 
 app.use(express.json());
 app.use(cors({
-  origin: 'https://timewise-ashy.vercel.app', 
+  origin: process.env.CLIENT_URL, 
   methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
   credentials: true
 }));
