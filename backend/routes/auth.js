@@ -49,6 +49,7 @@ module.exports = (app, pool) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
+
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
  
@@ -533,6 +534,7 @@ app.post('/auth/set-username', async (req, res) => {
    });
   
   app.get('/auth/check', authenticateToken, (req, res) => {
-    return res.status(200).json({isLoggedIn: "True"});
+    
+    return res.status(200).json({isLoggedIn: "True", userId: req.user.userId});
   });
 };

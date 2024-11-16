@@ -5,7 +5,7 @@ const { Pool } = require('pg');
 const { authenticateToken } = require('../authMiddleware');
 const upload = multer({ dest: 'uploads/' });
 const { v4: uuidv4 } = require('uuid');
-module.exports = (app, pool) => {
+module.exports = (app, pool, io) => {
   app.get('/api/user', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
     if (userId) {
@@ -69,6 +69,7 @@ module.exports = (app, pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Server not found or user not a member' });
       }
+      io.emit('serverLeft', {serverId:serverId, userId:userId})
 
       res.json({ message: 'Successfully left the server' });
     } catch (err) {
@@ -106,7 +107,9 @@ module.exports = (app, pool) => {
       }
   
       await pool.query('INSERT INTO "userServers" (user_id, server_id) VALUES ($1, $2)', [userId, serverId]);
-  
+      let { rows } = await pool.query(`SELECT username, email FROM users
+                                         WHERE users.id=$1`, [userId]);
+      rows.push({serverId: serverId})
       res.status(201).json({ message: 'Successfully joined the server', serverId });
     } catch (error) {
       console.error('Error joining server:', error);
