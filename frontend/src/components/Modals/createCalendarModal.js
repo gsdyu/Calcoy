@@ -261,6 +261,7 @@ const handleJoinServer = async () => {
               </button>
 
               <button
+
                 onClick={() => setCurrentTab('server')}
                 className="w-full p-4 rounded-2xl transition-all bg-gradient-to-r from-purple-400/10 to-pink-500/10 
                   hover:from-purple-400/20 hover:to-pink-500/20 border border-purple-500/20
@@ -272,6 +273,21 @@ const handleJoinServer = async () => {
                 <div className="text-left">
                   <div className="font-semibold text-lg text-purple-400 mb-1">Create a Server</div>
                   <p className="text-sm text-gray-400">Start a new calendar server for your team</p>
+                </div>
+              </button>
+
+              <button
+                onClick={() => setCurrentTab('export')}
+                className="w-full p-4 rounded-2xl transition-all bg-gradient-to-r from-red-400/10 to-red-500/10 
+                  hover:from-red-400/20 hover:to-red-500/20 border border-red-500/20
+                  group flex items-center gap-4"
+              >
+                <div className="p-3 rounded-full bg-red-500/10 group-hover:bg-red-500/20 transition-colors">
+                  <Users className="w-6 h-6 text-red-400" />
+                </div>
+                <div className="text-left">
+                  <div className="font-semibold text-lg text-red-400 mb-1">Export your Calendar</div>
+                  <p className="text-sm text-gray-400">Export your Calendar as an ICS file</p>
                 </div>
               </button>
             </div>
@@ -394,6 +410,59 @@ const handleJoinServer = async () => {
               </div>
             </form>
           )}
+          {currentTab === 'export' && (
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              handleJoinServer();
+            }}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Server Invite Link</label>
+                  <input
+                    type="text"
+                    name="inviteLink"
+                    placeholder="https://timewise.com/invite/es167y6o"
+                    value={inviteLink}
+                    onChange={(e) => setInviteLink(e.target.value)}
+                    className={`
+                      w-full p-3 rounded-full transition-all
+                      ${darkMode 
+                        ? 'bg-gray-800/50 focus:bg-gray-800/70 border-gray-700' 
+                        : 'bg-gray-100 border-gray-300'} 
+                      border focus:outline-none focus:ring-2 focus:ring-blue-500/50
+                    `}
+                    required
+                  />
+                </div>
+
+                <div className="bg-gray-800/30 rounded-2xl p-4">
+                  <div className="font-medium text-gray-400 mb-2">Example Invite Links:</div>
+                  <div className="space-y-1 text-sm text-gray-500">
+                    <div>https://timewise.com/invite/es589y9v</div>
+                    <div>https://timewise.com/invite/es323y6c</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-between mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setCurrentTab('main')}
+                  className="px-6 py-2 rounded-full border border-gray-700 hover:bg-gray-800/50 transition-colors"
+                >
+                  Back
+                </button>
+                <button 
+                  type="submit"
+                  className="px-8 py-2 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 
+                    hover:from-blue-600 hover:to-blue-700 text-white transition-colors"
+                >
+                  Join Server
+                </button>
+              </div>
+            </form>
+          )}
+
         </div>
       </div>
 

@@ -8,7 +8,6 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 import Image from 'next/image';
 
-// Create empty transparent image once, at component level
 const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
@@ -170,6 +169,22 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       isTask,
       isCompleted,
       eventTime,
+      onDragStart: (e) => {
+        // Create a custom drag image
+        const dragElement = e.target.cloneNode(true);
+        dragElement.style.position = 'absolute';
+        dragElement.style.top = '-1000px';
+        dragElement.style.opacity = '0';
+        document.body.appendChild(dragElement);
+        
+        e.dataTransfer.setDragImage(dragElement, 0, 0);
+        e.currentTarget.style.opacity = '0.4';
+        
+        // Clean up the temporary element
+        requestAnimationFrame(() => {
+          document.body.removeChild(dragElement);
+        });
+      }
     };
   
     return (

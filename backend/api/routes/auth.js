@@ -6,6 +6,7 @@ const expressSession = require('express-session');
 const pgSession = require('connect-pg-simple')(expressSession);
 const passport = require('passport');
 const ICAL = require('ical.js');
+const ICALgen = require('ical-generator').default
 
 const { authenticateToken } = require('../authMiddleware');
 
@@ -100,6 +101,8 @@ app.get('/auth/google/calendar', authenticateToken, passport.authenticate('googl
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
+  accessType: 'offline',
+  approvalPrompt: 'force',
 }),
 async (req, res) => {console.log("User authenticated:", req.user);}
 );
@@ -111,10 +114,46 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`${process.env.CLIENT_URL}?token=${accessToken}`);
+    res.redirect(`${process.env.CLIENT_URL}`);
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');
+  }
+});
+
+// Route to export calendar events as ICS - Miles
+app.get('/auth/calendar/export', authenticateToken, async (req, res) => {
+  const userId = req.user.userId; // Get userId from the token
+
+  try {
+    // Fetch events from the database for the authenticated user
+    const result = await pool.query('SELECT * FROM events WHERE user_id = $1', [userId]);
+    const events = result.rows;
+
+    // Create an ICS file ```javascript
+    const cal = ICALgen({ name: 'My Calendar' });
+
+    events.forEach(event => {
+      cal.createEvent({
+        start: event.start_time,
+        end: event.end_time,
+        summary: event.title,
+        description: event.description,
+        location: event.location,
+        uid: event.id.toString(), // Unique ID for the event
+      });
+    });
+
+    // Set the response type to application/ics
+
+    res.set('Content-Type', 'text/calendar');
+    res.set('Content-Disposition', `attachment; filename=calendar.ics`);
+
+    // Send the ICS file as a response
+    res.status(200).send(cal.toString())
+  } catch (error) {
+    console.error('Error exporting calendar:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User, Check, X, Loader2 } from 'lucide-react';
 
-const UsernamePage = () => {
+const Username = () => {
   const [username, setUsername] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -99,4 +99,4 @@ const UsernamePage = () => {
     );
 };
 
-export default UsernamePage;
+export default Username;

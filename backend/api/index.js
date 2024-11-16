@@ -7,12 +7,21 @@ const expressSession = require('express-session');
 const pgSession = require('connect-pg-simple')(expressSession);
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
+const http = require('http');
+const { Server } = require('socket.io');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
 
 // Initialize express app
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: {
+    origin: 'http://localhost:3000',
+    methods: ['GET', 'POST'],
+  },
+});
 
-app.use(cookieParser())
+app.use(cookieParser());
 
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
@@ -44,50 +53,64 @@ app.use(cors({
     })
   );
 
-
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool);
+require('./routes/events')(app, pool, io); // Pass `io` to the routes for real-time events
 require('./routes/profile')(app, pool);
-require('./routes/servers')(app, pool);
+require('./routes/servers')(app, pool, io); // Pass `io` to the servers route
 
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
-	.then(() => {console.log("Vector extension ready")})
-	.catch(err => {console.error('Error creating vector extension: ', err)});
+  .then(() => { console.log("Vector extension ready"); })
+  .catch(err => { console.error('Error creating vector extension: ', err); });
 
 // Create or alter users table to add 2FA columns
-pool.query(`  
+pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE,
     email VARCHAR(255) UNIQUE NOT NULL,
-    password TEXT,  -- Set password to allow NULL for OAuth users
+    password TEXT,
     profile_image VARCHAR(255),
     access_token TEXT,
     sync_token VARCHAR(255),
     refresh_token TEXT,
-    dark_mode BOOLEAN DEFAULT false, -- dark mode preference
-    preferences JSONB DEFAULT '{}',  -- Store event preferences (visibility and colors)
+    dark_mode BOOLEAN DEFAULT false,
+    preferences JSONB DEFAULT '{}',
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
-  
+
   CREATE TABLE IF NOT EXISTS servers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     image_url VARCHAR(255),
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
-    invite_link VARCHAR(255) UNIQUE 
-
+    invite_link VARCHAR(255) UNIQUE
   );
 
-  CREATE TABLE IF NOT EXISTS user_servers (
-      user_id INT REFERENCES users(id) ON DELETE CASCADE,
-      server_id INT REFERENCES servers(id) ON DELETE CASCADE,
-      PRIMARY KEY (user_id, server_id)
+  CREATE TABLE IF NOT EXISTS "userServers" (
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+    PRIMARY KEY (user_id, server_id)
   );
+
+  CREATE TABLE IF NOT EXISTS "watchedCalendars" (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    source VARCHAR(100) NOT NULL,
+    CONSTRAINT unique_name_source UNIQUE (name, source)
+  );
+
+  CREATE TABLE IF NOT EXISTS "usersWatchedCalendars"(
+    user_id INT REFERENCES users(id) ON DELETE CASCADE,
+    watched_calendar_id INT REFERENCES "watchedCalendars"(id) ON DELETE CASCADE,
+    resource_id VARCHAR(50),
+    channel_expire TIMESTAMPTZ,
+    PRIMARY KEY (user_id, watched_calendar_id)
+  );
+
 `).then(() => {
-  console.log("Users table is ready");
+  console.log("Users and Servers table is ready");
   pool.query(`
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
@@ -106,13 +129,44 @@ pool.query(`
       include_in_personal BOOLEAN DEFAULT FALSE,
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
-      ALTER TABLE events ADD COLUMN IF NOT EXISTS server_id INT REFERENCES servers(id) ON DELETE CASCADE;
-      ALTER TABLE events DROP CONSTRAINT IF EXISTS unique_event_timeframe_per_day;
-      ALTER TABLE servers ADD COLUMN IF NOT EXISTS invite_link VARCHAR(255) UNIQUE;
-  `).then(() => console.log("Events table is ready"))
-    .catch(err => console.error('Error creating events table:', err));
-  }).catch(err => console.error('Error creating users table:', err));
-
+  `
+    );
+  })
+  .then(() => {
+    console.log('Events table is ready');
+    // Create conversations table
+    return pool.query(
+      `
+    CREATE TABLE IF NOT EXISTS conversations (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+      title VARCHAR(255),
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `
+    );
+  })
+  .then(() => {
+    console.log('Conversations table is ready');
+    // Create messages table
+    return pool.query(
+      `
+    CREATE TABLE IF NOT EXISTS messages (
+      id SERIAL PRIMARY KEY,
+      conversation_id INTEGER REFERENCES conversations(id) ON DELETE CASCADE,
+      sender VARCHAR(50) NOT NULL, -- 'user' or 'model'
+      content TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+  `
+    );
+  })
+  .then(() => {
+    console.log('Messages table is ready');
+  })
+  .catch((err) => {
+    console.error('Error creating tables: ', err);
+  });
   pool.query(`
     CREATE TABLE IF NOT EXISTS "userSessions" (
     sid VARCHAR NOT NULL COLLATE "default",
@@ -128,16 +182,26 @@ pool.query(`
 
 // Additional routes
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool);
+require('./routes/events')(app, pool, io); // Pass `io` to events for WebSocket broadcasting
 require('./routes/ai')(app, pool);
-app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool));
+
+app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool, io));
 
 app.get('/', async (req, res) => {
   res.send({ "status": "ready" });
 });
 
+// WebSocket connection handling
+io.on('connection', (socket) => {
+  console.log('User connected to WebSocket');
+
+  // Handle disconnect
+  socket.on('disconnect', () => {
+    console.log('User disconnected from WebSocket');
+  });
+});
+
 // Start the server
-const PORT = process.env.PORT || 5000;
 console.log("Server is running")
 
-module.exports = app;
+module.exports = server;

@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import { sendMessage } from '@/utils/api'; // Utility function for sending messages
 
 const MessageModal = ({ friend, onClose }) => {
   const [message, setMessage] = useState('');
@@ -7,7 +6,7 @@ const MessageModal = ({ friend, onClose }) => {
   const handleSend = async (e) => {
     e.preventDefault();
     try {
-      await sendMessage(friend.id, message);
+      //await sendMessage(friend.id, message);
       alert(`Message sent to ${friend.name}`);
       setMessage('');
       onClose();

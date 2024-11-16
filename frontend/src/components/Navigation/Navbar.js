@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Button } from "@/components/ui/button";
-import { Home, Calendar, Brain, Plus, ChevronRight, ChevronLeft, Settings as SettingsIcon, Users } from 'lucide-react';
-import MenuItems from './MenuItems';
+import { Button } from '@/components/ui/button';
+import { Home, Calendar, Brain, Plus, Menu, Settings as SettingsIcon, Users } from 'lucide-react';
+import MenuItem from './MenuItem';
 import Profile from './Profile';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -18,7 +18,9 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
   const iconColor = darkMode ? "text-white" : "text-gray-600";
 
   const handleNavigation = (route) => {
-    setActiveItem(route);
+    if (setActiveItem) {
+      setActiveItem(route);
+    }
     switch (route) {
       case 'Calendar':
         router.push('/calendar');
@@ -32,7 +34,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
       case 'AI':
         router.push('/ai');
         break;
-      case 'Friends': // Add routing for Friends
+      case 'Friends':
         router.push('/friends');
         break;
       default:
@@ -42,33 +44,33 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
 
   useEffect(() => {
     if (pathname.includes('/calendar')) {
-      setActiveItem('Calendar');
+      setActiveItem && setActiveItem('Calendar');
     } else if (pathname.includes('/dashboard')) {
-      setActiveItem('Dashboard');
+      setActiveItem && setActiveItem('Dashboard');
     } else if (pathname.includes('/settings')) {
-      setActiveItem('Settings');
+      setActiveItem && setActiveItem('Settings');
     } else if (pathname.includes('/ai')) {
-      setActiveItem('AI');
-    } else if (pathname.includes('/friends')) { // Track Friends page
-      setActiveItem('Friends');
+      setActiveItem && setActiveItem('AI');
+    } else if (pathname.includes('/friends')) {
+      setActiveItem && setActiveItem('Friends');
     } else {
-      setActiveItem('Dashboard');
+      setActiveItem && setActiveItem('Dashboard');
     }
   }, [pathname, setActiveItem]);
 
   return (
     <div className={`fixed top-0 left-0 h-screen shadow-lg transition-all duration-300 ease-in-out flex flex-col ${isCollapsed ? "w-14" : "w-60"} ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
-      <div className="flex items-center justify-between p-3">
+      <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} p-3`}>
         {!isCollapsed && (
           <h1 className="text-xl font-bold font-serif ml-2">TimeWise</h1>
         )}
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`rounded-full p-1 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+          className={`rounded-xl p-3 transition-colors duration-200 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
           onClick={toggleCollapse}
         >
-          {isCollapsed ? <ChevronRight className={`h-4 w-4 ${iconColor}`} /> : <ChevronLeft className={`h-4 w-4 ${iconColor}`} />}
+          <Menu size={24} className={iconColor} />
         </Button>
       </div>
       <Button
@@ -104,8 +106,8 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           collapsed={isCollapsed}
           darkMode={darkMode}
         />
-        <MenuItems 
-          icon={Users} // Use the Users icon for Friends
+        <MenuItem 
+          icon={Users}
           label="Friends"
           isActive={activeItem === 'Friends'} 
           onClick={() => handleNavigation('Friends')}

@@ -6,7 +6,6 @@ import TitleCalendar from '@/components/Sidebar/TitleCalendar';
 import CalendarFilter from '@/components/Sidebar/CalendarFilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
-import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 
 const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, setServers}) => {
   const { darkMode } = useTheme();
@@ -62,6 +61,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           handleChangeActiveCalendar={handleChangeActiveCalendar}
           onLeave={onLeave} // Pass onLeave to TitleCalendar
         />
+        
         <MiniCalendar 
           onDateSelect={handleMiniCalendarDateSelect} 
           currentView={currentView} 
@@ -74,6 +74,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           itemColors={itemColors}
           activeServer={activeCalendar}
         />
+        
         <Tasks 
           events={events}
           selectedDate={selectedDate || mainCalendarDate}
