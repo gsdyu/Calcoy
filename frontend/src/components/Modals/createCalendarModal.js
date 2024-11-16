@@ -67,7 +67,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     
    
     if (!userId) {
-      console.error('User ID is missing');
+      console.error('User ID is missing');//s
       return;
     }
   
