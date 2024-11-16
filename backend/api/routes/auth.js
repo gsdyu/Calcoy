@@ -247,7 +247,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           res.cookie('auth_token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
-            sameSite: 'Strict',
+            sameSite: 'lax',
             path: '/',
           });
 
