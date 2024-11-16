@@ -8,7 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, serverUsers }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeServers, serverUsers }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
@@ -142,43 +142,41 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     
     //choosing eventColor will be based of users first (if there are). else (if no user, must be on default calendar) 
     //decide base of the calendar type
-    const otherColor = [];
-    let eventColor; 
+    const otherColor = {};
     let tempColor;
 
     if (!(serverUsers.length === 0)){
-      eventColor = itemColors?.[`user${event.user_id}`]
+      tempColor = itemColors?.[`user${event.user_id}`]
+      otherColor.user=tempColor
+    } else {
+      tempColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Task':
+              return itemColors?.tasks || 'bg-red-500';  
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
+      otherColor.my=tempColor.replace('bg-','');
     }
 
-    tempColor = itemColors?.[calendarType] 
-    ? itemColors[calendarType]
-    : (() => {
-        switch (calendarType) {
-          case 'Task':
-            return itemColors?.tasks || 'bg-red-500';  
-          case 'Personal':
-            return itemColors?.email || 'bg-blue-500'; 
-          case 'Family':
-            return itemColors?.familyBirthday || 'bg-orange-500'; 
-          case 'Work':
-            return 'bg-purple-500'; 
-          default:
-            return 'bg-gray-400'; 
-        }
-      })();
 
-    otherColor.push(tempColor)
+    const otherList=Object.values(otherColor)
 
-
-    eventColor = otherColor.shift()
-   
-
-    const bgGradientOther = otherColor.length > 0
-      ? `bg-gradient-to-b from-${otherColor[0]}/25 ${otherColor.slice(1, otherColor.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColor[otherColor.length - 1]}/25`
+    const eventColor = otherList.shift()
+    const bgGradientOther = otherList.length > 0 
+      ? `bg-gradient-to-b from-${otherList[1]}/25 ${otherList.slice(1, otherList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherList[otherList.length - 1]}/25`
       : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
-    console.log(bgGradientOther,'dog')
 
-
+    console.log(bgGradientOther, 'dog')
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;

@@ -94,6 +94,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     };
   }, [socketConnect, setSocketConnect]);
   
+
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
     
@@ -578,6 +579,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeServers={servers}
               serverUsers={serverUsers}
             />
           )}
@@ -624,6 +626,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               onColorChange={handleColorChange}
               setServers={setServers}
               serverUsers={serverUsers}
+              servers={servers}
               setServerUsers={setServerUsers}
             />
           )}
