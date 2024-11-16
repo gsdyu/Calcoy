@@ -72,8 +72,8 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       req.session.token = token;
       res.cookie('auth_token', token, {
         httpOnly: true,
-        sameSite: 'lax',
-        secure: process.env.node_env === 'production',
+        sameSite: 'none',
+        secure: true, 
         path: '/',
       });
 
@@ -246,8 +246,8 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           // Store the token in the expressSession or cookies
           res.cookie('auth_token', token, {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'lax',
+            sameSite: 'none',
+            secure: true, 
             path: '/',
           });
 
@@ -338,8 +338,9 @@ app.post('/auth/set-username', async (req, res) => {
       // Send the response
       res.cookie('auth_token', token, {
         httpOnly: true,
-        sameSite: 'strict',
-        secure: process.env.node_env === 'production',
+        sameSite: 'none',
+        secure: true, 
+       
         path:'/',
       });
       res.status(201).json({ message: 'User created successfully', user: newUser.rows[0]});
@@ -483,8 +484,9 @@ app.post('/auth/set-username', async (req, res) => {
                 // Return the JWT token to the client
                 res.cookie('auth_token', token, {
                   httpOnly: true,
-                  sameSite: 'strict',
-                  secure: process.env.node_env === 'production',
+                  sameSite: 'none',
+                  secure: true, 
+                 
                   path:'/',
                 });
               return res.status(200).json({message: 'Success'});
