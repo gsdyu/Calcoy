@@ -579,7 +579,8 @@ import { useTheme } from '@/contexts/ThemeContext';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
-              activeServers={servers}
+              activeCalendar={activeCalendar}
+              servers={servers}
               serverUsers={serverUsers}
             />
           )}

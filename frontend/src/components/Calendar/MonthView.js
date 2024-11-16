@@ -8,7 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeServers, serverUsers }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeCalendar, servers, serverUsers }) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
@@ -138,14 +138,16 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
     const calendarType = event.calendar || 'default';
   
-    // Use optional chaining and provide fallback color
-    
-    //choosing eventColor will be based of users first (if there are). else (if no user, must be on default calendar) 
-    //decide base of the calendar type
+    //stores all the possible colors for an event first. 
+
+    //otherColor is a dictionary; any color here can be chosen as an eventColor by calling the key
+    //default eventColor: the first color added to otherColor
     const otherColor = {};
     let tempColor;
 
-    if (!(serverUsers.length === 0)){
+    //checks if user is on a server calendar, else is on main calendar 
+    //main calendar and server calendar have different event color default
+    if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
       tempColor = itemColors?.[`user${event.user_id}`]
       otherColor.user=tempColor
     } else {
@@ -165,18 +167,19 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
               return 'bg-gray-400'; 
           }
         })();
-      otherColor.my=tempColor.replace('bg-','');
+      otherColor.my=tempColor;
+
     }
 
+    const otherBGList=Object.values(otherColor)
+    const eventColor = otherBGList.shift()
+    const otherList=otherBGList.map(color => color.replace('bg-',''))
 
-    const otherList=Object.values(otherColor)
-
-    const eventColor = otherList.shift()
+    //temp solution to showing other color. shows other color through a gradient bg
     const bgGradientOther = otherList.length > 0 
-      ? `bg-gradient-to-b from-${otherList[1]}/25 ${otherList.slice(1, otherList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherList[otherList.length - 1]}/25`
+      ? `bg-gradient-to-b from-${otherList[0]}/25 ${otherList.slice(1, otherList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherList[otherList.length - 1]}/25`
       : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
 
-    console.log(bgGradientOther, 'dog')
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;

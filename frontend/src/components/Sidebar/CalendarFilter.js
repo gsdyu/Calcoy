@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, setServerUsers }) => {
+const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -25,7 +25,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
   const [visibleItems, setVisibleItems] = useState({});
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showUsers, setShowUsers] = useState(true); // New state for Users dropdown
-  const [servers, setServers] = useState([]);  
   const [showServers, setShowServers] = useState(true);  
   
   // Fetch profile information
@@ -82,6 +81,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
     scrollbar-color: #4A5568 #2D3748;
   }
 ` : '';
+
   useEffect(() => {
     const fetchServers = async () => {
       try {
@@ -99,8 +99,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
     fetchServers();
   }, []);
  
-  
-  
   const renderServerItem = (server, showEyeIcon = true,color) => (
     <div
       key={server.id}
