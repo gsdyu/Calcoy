@@ -116,7 +116,7 @@ module.exports = (app, pool) => {
   app.post('/api/servers/create', authenticateToken,   async (req, res) => {
     const { serverName } = req.body;
     const userId = req.user.userId;
-    
+    console.log(req.body)
     try {
       const inviteLink = uuidv4(); // Generate a unique invite link
     
