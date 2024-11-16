@@ -64,7 +64,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     const formData = new FormData();
     formData.append('serverName', serverInfo.serverName);
     formData.append('userId', userId);
-    console.log(serverInfo.serverName)
+    console.log( formData.get('serverName'),'dog')
     if (serverInfo.icon) formData.append('icon', serverInfo.icon);
   
     if (!userId) {
