@@ -21,7 +21,7 @@ const findOrCreateUser = async (email, pool) => {
   }
   return user;
 };
-const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
+const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
   try {
     const events = calendarData.items.filter(event => {
       if (event.status === 'cancelled') return false;
@@ -38,7 +38,8 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
           location: event.location || '',
           calendar: 'Personal',
           time_zone: event.start.timezone || 'UTC',
-          imported_from: "google"
+          imported_from: "google",
+          imported_username: email
         };
       } else if (!event.start.datetime && !event.end.datetime) {
         event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
@@ -51,15 +52,16 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
           location: event.location || '',
           calendar: 'Personal',
           time_zone: event.start.timezone || 'UTC',
-          imported_from: "google"
+          imported_from: "google",
+          imported_username: email
         }
       }
       return eventData;
     }); 
     const insertPromises = events.map(event =>
       pool.query(
-        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone, imported_from, imported_username)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
          ON CONFLICT DO NOTHING
          RETURNING *;`,
         [
@@ -71,6 +73,8 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
           event.location,
           event.calendar,
           event.time_zone,
+          event.imported_from,
+          event.imported_username
         ]
     ).then(async result => {
       // checks for embedding on all events. can convert to function
@@ -109,7 +113,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
 }
 // Helper function to fetch and save calendar events to PostgreSQL
 // Helper function to fetch and save Google Calendar events with incremental sync
-const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
+const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email) => {
   // Retrieve the last sync token for this user, if any
   const result = await pool.query('SELECT sync_token FROM users WHERE id = $1', [userId]);
   let syncToken = result.rows[0]?.sync_token;
@@ -133,13 +137,13 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
           // Token invalidated, trigger a full sync
           console.warn('Sync token expired, initiating a full sync.');
           await pool.query('UPDATE users SET sync_token = NULL WHERE id = $1', [userId]);
-          return await fetchAndSaveGoogleCalendarEvents(accessToken, userId, pool);
+          return await fetchAndSaveGoogleCalendarEvents(accessToken, userId, pool, email);
       }
       throw new Error('Failed to fetch calendar events');
   }
 
   let calendarData = await response.json();
-  addGoogleCalendarEvents(calendarData, userId, pool)
+  addGoogleCalendarEvents(calendarData, userId, pool, email)
   let newPageToken = calendarData.nextPageToken;
   let page = 0;
   let newEvents = calendarData.items.length;
@@ -156,7 +160,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
       headers: { Authorization: `Bearer ${accessToken}`}})
     calendarData = await response.json()
     // Save events to the database
-    addGoogleCalendarEvents(calendarData, userId, pool);
+    addGoogleCalendarEvents(calendarData, userId, pool, email);
 
     newPageToken = calendarData.nextPageToken;
     page+=1
@@ -227,13 +231,13 @@ module.exports = (pool) => {
       );
     }
     // Save calendar events to the database
-    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool);
+    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
 
     // Webhook URL for Google Calendar notifications
     const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
      
     // Set up Google Calendar notification only once
-    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool);
+    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool, email);
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
@@ -258,13 +262,13 @@ module.exports = (pool) => {
   });
 // Helper function to subscribe to Google Calendar updates
 // For Primary calendars only
-const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId, pool) => {
+const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId, pool, email) => {
   try {
     const userName = await pool.query(`SELECT username FROM users WHERE id=$1`, [userId]).then(results => results?.rows[0]?.username)
     const result = await pool.query(`SELECT "usersWatchedCalendars".channel_expire FROM "usersWatchedCalendars" 
       INNER JOIN "watchedCalendars" ON "usersWatchedCalendars".watched_calendar_id="watchedCalendars".id
-      WHERE "watchedCalendars".name='primary' AND "watchedCalendars".source='google' AND "usersWatchedCalendars".user_id=$1;
-    `, [userId]).then(results => results?.rows[0])
+      WHERE "watchedCalendars".name=$1 AND "watchedCalendars".source='google' AND "usersWatchedCalendars".user_id=$2;
+    `, [email, userId]).then(results => results?.rows[0])
     const currentChannel = result?.channel_expire
     if (Date.now() < new Date(currentChannel).getTime()){
       console.log(`\nChannel for google primary already set up for user ${userName}`)
@@ -293,9 +297,9 @@ const subscribeToGoogleCalendarUpdates = async (accessToken, webhookUrl, userId,
 
     const responseJson = await response.json()
     let resourceId = responseJson.resourceId
-    await pool.query(`INSERT INTO "watchedCalendars" (name, source) VALUES ('primary', 'google') 
-      ON CONFLICT ON CONSTRAINT unique_name_source DO NOTHING`)
-    const watchedCalendarId = await pool.query(`SELECT id FROM "watchedCalendars" WHERE name = 'primary' AND source = 'google';`).then(async result => {return result.rows[0]?.id}) 
+    await pool.query(`INSERT INTO "watchedCalendars" (name, source) VALUES ($1, 'google') 
+      ON CONFLICT ON CONSTRAINT unique_name_source DO NOTHING`, [email])
+    const watchedCalendarId = await pool.query(`SELECT id FROM "watchedCalendars" WHERE name = $1 AND source = 'google';`,[email]).then(async result => {return result.rows[0]?.id}) 
     await pool.query(`INSERT INTO "usersWatchedCalendars" (user_id, watched_calendar_id, resource_id, channel_expire) VALUES ($1, $2, $3, CURRENT_TIMESTAMP + INTERVAL '1 day')
       ON CONFLICT ON CONSTRAINT "usersWatchedCalendars_pkey" DO UPDATE SET resource_id=EXCLUDED.resource_id, channel_expire=CURRENT_TIMESTAMP+INTERVAL '1 day'`, [userId, watchedCalendarId, resourceId])
 

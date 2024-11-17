@@ -33,9 +33,14 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
       credentials: 'include',
     });
     const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
     const link = document.getElementById('icsLink');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'timewise/calendar.ics';
+    link.href = blobUrl;
+    link.download = 'timewise_calendar';
+    link.textContent = blobUrl.replace('blob:','');
+    link.addEventListener('click', () => {
+      setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+    })
   };
 
   useEffect(() => {
@@ -255,14 +260,14 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
             </p>
             <div className="flex items-center space-x-3">
               <a 
-                href="#" 
+                href="123123" 
                 id="icsLink"
                 className={`w-full p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50
                   ${darkMode 
                     ? 'bg-gray-800/50 text-gray-200 border border-gray-700' 
                     : 'bg-gray-100 text-gray-900 border border-gray-200'}`}
               >
-                timewise/calendar.ics
+                {generateICS} 
               </a>
             </div>
           </div>

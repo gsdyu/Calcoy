@@ -1,6 +1,6 @@
 const fetch = require('node-fetch');
 
-const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
+const addGoogleCalendarEvents = async (calendarData, userId, pool, io, email) => {
   try {
     const events = calendarData.items.filter(event => {
       if (event.status === 'cancelled') return false;
@@ -15,7 +15,9 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
           start_time: new Date(event.start.dateTime),
           end_time: new Date(event.end.dateTime),
           location: event.location || '',
-          calendar: 'Google',
+          calendar: 'Personal',
+          imported_from: 'google',
+          imported_username: email,
           time_zone: event.start.timezone || 'UTC'
         };
       } else if (!event.start.datetime && !event.end.datetime) {
@@ -27,7 +29,9 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
           start_time: new Date(`${event.start.date}T00:00:00`),
           end_time: event_end_date,
           location: event.location || '',
-          calendar: 'Google',
+          calendar: 'Personal',
+          imported_from: 'google',
+          imported_username: email,
           time_zone: event.start.timezone || 'UTC'
         }
       }
@@ -86,7 +90,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, io) => {
   }
 }
 
-const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, userId, pool, io) => {
+const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, userId, pool, io, email) => {
   // Retrieve the last sync token for this user, if any
   const result = await pool.query('SELECT access_token, sync_token FROM users WHERE id = $1', [userId]);
   let syncToken = result.rows[0]?.sync_token;
@@ -124,13 +128,13 @@ const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, user
         // Token invalidated, trigger a full sync
           console.warn('Sync token expired, initiating a full sync.');
           await pool.query('UPDATE users SET sync_token = NULL WHERE id = $1', [userId]);
-          return await fetchAndSaveGoogleCalendarEvents(refreshToken, calendarName, userId, pool, io);
+          return await fetchAndSaveGoogleCalendarEvents(refreshToken, calendarName, userId, pool, io, email);
       }
       throw new Error('Failed to fetch calendar events');
   }
 
   let calendarData = await response.json();
-  addGoogleCalendarEvents(calendarData, userId, pool, io)
+  addGoogleCalendarEvents(calendarData, userId, pool, io, email)
   let newPageToken = calendarData.nextPageToken;
   let page = 0;
   let newEvents = calendarData.items.length;
@@ -147,7 +151,7 @@ const fetchAndSaveGoogleCalendarEvents = async (refreshToken, calendarName, user
       headers: { Authorization: `Bearer ${accessToken}`}})
     calendarData = await response.json()
     // Save events to the database
-    addGoogleCalendarEvents(calendarData, userId, pool, io);
+    addGoogleCalendarEvents(calendarData, userId, pool, io, email);
 
     newPageToken = calendarData.nextPageToken;
     page+=1
@@ -205,7 +209,7 @@ const handleGoogleCalendarWebhook = (pool, io) => async (req, res) => {
   }
   const now = Date.now();
 
-  const watchedCalendars = await pool.query(`SELECT "watchedCalendars".name, "watchedCalendars".source, users.access_token, users.id
+  const watchedCalendars = await pool.query(`SELECT "watchedCalendars".name, "watchedCalendars".source, users.access_token, users.id 
     FROM "watchedCalendars"
     INNER JOIN "usersWatchedCalendars" ON "watchedCalendars".id="usersWatchedCalendars".watched_calendar_id
     INNER JOIN users ON users.id="usersWatchedCalendars".user_id
@@ -217,7 +221,7 @@ const handleGoogleCalendarWebhook = (pool, io) => async (req, res) => {
     }
     const userTokens = await pool.query(`SELECT refresh_token FROM users WHERE id=$1`, [row.id]).then(results => results.rows[0]) 
     try {
-      const success = await fetchAndSaveGoogleCalendarEvents(userTokens.refresh_token, row.name, row.id, pool, io)
+      const success = await fetchAndSaveGoogleCalendarEvents(userTokens.refresh_token, row.name, row.id, pool, io, row.name)
 
       if (success) { 
         console.log("Event receieved and processed")

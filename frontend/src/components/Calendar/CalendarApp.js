@@ -23,6 +23,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [isSaving, setIsSaving] = useState(false);
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
+  const [otherCalendars, setOtherCalendars] = useState([])
   const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -65,7 +66,6 @@ import { useTheme } from '@/contexts/ThemeContext';
       });
 
       socket.on('serverLeft', async ( server ) => {
-        //const currentUser = Number(localStorage.getItem('userId'))
         if (!(server.userId === currentUser.current)) return;
         const serverId = Number(server.serverId)
         setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
@@ -268,9 +268,15 @@ import { useTheme } from '@/contexts/ThemeContext';
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isTask: event.calendar === 'Task',
             completed: event.completed || false,
-            server_id: event.server_id
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
           };
         });
+        console.log('gah', formattedEvents)
+
+        const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
+        if (tempOtherCalendars) setOtherCalendars(tempOtherCalendars)
   
         setEvents(formattedEvents);
       } else {
@@ -683,6 +689,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               serverUsers={serverUsers}
               servers={servers}
               setServerUsers={setServerUsers}
+              otherCalendars={otherCalendars}
             />
           )}
         </div>

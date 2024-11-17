@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers }) => {
+const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -394,7 +394,40 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
                 
               </div>
             )}
+            {/* Other Calendars Section */}
+          <div className="space-y-2">
+            <div
+              className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+              onClick={() => setShowOtherCalendars(!showOtherCalendars)}
+            >
+              <h3 className="font-medium">Other calendars</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowImportPopup(true);
+                  }}
+                  className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
+                    darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <FiPlus className="w-4 h-4" />
+                </button>
+                {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
+              </div>
+            </div>
+            
+            {showOtherCalendars && (
+              <div className="space-y-1 pl-2">
+                {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
+                {otherCalendars.map(otherCalendar => renderCalendarItem(`${otherCalendar.imported_from}:${otherCalendar.imported_username}`, 
+                  (otherCalendar.imported_from === otherCalendar.imported_username) ? otherCalendar.imported_from : `${otherCalendar.imported_from}: ${otherCalendar.imported_username}`, 
+                itemColors?.[`${otherCalendar.imported_from}:${otherCalendar.imported_username}`] || 'bg-green-500'))}
+              </div>
+            )}
           </div>
+          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
+        </div>
         </>
       ) : (
       <div className="space-y-2">
@@ -412,37 +445,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         )}
       </div>
       )}
-      {/* Other Calendars Section */}
-      <div className="space-y-2">
-        <div
-          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-          onClick={() => setShowOtherCalendars(!showOtherCalendars)}
-        >
-          <h3 className="font-medium">Other calendars</h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowImportPopup(true);
-              }}
-              className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
-                darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <FiPlus className="w-4 h-4" />
-            </button>
-            {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
-          </div>
-        </div>
-        
-        {showOtherCalendars && (
-          <div className="space-y-1 pl-2">
-            {renderCalendarItem('google', email, 'bg-blue-500')}
-            {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
-          </div>
-        )}
-      </div>
-      {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
     </div>
   );
 };
