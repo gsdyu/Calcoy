@@ -1,7 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './AiPage.module.css';
-
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   MessageSquare,
   SquarePen,
@@ -48,7 +53,7 @@ const ChatItem = ({
     setIsEditing(false);
   };
 
-  return (
+  const chatContent = (
     <div
       className={`
         relative group flex items-center gap-2 p-3 my-1 rounded-xl
@@ -179,6 +184,26 @@ const ChatItem = ({
         </div>
       )}
     </div>
+  );
+
+  return (
+    <TooltipProvider delayDuration={300}>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {chatContent}
+        </TooltipTrigger>
+        <TooltipContent 
+          side="left" 
+          className={`
+            ${darkMode ? 'bg-gray-300 text-gray-600' : 'bg-gray-100 text-gray-800'}
+            border ${darkMode ? 'border-gray-600' : 'border-gray-200'}
+            shadow-lg  rounded-xl max-w-52
+          `}
+        >
+          <p>{chat.title || 'New Chat'}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 };
 
