@@ -169,16 +169,23 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         })();
       otherColor.my=tempColor;
 
+      if (event.server_id && itemColors?.[`server${event.server_id}`]) {
+        otherColor.server=itemColors?.[`server${event.server_id}`]
+      }
+
+
     }
 
     const otherBGList=Object.values(otherColor)
     const eventColor = otherBGList.shift()
+    //let eventColor = otherColor.server ? otherColor.server : otherBGList.shift()
     const otherList=otherBGList.map(color => color.replace('bg-',''))
 
     //temp solution to showing other color. shows other color through a gradient bg
     const bgGradientOther = otherList.length > 0 
       ? `bg-gradient-to-b from-${otherList[0]}/25 ${otherList.slice(1, otherList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherList[otherList.length - 1]}/25`
       : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+
 
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';

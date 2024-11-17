@@ -390,7 +390,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             </div>
             {showServers && (
               <div className="space-y-1 pl-2">
-                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || 'bg-purple-500'))}
+                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || 'bg-blue-500'))}
                 
               </div>
             )}
