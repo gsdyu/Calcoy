@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
@@ -136,14 +136,14 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (hours + minutes / 60) * 60;
   };
 
-  const filteredEvents = [...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate));
-  const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
-  const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
+  const filteredEvents= useRef([...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate)));
+  const allDayEvents= useRef(filteredEvents.current.filter(event => isAllDayEvent(event)));
+  const timedEvents = useRef(filteredEvents.current.filter(event => !isAllDayEvent(event)));
 
   useEffect(() => {
-    const positions = calculateEventColumns(timedEvents);
+    const positions = calculateEventColumns(timedEvents.current);
     setEventPositions(positions);
-  }, [timedEvents]);
+  }, [timedEvents.current]);
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
@@ -270,7 +270,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       : (allDayEvents.length <= maxVisibleEvents ? allDayEvents.length : 2);
     const hiddenCount = allDayEvents.length - visibleCount;
   
-    const sortedEvents = [...allDayEvents].sort((a, b) => {
+    const sortedEvents = [...allDayEvents.current].sort((a, b) => {
       if (a.isHoliday && !b.isHoliday) return -1;
       if (!a.isHoliday && b.isHoliday) return 1;
       if (a.calendar === 'Task' && b.calendar === 'Task') {
@@ -377,7 +377,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 onDoubleClick={(e) => handleTimeSlotDoubleClick(e, currentDate, hour, onDateDoubleClick)}
               ></div>
             ))}
-            {timedEvents.map(event => {
+            {timedEvents.current.map(event => {
               if (event.calendar === 'Task') {
                 let {eventColor} = getEventColor(event)
                 eventColor = eventColor.replace('bg-', '');
