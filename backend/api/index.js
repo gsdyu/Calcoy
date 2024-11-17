@@ -161,7 +161,7 @@ pool.query(`
     console.error('Error creating tables: ', err);
   });
   pool.query(`
-CREATE TABLE IF NOT EXISTS user_sessions (
+CREATE TABLE IF NOT EXISTS "userSessions" (
   sid VARCHAR NOT NULL COLLATE "default",
   sess json NOT NULL,
   expire timestamp(6) NOT NULL,
@@ -169,7 +169,7 @@ CREATE TABLE IF NOT EXISTS user_sessions (
   CONSTRAINT session_pkey PRIMARY KEY (sid) NOT DEFERRABLE INITIALLY IMMEDIATE
 );
 
-CREATE INDEX IF NOT EXISTS IDX_session_expire ON user_sessions (expire);`).then(() => console.log("Sessions table is ready")
+CREATE INDEX IF NOT EXISTS IDX_session_expire ON "userSessions" (expire);`).then(() => console.log("Sessions table is ready")
     ).catch(err => console.error("Error creating sessions table:", err));
 
 // Additional routes

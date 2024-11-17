@@ -16,7 +16,7 @@ module.exports = (app, pool) => {
     expressSession({
       store: new pgSession({
         pool: pool,
-        tableName: 'user_sessions',
+        tableName: "userSessions",
       }),
       secret: process.env.COOKIE_SECRET || 'secret key',
       resave: false,
