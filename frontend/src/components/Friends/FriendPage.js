@@ -6,13 +6,11 @@ import Navbar from '@/components/Navigation/Navbar';
 import FriendCalendar from '@/components/Friends/FriendCalendar';
  import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
-import axios from 'axios';
 import {   Inbox } from 'lucide-react';
 
 const FriendPage = ({ userId }) => {
   const { darkMode } = useTheme();
   const [friends, setFriends] = useState([]);
-  const [searchResults, setSearchResults] = useState([]);
   const [inbox, setInbox] = useState([]);
   const [newFriend, setNewFriend] = useState('');
   const [selectedFriend, setSelectedFriend] = useState(null);
@@ -20,9 +18,7 @@ const FriendPage = ({ userId }) => {
   const [activeItem, setActiveItem] = useState('Friends');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('friends');  
-  const [showFriendsList, setShowFriendsList] = useState(false);
   const [filteredFriends, setFilteredFriends] = useState([]);
-  const [acceptedFriends, setAcceptedFriends] = useState([]);
    const [pendingRequests, setPendingRequests] = useState(0);
   const [notification, setNotification] = useState({ 
     message: '', 
@@ -30,15 +26,6 @@ const FriendPage = ({ userId }) => {
     isVisible: false 
   });
 
-  const handleSearchBlur = () => {
-    if (!searchTerm) {
-      setShowFriendsList(false);
-    }
-  };
-  const handleSearchFocus = () => {
-    setShowFriendsList(true); 
-    setFilteredFriends(friends);  
-  };
   
   useEffect(() => {
     if (searchTerm) {
@@ -246,17 +233,15 @@ const FriendPage = ({ userId }) => {
       />
   
       <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 
-        ${darkMode ? 'bg-[#0B0F17]' : 'bg-white'}`}>
+        ${darkMode ? 'bg-gray-900' : 'bg-gray-100'}`}>
+  
         <div className="h-full p-8">
           {selectedFriend ? (
             <div className="h-full">
               <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={onBackToFriendsList}
-                  className={`p-2 rounded-full transition-colors
-                    ${darkMode 
-                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
-                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
+                  className="p-2 rounded-full hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-200"
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -276,44 +261,16 @@ const FriendPage = ({ userId }) => {
                 <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent flex items-center gap-2">
                   My Friends <Users className="w-6 h-6 text-purple-400" />
                 </h1>
-                <div className="relative">
-                  <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4
-                    ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
-                  <input
-                    type="text"
-                    placeholder="Search friends..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className={`pl-10 pr-4 py-2 rounded-full w-64 text-sm focus:outline-none focus:ring-2 
-                      focus:ring-purple-500/50 transition-colors
-                      ${darkMode 
-                        ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400' 
-                        : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'} 
-                      border`}
-                  />
-                </div>
-              </div>
-
-              <div className={`relative p-6 rounded-2xl border
-                ${darkMode 
-                  ? 'bg-gray-800 border-gray-700' 
-                  : 'bg-gray-50 border-gray-200'}`}>
-                <div className="relative">
-                  <h2 className={`text-xl font-semibold mb-4
-                    ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
-                    Add New Friend
-                  </h2>
-                  <div className="flex gap-3">
+                <div className="relative flex gap-4">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <input
                       type="text"
-                      placeholder="Enter friend's name"
-                      value={newFriend}
-                      onChange={(e) => setNewFriend(e.target.value)}
-                      className={`flex-1 px-4 py-2 rounded-full border focus:outline-none focus:ring-2 
-                        focus:ring-purple-500/50 transition-colors
-                        ${darkMode 
-                          ? 'bg-gray-900 border-gray-700 text-gray-200 placeholder-gray-400' 
-                          : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'}`}
+                      placeholder="Search friends..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="pl-10 pr-4 py-2 rounded-full bg-gray-800 border border-gray-700 focus:outline-none focus:ring-2 
+                        focus:ring-purple-500/50 w-64 text-sm text-gray-200 placeholder-gray-400"
                     />
                   </div>
                   <div className="relative flex items-center">
@@ -336,18 +293,13 @@ const FriendPage = ({ userId }) => {
               <div className="space-y-4 mt-4">
                 {filteredFriends.length > 0 ? (
                   filteredFriends.map(friend => (
-                    <div key={friend.id} 
-                    className={`group p-4 rounded-2xl border transition-all duration-200
-                      ${darkMode 
-                        ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
-                    >
+                    <div key={friend.id} className="p-4 rounded-2xl bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all duration-200">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
                             {friend.name[0].toUpperCase()}
                           </div>
-                          <span className={`font-medium ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>{friend.name}</span>
+                          <span className="font-medium text-gray-200">{friend.name}</span>
                         </div>
                       </div>
                     </div>
@@ -373,19 +325,13 @@ const FriendPage = ({ userId }) => {
                       <div className="flex gap-3">
                         <button
                           onClick={() => handleAcceptRequest(request.id)}
-                          className={`p-2 rounded-full transition-colors
-                            ${darkMode 
-                              ? 'hover:bg-gray-600 text-gray-400 hover:text-gray-200' 
-                              : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'}`}
+                          className="px-4 py-2 rounded-full bg-green-500 text-white font-medium hover:bg-green-600 transition"
                         >
                           Accept
                         </button>
                         <button
                           onClick={() => handleDeclineRequest(request.id)}
-                          className={`p-2 rounded-full transition-colors
-                            ${darkMode 
-                              ? 'hover:bg-red-900/20 text-gray-400 hover:text-red-400' 
-                              : 'hover:bg-red-100 text-gray-500 hover:text-red-600'}`}
+                          className="px-4 py-2 rounded-full bg-red-500 text-white font-medium hover:bg-red-600 transition"
                         >
                           Decline
                         </button>
@@ -425,6 +371,7 @@ const FriendPage = ({ userId }) => {
                       </div>
                     </div>
                   </div>
+  
                   <div className="space-y-4">
                     {filteredFriends.map((friend) => (
                       <div
@@ -460,7 +407,7 @@ const FriendPage = ({ userId }) => {
                     ))}
   
                     {filteredFriends.length === 0 && (
-                      <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                      <div className="text-center py-12 text-gray-400">
                         {searchTerm ? 'No friends found matching your search' : 'No friends added yet'}
                       </div>
                     )}
