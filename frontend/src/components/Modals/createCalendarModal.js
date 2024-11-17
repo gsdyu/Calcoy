@@ -163,7 +163,6 @@ const handleJoinServer = async () => {
 
   const formData = new FormData();
   formData.append('inviteLink', inviteLink);
-
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/join`, {
       method: 'POST',
@@ -171,27 +170,26 @@ const handleJoinServer = async () => {
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ serverName: serverInfo.serverName, userId }), // Sending as JSON
+      body: JSON.stringify({ inviteLink, userId }), // Include inviteLink in JSON
     });
   
-
     const joinData = await response.json();
-
+  
     if (response.ok) {
       const serverId = joinData.serverId;
-
+  
       if (!serverId) {
         console.error('Server ID not returned from join response:', joinData);
         alert('Failed to retrieve server ID after joining.');
         return;
       }
-
+  
       // Fetch the full server details using the server ID
       const serverResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${serverId}`, {
         method: 'GET',
         credentials: 'include',
       });
-
+  
       if (serverResponse.ok) {
         const serverData = await serverResponse.json();
         setServers((prevServers) => [...prevServers, serverData]);
@@ -212,10 +210,9 @@ const handleJoinServer = async () => {
     console.error('Error joining server:', error);
     alert('Failed to join server');
   }
-
+  
   if (onClose) onClose();
-};
-
+};  
 
 
   return (
