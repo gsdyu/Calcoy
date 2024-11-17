@@ -39,14 +39,14 @@ module.exports = (app, pool, io) => {
   
     try {
       const { rows } = await pool.query(
-       `SELECT users.username, users.email FROM "userServers" 
+       `SELECT users.username, users.email, users.id FROM "userServers" 
         INNER JOIN users ON "userServers".user_id = users.id
         WHERE "userServers".server_id = $1`, [serverId]
       );
       if (rows.rowCount === 0) {
         return res.status(404).json({error: "Server not found or there are no users."});
       }
-      
+      rows.map(row => row.server_id=serverId)
       return(res.json(rows))
     } catch (error) {
       console.error('Error:', error)

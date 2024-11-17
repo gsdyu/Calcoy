@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { isToday, formatHour } from '@/utils/dateUtils';
 import { ChevronDown, Check } from 'lucide-react';
@@ -10,7 +10,7 @@ import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
 
 
-const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, getEventColor }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -39,30 +39,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   }, [currentDate]);
 
   // Helper function for getting event colors
-  const getEventColor = (event) => {
-    if (event.isHoliday) {
-      return itemColors?.holidays || 'bg-yellow-500';
-    }
-
-    const calendarType = event.calendar || 'default';
-    
-    return itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500';
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500';
-            case 'Work':
-              return 'bg-purple-500';
-            case 'Task':
-              return itemColors?.tasks || 'bg-red-500';
-            default:
-              return 'bg-blue-500';
-          }
-        })();
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -160,14 +136,14 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (hours + minutes / 60) * 60;
   };
 
-  const filteredEvents = [...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate));
-  const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
-  const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
+  const filteredEvents= useRef([...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate)));
+  const allDayEvents= useRef(filteredEvents.current.filter(event => isAllDayEvent(event)));
+  const timedEvents = useRef(filteredEvents.current.filter(event => !isAllDayEvent(event)));
 
   useEffect(() => {
-    const positions = calculateEventColumns(timedEvents);
+    const positions = calculateEventColumns(timedEvents.current);
     setEventPositions(positions);
-  }, [timedEvents]);
+  }, [timedEvents.current]);
 
   const handleEventClick = (event, e) => {
     e.stopPropagation();
@@ -230,7 +206,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       );
     }
 
-    const eventColor = getEventColor(event).replace('bg-', '');
+    let {eventColor} = getEventColor(event);
+    eventColor = eventColor.replace('bg-', '');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
 
@@ -293,7 +270,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       : (allDayEvents.length <= maxVisibleEvents ? allDayEvents.length : 2);
     const hiddenCount = allDayEvents.length - visibleCount;
   
-    const sortedEvents = [...allDayEvents].sort((a, b) => {
+    const sortedEvents = [...allDayEvents.current].sort((a, b) => {
       if (a.isHoliday && !b.isHoliday) return -1;
       if (!a.isHoliday && b.isHoliday) return 1;
       if (a.calendar === 'Task' && b.calendar === 'Task') {
@@ -400,9 +377,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 onDoubleClick={(e) => handleTimeSlotDoubleClick(e, currentDate, hour, onDateDoubleClick)}
               ></div>
             ))}
-            {timedEvents.map(event => {
+            {timedEvents.current.map(event => {
               if (event.calendar === 'Task') {
-                const eventColor = getEventColor(event).replace('bg-', '');
+                let {eventColor} = getEventColor(event)
+                eventColor = eventColor.replace('bg-', '');
                 const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                 return (
                   <div
@@ -441,7 +419,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               }
 
               if (event.isHoliday) {
-                const eventColor = getEventColor(event).replace('bg-', '');
+                let {eventColor} = getEventColor(event).replace('bg-', '');
+                eventColor = eventColor.replace('bg-', '');
                 return (
                   <div
                     key={event.id}
@@ -472,7 +451,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
               const end = new Date(event.end_time);
               const isCrossingMidnight = isEventCrossingMidnight(event);
               const isNextDay = start.getDate() !== currentDate.getDate();
-              const eventColor = getEventColor(event).replace('bg-', '');
+              let {eventColor} = getEventColor(event)
+              eventColor = eventColor.replace('bg-', '')
 
               return (
                 <div
@@ -522,7 +502,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {dropPreview && (
               <div
                 className={`absolute pointer-events-none opacity-50 ${(() => {
-                  const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                  let {eventColor} = getEventColor(dropPreview).replace('bg-', '');
+                  eventColor.replace('bg-', '')
                   return `
                     bg-${eventColor} bg-opacity-20 
                     text-xs overflow-hidden rounded

@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, setServerUsers }) => {
+const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -25,7 +25,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
   const [visibleItems, setVisibleItems] = useState({});
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showUsers, setShowUsers] = useState(true); // New state for Users dropdown
-  const [servers, setServers] = useState([]);  
   const [showServers, setShowServers] = useState(true);  
   
   // Fetch profile information
@@ -82,6 +81,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
     scrollbar-color: #4A5568 #2D3748;
   }
 ` : '';
+
   useEffect(() => {
     const fetchServers = async () => {
       try {
@@ -92,12 +92,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
 
         const data = await response.json();
         setServers(data.servers || []);
-        setServerColors(
-          data.servers.reduce((acc, server) => {
-            acc[server.id] = colorOptions[server.id % colorOptions.length];  
-            return acc;
-          }, {})
-        );
       } catch (error) {
         console.error('Error fetching servers:', error);
       }
@@ -105,19 +99,17 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
     fetchServers();
   }, []);
  
-  
-  
-  const renderServerItem = (server, showEyeIcon = true,color) => (
+  const renderServerItem = (server, color , showEyeIcon = true) => (
     <div
-      key={server.id}
+      key={`server${server.id}`}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
-        visibleItems[server.id] ? '' : 'opacity-50'
+        visibleItems[`server${server.id}`] ? '' : 'opacity-50'
       }`}
       onClick={(e) => {
         e.preventDefault();
-        toggleVisibility(server.id, e);
+        toggleVisibility(`server${server.id}`, e);
       }}
-      onContextMenu={(e) => togglePopup(server.id, e)} // Open color picker on right-click
+      onContextMenu={(e) => togglePopup(`server${server.id}`, e)} // Open color picker on right-click
     >
       <div className="flex items-center">
         {/* Display server image or fallback initial */}
@@ -135,7 +127,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
         )}
         {/* Color circle and server name */}
         <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[server.id] || 'bg-gray-400'}`}></div>
+          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[`server${server.id}`] || 'bg-gray-400'}`}></div>
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{server.name}</p>
         </div>
       </div>
@@ -146,20 +138,61 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
           className="p-2 hover:bg-gray-500/20 rounded"
           onClick={(e) => {
             e.stopPropagation();
-            toggleVisibility(server.id, e);
+            toggleVisibility(`server${server.id}`, e);
           }}
         >
-          {visibleItems[server.id] ? <FiEye /> : <FiEyeOff />}
+          {visibleItems[`server${server.id}`] ? <FiEye /> : <FiEyeOff />}
         </button>
       )}
   
       {/* Color picker popup */}
-      {popupVisible[server.id] && (
-        <ColorPicker 
-          item={server.id} 
-          colors={colorOptions} 
-          onSelectColor={changeColor} 
-        />
+      {popupVisible[`server${server.id}`] && (
+        <div 
+          className={`
+            absolute z-50 right-0 top-full mt-1 
+            ${darkMode ? 'bg-gray-900' : 'bg-white'} 
+            p-3 rounded-xl shadow-xl 
+            border ${darkMode ? 'border-gray-800/10' : 'border-gray-200'}
+            backdrop-blur-sm
+          `}
+          onClick={e => e.stopPropagation()}
+        >
+          <div className="flex flex-wrap gap-2 min-w-[140px]">
+            {colorOptions.map(({ value, label }) => (
+              <button
+                key={value}
+                className={`
+                  group relative w-7 h-7 rounded-full ${value}
+                  transition-all duration-200
+                  hover:scale-110
+                  ${itemColors?.[`server${server.id}`] === value ? 
+                    'ring-2 ring-blue-400 ring-offset-2 ' + 
+                    (darkMode ? 'ring-offset-gray-900' : 'ring-offset-white')
+                    : ''
+                  }
+                  before:absolute before:inset-0 
+                  before:rounded-full before:transition-opacity
+                  before:duration-200 before:opacity-0
+                  hover:before:opacity-100
+                  before:bg-gradient-to-br before:from-white/20 before:to-transparent
+                `}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  changeColor(`server${server.id}`, value);
+                }}
+              >
+                <span className={`
+                  absolute -top-6 left-1/2 -translate-x-1/2 text-xs
+                  opacity-0 group-hover:opacity-100 whitespace-nowrap 
+                  ${darkMode ? 'text-gray-400' : 'text-gray-600'}
+                  transition-opacity duration-200 z-50
+                `}>
+                  {label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
@@ -212,12 +245,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
 
   const changeColor = (item, color) => {
      
-    setServerColors((prevColors) => ({
-      ...prevColors,
-      [item]: color,
-      
-    }));
-  
    
     if (onColorChange) {
       onColorChange(item, color);  
@@ -225,26 +252,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
   
     
     togglePopup(item);
-  };
-
-  const ColorPicker = ({ item, colors, onSelectColor }) => {
-    return (
-      <div 
-        className="absolute z-50 right-0 top-full mt-1 bg-gray-800/95 p-2 rounded shadow-lg flex space-x-2"
-        onClick={e => e.stopPropagation()}
-      >
-        {colors.map((color) => (
-          <button
-            key={color}
-            className={`w-6 h-6 rounded-full ${color} hover:ring-2 hover:ring-white transition-all duration-200`}
-            onClick={(e) => {
-              e.stopPropagation();
-              onSelectColor(item, color);
-            }}
-          />
-        ))}
-      </div>
-    );
   };
 
   const savePreferences = async (preferences) => {
@@ -351,27 +358,27 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
       <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
       <style>{scrollbarStyles}</style>
     
+      <div className="space-y-2">
+        <div
+          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+          onClick={() => setShowMyCalendars(!showMyCalendars)}
+        >
+          <h3 className="font-medium">Calendar Types</h3>
+          {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
+        </div>
+        
+        {showMyCalendars && (
+          <div className="space-y-1 pl-2">
+            {renderCalendarItem('email', 'Personal', itemColors?.email || 'bg-blue-500')}
+            {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
+            {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
+            {renderCalendarItem('family', 'Family', 'bg-gray-400')}
+          </div>
+        )}
+      </div>
       {/* Conditionally render My Calendars and Other Calendars if no active server */}
       {!activeServer ? (
         <>
-          <div className="space-y-2">
-            <div
-              className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-              onClick={() => setShowMyCalendars(!showMyCalendars)}
-            >
-              <h3 className="font-medium">My calendars</h3>
-              {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
-            </div>
-            
-            {showMyCalendars && (
-              <div className="space-y-1 pl-2">
-                {renderCalendarItem('email', username, itemColors?.email || 'bg-blue-500')}
-                {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
-                {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
-                {renderCalendarItem('family', 'Family', 'bg-gray-400')}
-              </div>
-            )}
-          </div>
           <div className="space-y-2">
             {/* Servers Dropdown */}
             <div
@@ -383,11 +390,44 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
             </div>
             {showServers && (
               <div className="space-y-1 pl-2">
-                {servers.map((server) => renderServerItem(server))}
+                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || 'bg-blue-500'))}
                 
               </div>
             )}
+            {/* Other Calendars Section */}
+          <div className="space-y-2">
+            <div
+              className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+              onClick={() => setShowOtherCalendars(!showOtherCalendars)}
+            >
+              <h3 className="font-medium">Other calendars</h3>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowImportPopup(true);
+                  }}
+                  className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
+                    darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <FiPlus className="w-4 h-4" />
+                </button>
+                {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
+              </div>
+            </div>
+            
+            {showOtherCalendars && (
+              <div className="space-y-1 pl-2">
+                {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
+                {otherCalendars.map(otherCalendar => renderCalendarItem(`${otherCalendar.imported_from}:${otherCalendar.imported_username}`, 
+                  (otherCalendar.imported_from === otherCalendar.imported_username) ? otherCalendar.imported_from : `${otherCalendar.imported_from}: ${otherCalendar.imported_username}`, 
+                itemColors?.[`${otherCalendar.imported_from}:${otherCalendar.imported_username}`] || 'bg-green-500'))}
+              </div>
+            )}
           </div>
+          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
+        </div>
         </>
       ) : (
       <div className="space-y-2">
@@ -400,42 +440,11 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, serverUsers, 
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(user.email, user.username, itemColors?.email || 'bg-blue-500'))}
+            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || itemColors?.[`server${user.server_id}`]||'bg-blue-500'))}
           </div>
         )}
       </div>
       )}
-      {/* Other Calendars Section */}
-      <div className="space-y-2">
-        <div
-          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-          onClick={() => setShowOtherCalendars(!showOtherCalendars)}
-        >
-          <h3 className="font-medium">Other calendars</h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowImportPopup(true);
-              }}
-              className={`p-2 hover:bg-gray-500/20 rounded transition-colors duration-200 ${
-                darkMode ? 'text-gray-400 hover:text-gray-200' : 'text-gray-600 hover:text-gray-800'
-              }`}
-            >
-              <FiPlus className="w-4 h-4" />
-            </button>
-            {showOtherCalendars ? <FiChevronUp /> : <FiChevronDown />}
-          </div>
-        </div>
-        
-        {showOtherCalendars && (
-          <div className="space-y-1 pl-2">
-            {renderCalendarItem('google', email, 'bg-blue-500')}
-            {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
-          </div>
-        )}
-      </div>
-      {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
     </div>
   );
 };

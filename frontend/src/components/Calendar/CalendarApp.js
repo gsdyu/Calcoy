@@ -23,6 +23,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [isSaving, setIsSaving] = useState(false);
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
+  const [otherCalendars, setOtherCalendars] = useState([])
   const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -65,7 +66,6 @@ import { useTheme } from '@/contexts/ThemeContext';
       });
 
       socket.on('serverLeft', async ( server ) => {
-        //const currentUser = Number(localStorage.getItem('userId'))
         if (!(server.userId === currentUser.current)) return;
         const serverId = Number(server.serverId)
         setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
@@ -94,6 +94,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     };
   }, [socketConnect, setSocketConnect]);
   
+
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
     
@@ -187,6 +188,60 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to save color preference');
     }
   };
+
+  const getEventColor = (event) => {
+    const calendarType = event.calendar || 'default';
+  
+    //stores all the possible colors for an event first. 
+
+    //otherColor is a dictionary; any color here can be chosen as an eventColor by calling the key
+    //default eventColor: the first color added to otherColor
+    const otherColor = {};
+    let tempColor;
+
+
+    if (event?.isHoliday) {
+      otherColor.holidays = itemColors?.holidays || 'bg-yellow-500'
+    } else {
+      //the bottom logic is the order of the calendar shown on the sidebar
+      //if statement are for which sidebar is being shown
+      tempColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Task':
+              return itemColors?.tasks || 'bg-red-500';  
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
+      otherColor.my=tempColor;
+      if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
+        tempColor = itemColors?.[`user${event.user_id}`]
+        otherColor.user=tempColor
+    } else {
+        if (event.server_id && itemColors?.[`server${event.server_id}`]) {
+          otherColor.server=itemColors?.[`server${event.server_id}`]
+        }
+        if (event.imported_from && itemColors?.[`${event.imported_from}:${event.imported_username}`]) {
+          otherColor.otherCalendar=itemColors?.[`${event.imported_from}:${event.imported_username}`]
+        }
+      }
+    }
+
+    const otherColorBGList=Object.values(otherColor);
+    const origColorBGList = Array.from(otherColorBGList);
+    const eventColor = otherColorBGList.shift();
+    const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
+
+    return {eventColor, otherColorList, otherColorBGList, origColorBGList}
+  }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
@@ -216,9 +271,14 @@ import { useTheme } from '@/contexts/ThemeContext';
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isTask: event.calendar === 'Task',
             completed: event.completed || false,
-            server_id: event.server_id
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
           };
         });
+
+        const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
+        if (tempOtherCalendars) setOtherCalendars(tempOtherCalendars)
   
         setEvents(formattedEvents);
       } else {
@@ -578,6 +638,10 @@ import { useTheme } from '@/contexts/ThemeContext';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              servers={servers}
+              serverUsers={serverUsers}
+              getEventColor={getEventColor}
             />
           )}
           {view === 'Week' && (
@@ -591,6 +655,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              getEventColor={getEventColor}
             />
           )}
           {view === 'Day' && (
@@ -602,6 +667,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              getEventColor={getEventColor}
             />
           )}
         </div>
@@ -623,7 +689,9 @@ import { useTheme } from '@/contexts/ThemeContext';
               onColorChange={handleColorChange}
               setServers={setServers}
               serverUsers={serverUsers}
+              servers={servers}
               setServerUsers={setServerUsers}
+              otherCalendars={otherCalendars}
             />
           )}
         </div>
@@ -651,6 +719,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           onTaskComplete={handleTaskComplete}
           triggerRect={eventModalTriggerRect}  
           view={view}
+          getEventColor={getEventColor}
         />
       )}
       {isAddingEvent && (

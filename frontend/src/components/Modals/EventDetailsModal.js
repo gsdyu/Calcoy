@@ -4,11 +4,12 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, Edit, Trash, Check, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, triggerRect, view }) => {
+const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, triggerRect, view, getEventColor }) => {
   const { darkMode } = useTheme();
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState(null);
   const [position, setPosition] = useState({ left: -9999, top: -9999 }); // Start offscreen
+  const [colorBGList, setColorBGList] = useState([]);
   const modalRef = useRef(null);
   const isTask = event?.calendar === 'Task';
   const isCompleted = event?.completed;
@@ -20,6 +21,13 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
       document.body.style.overflow = 'auto';
     };
   }, []);
+
+  // for the color dots on modal
+  useEffect(() => {
+    if (!event) return
+    const {origColorBGList} = getEventColor(event);
+    setColorBGList(origColorBGList);
+  }, [event, getEventColor])
 
   // Handle positioning
   useEffect(() => {
@@ -85,6 +93,10 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
   }, [onClose]);
 
   if (!event) return null;
+
+  const renderColorDot = (color) => ( 
+    <div className={`w-6 h-6 rounded-full mr-2 ${color} `}/>
+  ) 
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -176,6 +188,10 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
         {/* Content */}
         <div className="p-4">
           <div className={`space-y-3 ${isTask && isCompleted ? 'opacity-50' : ''}`}>
+            {/* Color Dots */}
+            <div className="flex space-x-2">
+              {colorBGList?colorBGList.map(color=>renderColorDot(color)):''} 
+            </div>
             <p className="text-sm"><strong>Date:</strong> {event.date}</p>
             <p className="text-sm"><strong>Time:</strong> {event.startTime} - {event.endTime}</p>
             {event.location && (

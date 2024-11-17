@@ -10,7 +10,7 @@ import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
 
 
-const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
+const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, getEventColor }) => {
   const { darkMode } = useTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
@@ -47,32 +47,6 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       setHolidays(monthHolidays);
     }
   }, [currentDate]);
-
-  // Helper function for getting event colors
-  const getEventColor = (event) => {
-    if (event.isHoliday) {
-      return itemColors?.holidays || 'bg-yellow-500';
-    }
-
-    const calendarType = event.calendar || 'default';
-    
-    return itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500';
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500';
-            case 'Work':
-              return 'bg-purple-500';
-            case 'Task':
-              return itemColors?.tasks || 'bg-red-500';
-            default:
-              return 'bg-blue-500';
-          }
-        })();
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -290,7 +264,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
       );
     }
 
-    const eventColor = getEventColor(event).replace('bg-', '');
+    let {eventColor} = getEventColor(event);
+    eventColor = eventColor.replace('bg-','');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
     const augmentedEvent = {
@@ -593,7 +568,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   };
 
                   if (event.calendar === 'Task') {
-                    const eventColor = getEventColor(event).replace('bg-', '');
+                    let {eventColor} = getEventColor(event)
+                    eventColor = eventColor.replace('bg-','')
                     const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                     return (
                       <div
@@ -646,7 +622,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     ((endHours - start.getHours()) * 60) + 
                     (end.getMinutes() - start.getMinutes());
                   
-                  const eventColor = getEventColor(event).replace('bg-', '');
+                  let {eventColor} = getEventColor(event)
+                  eventColor = eventColor.replace('bg-','')
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
@@ -691,7 +668,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
               <div
                 className={`absolute 
                   ${(() => {
-                    const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                    let {eventColor} = getEventColor(dropPreview)
+                    eventColor = eventColor.replace('bg-', '');
                     return `
                       bg-${eventColor} bg-opacity-20 
                       text-xs overflow-hidden rounded cursor-pointer

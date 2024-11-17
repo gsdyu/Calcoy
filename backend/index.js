@@ -126,6 +126,8 @@ pool.query(`
       embedding vector(128),
       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
+      imported_from VARCHAR(50),
+      imported_username VARCHAR(50),
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
   `
