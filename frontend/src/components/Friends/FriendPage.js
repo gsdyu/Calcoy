@@ -6,11 +6,13 @@ import Navbar from '@/components/Navigation/Navbar';
 import FriendCalendar from '@/components/Friends/FriendCalendar';
  import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
+import axios from 'axios';
 import {   Inbox } from 'lucide-react';
 
 const FriendPage = ({ userId }) => {
   const { darkMode } = useTheme();
   const [friends, setFriends] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
   const [inbox, setInbox] = useState([]);
   const [newFriend, setNewFriend] = useState('');
   const [selectedFriend, setSelectedFriend] = useState(null);
@@ -18,7 +20,9 @@ const FriendPage = ({ userId }) => {
   const [activeItem, setActiveItem] = useState('Friends');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('friends');  
+  const [showFriendsList, setShowFriendsList] = useState(false);
   const [filteredFriends, setFilteredFriends] = useState([]);
+  const [acceptedFriends, setAcceptedFriends] = useState([]);
    const [pendingRequests, setPendingRequests] = useState(0);
   const [notification, setNotification] = useState({ 
     message: '', 
@@ -26,6 +30,15 @@ const FriendPage = ({ userId }) => {
     isVisible: false 
   });
 
+  const handleSearchBlur = () => {
+    if (!searchTerm) {
+      setShowFriendsList(false);
+    }
+  };
+  const handleSearchFocus = () => {
+    setShowFriendsList(true); 
+    setFilteredFriends(friends);  
+  };
   
   useEffect(() => {
     if (searchTerm) {
