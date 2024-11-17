@@ -75,17 +75,14 @@ module.exports = {
   },
   plugins: [require("tailwindcss-animate")],
   safelist: [
-    'border-yellow-500',
-    'text-yellow-500',
-    'border-blue-500',
-    'text-blue-500',
-    'border-red-500',
-    'text-red-500',
-    'border-green-500',
-    'text-green-500',
-    'border-purple-500',
-    'text-purple-500',
-    'border-orange-500',
-    'text-orange-500',
+    {
+      pattern: /border-(yellow|blue|red|green|purple|orange)-500/,
+    },
+    {
+      pattern: /from-(yellow|blue|red|green|purple|orange|gray)-500\/25/,
+    },
+    {
+      pattern: /to-(yellow|blue|red|green|purple|orange|gray)-500\/25/,
+    },
   ]
 }

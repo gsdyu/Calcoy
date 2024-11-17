@@ -144,6 +144,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
     const bgGradientOther = otherList.length > 0 
       ? `bg-gradient-to-b from-${otherList[0]}/25 ${otherList.slice(1, otherList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherList[otherList.length - 1]}/25`
       : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+    console.log(bgGradientOther, 'yog')
 
 
     const isAllDay = isAllDayEvent(event);
@@ -193,7 +194,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           ${darkMode && !isAllDay ? `border-${eventColor.replace('bg-', '')}-400 text-${eventColor.replace('bg-', '')}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
           ${isTask && isCompleted ? 'line-through' : ''}
-          ${bgGradientOther}
+          ${isAllDay? '':bgGradientOther}
         `}
       onClick={(e) => {
           e.stopPropagation();
