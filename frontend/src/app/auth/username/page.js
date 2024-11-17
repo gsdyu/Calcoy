@@ -1,4 +1,4 @@
-import UsernamePage from '@/components/Auth/UsernamePage';
+import UsernamePage from '@/components/Auth/username';
 
 export default function Username() {
   return <UsernamePage />;

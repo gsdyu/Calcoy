@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react';
-import TaskOverviewComponent from './Taskoverview/TaskOverview';
-import AIInsightsComponent from './AI';
+import TaskOverviewComponent from './TaskOverview/TaskOverview';
 import RecentCheckIns from './CheckIns';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
