@@ -306,7 +306,12 @@ const FriendPage = ({ userId }) => {
               <div className="space-y-4 mt-4">
                 {filteredFriends.length > 0 ? (
                   filteredFriends.map(friend => (
-                    <div key={friend.id} className="p-4 rounded-2xl bg-gray-800 border border-gray-700 hover:bg-gray-700 transition-all duration-200">
+                    <div key={friend.id} 
+                    className={`group p-4 rounded-2xl border transition-all duration-200
+                      ${darkMode 
+                        ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
+                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
+                    >
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold">
