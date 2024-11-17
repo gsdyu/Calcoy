@@ -21,7 +21,7 @@ const Username = () => {
 
       setIsLoading(true);
       try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/routes/username`, {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/set-username`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ username }),
