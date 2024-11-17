@@ -358,27 +358,27 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
       <style>{scrollbarStyles}</style>
     
+      <div className="space-y-2">
+        <div
+          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+          onClick={() => setShowMyCalendars(!showMyCalendars)}
+        >
+          <h3 className="font-medium">Calendar Types</h3>
+          {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
+        </div>
+        
+        {showMyCalendars && (
+          <div className="space-y-1 pl-2">
+            {renderCalendarItem('email', 'Personal', itemColors?.email || 'bg-blue-500')}
+            {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
+            {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
+            {renderCalendarItem('family', 'Family', 'bg-gray-400')}
+          </div>
+        )}
+      </div>
       {/* Conditionally render My Calendars and Other Calendars if no active server */}
       {!activeServer ? (
         <>
-          <div className="space-y-2">
-            <div
-              className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-              onClick={() => setShowMyCalendars(!showMyCalendars)}
-            >
-              <h3 className="font-medium">My calendars</h3>
-              {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
-            </div>
-            
-            {showMyCalendars && (
-              <div className="space-y-1 pl-2">
-                {renderCalendarItem('email', username, itemColors?.email || 'bg-blue-500')}
-                {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
-                {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
-                {renderCalendarItem('family', 'Family', 'bg-gray-400')}
-              </div>
-            )}
-          </div>
           <div className="space-y-2">
             {/* Servers Dropdown */}
             <div

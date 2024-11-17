@@ -190,7 +190,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   };
 
   const getEventColor = (event) => {
-    if (event.isHoliday) return itemColors?.holidays || 'bg-yellow-500'
     const calendarType = event.calendar || 'default';
   
     //stores all the possible colors for an event first. 
@@ -201,12 +200,11 @@ import { useTheme } from '@/contexts/ThemeContext';
     let tempColor;
 
 
-    //checks if user is on a server calendar, else is on main calendar 
-    //main calendar and server calendar have different event color default
-    if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
-      tempColor = itemColors?.[`user${event.user_id}`]
-      otherColor.user=tempColor
+    if (event?.isHoliday) {
+      otherColor.holidays = itemColors?.holidays || 'bg-yellow-500'
     } else {
+      //the bottom logic is the order of the calendar shown on the sidebar
+      //if statement are for which sidebar is being shown
       tempColor = itemColors?.[calendarType] 
       ? itemColors[calendarType]
       : (() => {
@@ -224,22 +222,25 @@ import { useTheme } from '@/contexts/ThemeContext';
           }
         })();
       otherColor.my=tempColor;
-
-      if (event.server_id && itemColors?.[`server${event.server_id}`]) {
-        otherColor.server=itemColors?.[`server${event.server_id}`]
+      if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
+        tempColor = itemColors?.[`user${event.user_id}`]
+        otherColor.user=tempColor
+    } else {
+        if (event.server_id && itemColors?.[`server${event.server_id}`]) {
+          otherColor.server=itemColors?.[`server${event.server_id}`]
+        }
+        if (event.imported_from && itemColors?.[`${event.imported_from}:${event.imported_username}`]) {
+          otherColor.otherCalendar=itemColors?.[`${event.imported_from}:${event.imported_username}`]
+        }
       }
-
-      if (event.imported_from && itemColors?.[`${event.imported_from}:${event.imported_username}`]) {
-        otherColor.otherCalendar=itemColors?.[`${event.imported_from}:${event.imported_username}`]
-      }
-
     }
 
-    const otherBGList=Object.values(otherColor)
-    const eventColor = otherBGList.shift()
-    const otherList=otherBGList.map(color => color.replace('bg-',''))
+    const otherColorBGList=Object.values(otherColor);
+    const origColorBGList = Array.from(otherColorBGList);
+    const eventColor = otherColorBGList.shift();
+    const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
 
-    return {eventColor, otherList, otherBGList}
+    return {eventColor, otherColorList, otherColorBGList, origColorBGList}
   }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
@@ -718,6 +719,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           onTaskComplete={handleTaskComplete}
           triggerRect={eventModalTriggerRect}  
           view={view}
+          getEventColor={getEventColor}
         />
       )}
       {isAddingEvent && (
