@@ -16,14 +16,20 @@ module.exports = (app, pool) => {
     expressSession({
       store: new pgSession({
         pool: pool,
-        tableName: 'user_sessions'
+        tableName: 'user_sessions',
       }),
-      secret: process.env.COOKIE_SECRET || "secrety key" ,
+      secret: process.env.COOKIE_SECRET || 'secret key',
       resave: false,
-      saveUninitialized: true,
-      cookie: { maxAge: 30*24*60*60*1000}
+      saveUninitialized: false, // Prevent creating empty sessions
+      cookie: {
+        maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+        httpOnly: true,
+        sameSite: 'none', // Required for cross-origin cookies
+        secure: true, // Ensure secure cookies in production
+      },
     })
   );
+  
 
   // MSAL configuration for Microsoft OAuth
   const msalConfig = {
@@ -315,30 +321,31 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
   // Route to handle setting the username for first-time login users
 // Route to handle setting the username for first-time login users
 app.post('/auth/set-username', async (req, res) => {
-    const { username } = req.body;
-    console.log(req.session.tempUser)
-    const { email } = req.session.tempUser;  // Get email stored in session
-  
-    try {
-      const result = await pool.query(
-        'UPDATE users SET username = $1 WHERE email = $2 RETURNING *',
-        [username, email]
-      );
-  
-      // Clear the tempUser expressSession
-      req.session.tempUser = null;
-  
-      // Send the updated user data
-      res.json({ user: result.rows[0] });
-    } catch (error) {
-      if (error.code === '23505' && error.constraint === 'users_username_key') {
-        // Handle unique constraint violation (duplicate username)
-        return res.status(400).json({ error: 'Username already taken' });
-      }
-      console.error('Error setting username:', error);
-      res.status(500).json({ error: 'Internal server error' });
+  console.log('Session data:', req.session);
+
+  if (!req.session.tempUser) {
+    return res.status(400).json({ error: 'Session expired or invalid' });
+  }
+
+  const { email } = req.session.tempUser;
+
+  try {
+    const result = await pool.query(
+      'UPDATE users SET username = $1 WHERE email = $2 RETURNING *',
+      [req.body.username, email]
+    );
+
+    req.session.tempUser = null; // Clear session after use
+    res.json({ user: result.rows[0] });
+  } catch (error) {
+    if (error.code === '23505' && error.constraint === 'users_username_key') {
+      return res.status(400).json({ error: 'Username already taken' });
     }
-  });
+    console.error('Error setting username:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
   
 
 
