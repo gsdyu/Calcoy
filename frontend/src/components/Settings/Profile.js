@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Lock, Bell, Shield, Edit2, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import ImageEditModal from '@/components/Modals/ImageEditModal';
 
 const DefaultProfileIcon = () => (
   <svg className="w-full h-full text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -16,10 +17,12 @@ const Profile = () => {
   const [profileImage, setProfileImage] = useState(null);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(''); // Add error state
+  const [error, setError] = useState('');
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
 
   useEffect(() => {
-    // Fetch user data from backend
     const fetchProfile = async () => {
       const check = await fetch('http://localhost:5000/auth/check', {
         credentials: 'include',
@@ -70,9 +73,8 @@ const Profile = () => {
     }	
 
     try {
-	  // Checks that desired username fits within the schema range
-	  if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
-	  if (displayName.length==0) throw new Error('Username cannot be empty');
+      if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
+      if (displayName.length==0) throw new Error('Username cannot be empty');
 
       const response = await fetch('http://localhost:5000/profile/name', {
         method: 'PUT',
@@ -84,46 +86,59 @@ const Profile = () => {
       });
 
       if (!response.ok) {
-		if (response.status == 409) throw new Error(`Username ${displayName} is already taken`);
+        if (response.status == 409) throw new Error(`Username ${displayName} is already taken`);
         throw new Error('An error occurred on the server. Try again later.');
       }
       alert('Username updated successfully!');
     } catch (error) {
-	  const err_msg = `Error updating username: ${error.message}`
+      const err_msg = `Error updating username: ${error.message}`
       console.error(err_msg);
-		alert(err_msg);
+      alert(err_msg);
     }
   };
 
-  const handleImageChange = async (event) => {
+  const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-	  //FormData uses encoding type "multipart/form-data"
+      setSelectedFile(file);
+      const imageUrl = URL.createObjectURL(file);
+      setSelectedImage(imageUrl);
+      setIsEditModalOpen(true);
+    }
+  };
+
+  const handleSaveEdit = async ({ x, y, scale }) => {
+    if (!selectedFile) return;
+
+    const check = await fetch('http://localhost:5000/auth/check', {
+      credentials: 'include',
+    });
+    if (!check.ok) {
+      alert("No token found. Please login.")
+      return;
+    }
+
+    try {
       const formData = new FormData();
-      formData.append('profile_image', file);
+      formData.append('profile_image', selectedFile);
+      formData.append('x_offset', x);
+      formData.append('y_offset', y);
+      formData.append('scale', scale);
 
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const response = await fetch('http://localhost:5000/profile/picture', {
+        method: 'PUT',
         credentials: 'include',
+        body: formData,
       });
-      if (!check.ok) {
-        alert("No token found. Please login.")
-        return
-      }
-
-      try {
-        const response = await fetch('http://localhost:5000/profile/picture', {
-          method: 'PUT',
-          credentials: 'include',
-          body: formData,
-
-        });
-        const data = await response.json();
-        setProfileImage(data.profile_image);
-        alert('Profile picture updated successfully!');
-      } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('Error updating profile picture.');
-      }
+      const data = await response.json();
+      setProfileImage(data.profile_image);
+      setIsEditModalOpen(false);
+      setSelectedImage(null);
+      setSelectedFile(null);
+      alert('Profile picture updated successfully!');
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      alert('Error updating profile picture.');
     }
   };
 
@@ -145,7 +160,7 @@ const Profile = () => {
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>; // Display error message if any
+    return <div className="text-red-500">{error}</div>;
   }
 
   return (
@@ -226,6 +241,17 @@ const Profile = () => {
         description="Customize how and when you receive notifications."
         icon={<Bell size={24} className="text-yellow-500" />}
         action="Set Preferences"
+      />
+
+      <ImageEditModal 
+        isOpen={isEditModalOpen}
+        onClose={() => {
+          setIsEditModalOpen(false);
+          setSelectedImage(null);
+          setSelectedFile(null);
+        }}
+        imageUrl={selectedImage}
+        onSave={handleSaveEdit}
       />
     </div>
   );

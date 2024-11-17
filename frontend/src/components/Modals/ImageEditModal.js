@@ -10,109 +10,113 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
-  const containerRef = useRef(null);
   const imageRef = useRef(null);
+  const containerRef = useRef(null);
+  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
 
+  // Center image when it loads
   useEffect(() => {
+    const image = imageRef.current;
+    const container = containerRef.current;
+    
     const centerImage = () => {
-      if (imageRef.current && containerRef.current) {
-        const img = imageRef.current;
-        const container = containerRef.current;
-        
-        setImageSize({
-          width: img.naturalWidth,
-          height: img.naturalHeight
-        });
-
-        // Center the image
-        const x = (container.clientWidth - img.width) / 2;
-        const y = (container.clientHeight - img.height) / 2;
+      if (image && container) {
+        const x = (container.offsetWidth - image.offsetWidth) / 2;
+        const y = (container.offsetHeight - image.offsetHeight) / 2;
         setPosition({ x, y });
+        setImageSize({
+          width: image.naturalWidth,
+          height: image.naturalHeight
+        });
       }
     };
 
-    if (imageRef.current?.complete) {
-      centerImage();
+    if (image) {
+      if (image.complete) {
+        centerImage();
+      } else {
+        image.addEventListener('load', centerImage);
+      }
     }
-    imageRef.current?.addEventListener('load', centerImage);
-    return () => imageRef.current?.removeEventListener('load', centerImage);
-  }, []);
+
+    return () => {
+      if (image) {
+        image.removeEventListener('load', centerImage);
+      }
+    };
+  }, [imageUrl]);
 
   const handleDragStart = (e) => {
     e.preventDefault();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
     setIsDragging(true);
     setDragStart({
-      x: e.clientX - position.x,
-      y: e.clientY - position.y
+      x: clientX - position.x,
+      y: clientY - position.y
     });
   };
 
   const handleDragMove = (e) => {
-    if (!isDragging || !containerRef.current) return;
-    
-    const container = containerRef.current;
-    const containerRect = container.getBoundingClientRect();
-    const circleRadius = 64; // Half of the circle width (128px)
-    
-    // Calculate boundaries
-    const scaledWidth = imageSize.width * scale;
-    const scaledHeight = imageSize.height * scale;
-    
-    let newX = e.clientX - dragStart.x;
-    let newY = e.clientY - dragStart.y;
+    if (!isDragging) return;
 
-    // Calculate bounds to keep the image covering the circle
-    const minX = containerRect.width / 2 - scaledWidth + circleRadius;
-    const maxX = containerRect.width / 2 - circleRadius;
-    const minY = containerRect.height / 2 - scaledHeight + circleRadius;
-    const maxY = containerRect.height / 2 - circleRadius;
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    const newX = clientX - dragStart.x;
+    const newY = clientY - dragStart.y;
 
-    // Constrain the position
-    newX = Math.min(Math.max(newX, minX), maxX);
-    newY = Math.min(Math.max(newY, minY), maxY);
-
-    setPosition({ x: newX, y: newY });
+    setPosition({
+      x: newX,
+      y: newY
+    });
   };
 
   const handleDragEnd = () => {
     setIsDragging(false);
   };
 
-  const handleZoom = (value) => {
-    if (!containerRef.current) return;
-
+  const handleSave = () => {
+    // Calculate relative position from the center
     const container = containerRef.current;
-    const containerRect = container.getBoundingClientRect();
-    const newScale = value[0] / 100;
+    const image = imageRef.current;
     
-    // Calculate the center point of the circle
-    const centerX = containerRect.width / 2;
-    const centerY = containerRect.height / 2;
+    if (!container || !image) return;
 
-    // Calculate the relative position to the center
-    const relativeX = position.x - centerX;
-    const relativeY = position.y - centerY;
+    const containerRect = container.getBoundingClientRect();
+    const containerCenterX = containerRect.width / 2;
+    const containerCenterY = containerRect.height / 2;
 
-    // Scale the position from the center
-    const scaleFactor = newScale / scale;
-    const newX = centerX + (relativeX * scaleFactor);
-    const newY = centerY + (relativeY * scaleFactor);
+    // Calculate the offset from center
+    const offsetX = position.x - containerCenterX;
+    const offsetY = position.y - containerCenterY;
 
-    setScale(newScale);
-    setPosition({ x: newX, y: newY });
+    // Calculate position as percentages
+    const positionData = {
+      x: offsetX / containerRect.width,
+      y: offsetY / containerRect.height,
+      scale: scale
+    };
+
+    onSave(positionData);
   };
 
   useEffect(() => {
     if (isDragging) {
       window.addEventListener('mousemove', handleDragMove);
       window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDragMove);
+      window.addEventListener('touchend', handleDragEnd);
+
       return () => {
         window.removeEventListener('mousemove', handleDragMove);
         window.removeEventListener('mouseup', handleDragEnd);
+        window.removeEventListener('touchmove', handleDragMove);
+        window.removeEventListener('touchend', handleDragEnd);
       };
     }
-  }, [isDragging, scale, imageSize]);
+  }, [isDragging]);
 
   if (!isOpen) return null;
 
@@ -145,12 +149,14 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
         >
           {/* Draggable Image Container */}
           <div
-            className="absolute origin-center"
+            className="absolute select-none touch-none"
             style={{
               transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              cursor: isDragging ? 'grabbing' : 'grab'
+              cursor: isDragging ? 'grabbing' : 'grab',
+              touchAction: 'none'
             }}
             onMouseDown={handleDragStart}
+            onTouchStart={handleDragStart}
           >
             <img
               ref={imageRef}
@@ -162,7 +168,7 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
           </div>
 
           {/* Overlay with Circle Cutout */}
-          <div className="absolute inset-0" style={{
+          <div className="absolute inset-0 pointer-events-none" style={{
             background: `radial-gradient(circle at center, 
               transparent 64px,
               ${darkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.6)'} 65px
@@ -182,7 +188,7 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
             </label>
             <Slider
               value={[scale * 100]}
-              onValueChange={handleZoom}
+              onValueChange={(value) => setScale(value[0] / 100)}
               min={100}
               max={300}
               step={1}
@@ -194,7 +200,7 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
             <Button
               variant="outline"
               onClick={onClose}
-              className={`w-24 ${
+              className={`w-24 rounded-full ${
                 darkMode 
                   ? 'border-gray-700 text-gray-300 hover:bg-gray-800' 
                   : 'border-gray-200 text-gray-600 hover:bg-gray-50'
@@ -203,8 +209,8 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
               Cancel
             </Button>
             <Button
-              onClick={() => onSave({ scale, position })}
-              className="w-24 bg-blue-500 hover:bg-blue-600 text-white"
+              onClick={handleSave}
+              className="w-24 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
             >
               Apply
             </Button>
