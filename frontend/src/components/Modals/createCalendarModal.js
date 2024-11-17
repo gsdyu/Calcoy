@@ -67,7 +67,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     
    
     if (!userId) {
-      console.error('User ID is missing');//s
+      console.error('User ID is missing'); 
       return;
     }
   
@@ -78,7 +78,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: formData,
+        body: JSON.stringify({ serverName, userId }),
       });
   
       if (!response.ok) {

@@ -178,7 +178,7 @@ module.exports = (pool) => {
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
+      callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
       accessType: 'offline', // Request offline access to get a refresh token
       prompt: 'consent' // Force re-consent to receive the refresh token
     },
