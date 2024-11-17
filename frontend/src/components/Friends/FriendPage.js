@@ -247,14 +247,16 @@ const FriendPage = ({ userId }) => {
   
       <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 
         ${darkMode ? 'bg-[#0B0F17]' : 'bg-white'}`}>
-  
         <div className="h-full p-8">
           {selectedFriend ? (
             <div className="h-full">
               <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={onBackToFriendsList}
-                  className="p-2 rounded-full hover:bg-gray-800 transition-colors text-gray-400 hover:text-gray-200"
+                  className={`p-2 rounded-full transition-colors
+                    ${darkMode 
+                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
+                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
                 >
                   <ArrowLeft className="w-5 h-5" />
                 </button>
@@ -423,7 +425,6 @@ const FriendPage = ({ userId }) => {
                       </div>
                     </div>
                   </div>
-  
                   <div className="space-y-4">
                     {filteredFriends.map((friend) => (
                       <div

@@ -132,10 +132,18 @@ const FriendCalendar = ({ friend }) => {
         <div
           key={i}
           className={`
-            border-r border-b border-gray-700/80
-            relative p-1
-            ${!isCurrentMonth ? 'bg-gray-900' : ''}
-            ${isCurrentMonth && isWeekendDay ? 'bg-gray-800/90' : isCurrentMonth ? 'bg-gray-800' : ''}
+            border-r border-b relative p-1
+            ${darkMode 
+              ? 'border-gray-700/80' 
+              : 'border-gray-200'}
+            ${!isCurrentMonth 
+              ? darkMode ? 'bg-gray-900' : 'bg-gray-50' 
+              : ''}
+            ${isCurrentMonth && isWeekendDay 
+              ? darkMode ? 'bg-gray-800/90' : 'bg-gray-100' 
+              : isCurrentMonth 
+                ? darkMode ? 'bg-gray-800' : 'bg-white' 
+                : ''}
             transition-colors duration-200
           `}
           style={{ height: '100px' }}
@@ -149,8 +157,8 @@ const FriendCalendar = ({ friend }) => {
                   ${isCurrentDay 
                     ? 'bg-blue-500 text-white rounded-full' 
                     : isWeekendDay 
-                      ? 'text-gray-300' 
-                      : 'text-gray-200'}
+                      ? darkMode ? 'text-gray-300' : 'text-gray-600'
+                      : darkMode ? 'text-gray-200' : 'text-gray-900'}
                 `}
               >
                 {dayNumber}
@@ -159,7 +167,10 @@ const FriendCalendar = ({ friend }) => {
                 {dayEvents.slice(0, eventsPerDay).map(event => renderEventCompact(event))}
                 {dayEvents.length > eventsPerDay && (
                   <button
-                    className="text-[10px] text-gray-400 px-1.5 hover:text-gray-300 transition-colors"
+                    className={`text-[10px] px-1.5 transition-colors
+                      ${darkMode 
+                        ? 'text-gray-400 hover:text-gray-300' 
+                        : 'text-gray-500 hover:text-gray-700'}`}
                     onClick={(e) => {
                       e.stopPropagation();
                       // Handle showing more events
@@ -179,13 +190,20 @@ const FriendCalendar = ({ friend }) => {
   };
 
   return (
-    <div ref={containerRef} className="w-full rounded-xl bg-gray-900 border border-gray-800 overflow-hidden">
-      <div className="p-4 border-b border-gray-800 flex items-center justify-between">
+    <div 
+      ref={containerRef} 
+      className={`w-full rounded-xl overflow-hidden border
+        ${darkMode 
+          ? 'bg-gray-900 border-gray-800' 
+          : 'bg-white border-gray-200'}`}
+    >
+      <div className={`p-4 border-b flex items-center justify-between
+        ${darkMode ? 'border-gray-800' : 'border-gray-200'}`}>
         <h2 className="text-lg">
-          <span className="font-bold text-gray-200">
+          <span className={`font-bold ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>
             {currentDate.toLocaleString('default', { month: 'long' })}
           </span>
-          <span className="text-gray-400 ml-1">
+          <span className={`ml-1 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
             {currentDate.getFullYear()}
           </span>
         </h2>
@@ -193,39 +211,53 @@ const FriendCalendar = ({ friend }) => {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
-            className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-gray-300 transition-colors"
+            className={`p-2 rounded-full transition-colors
+              ${darkMode 
+                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
           >
             <ChevronLeft className="w-5 h-5" />
           </button>
           
           <button
             onClick={() => setCurrentDate(new Date())}
-            className="px-4 py-1.5 rounded-full bg-gray-800 text-gray-300 hover:text-gray-200 hover:bg-gray-700 transition-colors text-sm"
+            className={`px-4 py-1.5 rounded-full text-sm transition-colors
+              ${darkMode 
+                ? 'bg-gray-800 text-gray-300 hover:text-gray-200 hover:bg-gray-700' 
+                : 'bg-gray-100 text-gray-700 hover:text-gray-900 hover:bg-gray-200'}`}
           >
             Today
           </button>
           
           <button
             onClick={() => setCurrentDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1))}
-            className="p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-gray-300 transition-colors"
+            className={`p-2 rounded-full transition-colors
+              ${darkMode 
+                ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-300' 
+                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
           >
             <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </div>
 
-      <div className="grid grid-cols-7 border-b border-gray-700/80">
+      <div className={`grid grid-cols-7 border-b
+        ${darkMode ? 'border-gray-700/80' : 'border-gray-200'}`}>
         {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
           <div
             key={day}
-            className="py-2 text-xs font-medium text-gray-400 text-center border-r border-gray-700/80"
+            className={`py-2 text-xs font-medium text-center border-r
+              ${darkMode 
+                ? 'text-gray-400 border-gray-700/80' 
+                : 'text-gray-600 border-gray-200'}`}
           >
             {day}
           </div>
         ))}
       </div>
       
-      <div className="grid grid-cols-7 border-l border-gray-700/80">
+      <div className={`grid grid-cols-7 border-l
+        ${darkMode ? 'border-gray-700/80' : 'border-gray-200'}`}>
         {renderCalendar()}
       </div>
     </div>
