@@ -73,7 +73,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: formData,
+        body: JSON.stringify({ serverName: serverInfo.serverName, userId }),
         
       });
   
