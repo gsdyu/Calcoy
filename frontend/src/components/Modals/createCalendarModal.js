@@ -60,14 +60,9 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
 
   const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('serverName', serverInfo.serverName);
-    formData.append('userId', userId);
-    
-   
-    if (!userId) {
-      console.error('User ID is missing');
+  
+    if (!serverInfo.serverName || !userId) {
+      console.error('Missing serverName or userId');
       return;
     }
   
@@ -78,7 +73,8 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
           'Content-Type': 'application/json',
         },
         credentials: 'include',
-        body: formData,
+        body: JSON.stringify({ serverName: serverInfo.serverName, userId }),
+        
       });
   
       if (!response.ok) {
@@ -95,6 +91,9 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       console.error('Error submitting server info:', error);
     }
   };
+  
+
+  
  
   const handleEventOptionSelect = async (option) => {
     setEventDisplayOption(option);
@@ -164,31 +163,33 @@ const handleJoinServer = async () => {
 
   const formData = new FormData();
   formData.append('inviteLink', inviteLink);
-
   try {
     const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/join`, {
       method: 'POST',
       credentials: 'include',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ inviteLink, userId }), // Include inviteLink in JSON
     });
-
+  
     const joinData = await response.json();
-
+  
     if (response.ok) {
       const serverId = joinData.serverId;
-
+  
       if (!serverId) {
         console.error('Server ID not returned from join response:', joinData);
         alert('Failed to retrieve server ID after joining.');
         return;
       }
-
+  
       // Fetch the full server details using the server ID
       const serverResponse = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${serverId}`, {
         method: 'GET',
         credentials: 'include',
       });
-
+  
       if (serverResponse.ok) {
         const serverData = await serverResponse.json();
         setServers((prevServers) => [...prevServers, serverData]);
@@ -209,10 +210,9 @@ const handleJoinServer = async () => {
     console.error('Error joining server:', error);
     alert('Failed to join server');
   }
-
+  
   if (onClose) onClose();
-};
-
+};  
 
 
   return (
