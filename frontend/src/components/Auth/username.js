@@ -37,7 +37,7 @@ const UsernamePage = () => {
       } catch (error) {
           setError('An unexpected error occurred');
       } finally {
-          setIsLoading(false);
+          setIsLoading(false);// load
       }
   };
 
