@@ -188,6 +188,57 @@ import { useTheme } from '@/contexts/ThemeContext';
       showNotification('Failed to save color preference');
     }
   };
+
+  const getEventColor = (event) => {
+    if (event.isHoliday) return itemColors?.holidays || 'bg-yellow-500'
+    const calendarType = event.calendar || 'default';
+  
+    //stores all the possible colors for an event first. 
+
+    //otherColor is a dictionary; any color here can be chosen as an eventColor by calling the key
+    //default eventColor: the first color added to otherColor
+    const otherColor = {};
+    let tempColor;
+
+
+    //checks if user is on a server calendar, else is on main calendar 
+    //main calendar and server calendar have different event color default
+    if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
+      tempColor = itemColors?.[`user${event.user_id}`]
+      otherColor.user=tempColor
+    } else {
+      tempColor = itemColors?.[calendarType] 
+      ? itemColors[calendarType]
+      : (() => {
+          switch (calendarType) {
+            case 'Task':
+              return itemColors?.tasks || 'bg-red-500';  
+            case 'Personal':
+              return itemColors?.email || 'bg-blue-500'; 
+            case 'Family':
+              return itemColors?.familyBirthday || 'bg-orange-500'; 
+            case 'Work':
+              return 'bg-purple-500'; 
+            default:
+              return 'bg-gray-400'; 
+          }
+        })();
+      otherColor.my=tempColor;
+
+      if (event.server_id && itemColors?.[`server${event.server_id}`]) {
+        otherColor.server=itemColors?.[`server${event.server_id}`]
+      }
+
+
+    }
+
+    const otherBGList=Object.values(otherColor)
+    const eventColor = otherBGList.shift()
+    //let eventColor = otherColor.server ? otherColor.server : otherBGList.shift()
+    const otherList=otherBGList.map(color => color.replace('bg-',''))
+
+    return {eventColor, otherList, otherBGList}
+  }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
@@ -582,6 +633,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               activeCalendar={activeCalendar}
               servers={servers}
               serverUsers={serverUsers}
+              getEventColor={getEventColor}
             />
           )}
           {view === 'Week' && (
@@ -595,6 +647,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              getEventColor={getEventColor}
             />
           )}
           {view === 'Day' && (
@@ -606,6 +659,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              getEventColor={getEventColor}
             />
           )}
         </div>
