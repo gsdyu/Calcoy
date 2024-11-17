@@ -64,10 +64,10 @@ app.use(passport.session());
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
  
-// Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
   async (req, res) => {
     const email = req.user.email;
+
     try {
       let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       let user = userResult.rows[0];
@@ -75,30 +75,30 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       // Create JWT token
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
-      // Store the token in the expressSession or cookies
+      // Store the token in the express session and cookies
       req.session.token = token;
+      req.session.tempUser = { email }; // Set tempUser here
+      console.log('Session after setting tempUser:', req.session); // Debugging
+
       res.cookie('auth_token', token, {
         httpOnly: true,
         sameSite: 'none',
-        secure: true, 
+        secure: true,
         path: '/',
       });
 
-      // Redirect to the username page if the user has no username set
       if (!user.username) {
-        req.session.tempUser = { email }; // Save email in expressSession for username setup
         return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
       }
 
-      // Otherwise, redirect to the calendar page
       res.redirect(`${process.env.CLIENT_URL}/calendar`);
     } catch (error) {
       console.error('Google login error:', error);
       res.status(500).send('Internal server error');
     }
   }
-)
-;
+);
+
 
 // Google Auth Route for Importing Calendar Events
 app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
