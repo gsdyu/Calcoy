@@ -36,8 +36,9 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
           start_time: new Date(event.start.dateTime),
           end_time: new Date(event.end.dateTime),
           location: event.location || '',
-          calendar: 'Google',
-          time_zone: event.start.timezone || 'UTC'
+          calendar: 'Personal',
+          time_zone: event.start.timezone || 'UTC',
+          imported_from: "google"
         };
       } else if (!event.start.datetime && !event.end.datetime) {
         event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
@@ -48,8 +49,9 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
           start_time: new Date(`${event.start.date}T00:00:00`),
           end_time: event_end_date,
           location: event.location || '',
-          calendar: 'Google',
-          time_zone: event.start.timezone || 'UTC'
+          calendar: 'Personal',
+          time_zone: event.start.timezone || 'UTC',
+          imported_from: "google"
         }
       }
       return eventData;

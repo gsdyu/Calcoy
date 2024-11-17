@@ -181,8 +181,9 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
         start_time: vEvent.startDate.toJSDate(),
         end_time: vEvent.endDate.toJSDate(),
         location: vEvent.location || '',
-        calendar: 'canvas',
+        calendar: 'Personal',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
+        imported_from: 'canvas'
       };
     });
 
