@@ -1,5 +1,4 @@
 'use client';
-import { io } from 'socket.io-client';
 
 import React, { useState, useEffect } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
@@ -38,37 +37,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-  const [socketConnect, setSocketConnect] = useState(false);
-  useEffect(() => {
-    let socket = null
-    if (!socketConnect) { 
-      socket = io('http://localhost:5000');
-      socket.removeAllListeners();
-      socket.on('eventCreated', (event) => {
-        const eventList = Array.isArray(event) ? event : [event]
-        setEvents((prevEvents) => [...prevEvents, ...eventList]);
-      });
-      
-      socket.on('eventUpdated', (updatedEvent) => {
-        setEvents((prevEvents) =>
-          prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
-        );
-      });
-      
-      socket.on('eventDeleted', ({ eventId }) => {
-        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
-      });
-    }
-
-    return () => {
-      if (socket) {
-        socket.off('eventCreated');
-        socket.off('eventUpdated');
-        socket.off('eventDeleted');
-      }
-      setSocketConnect(false);
-    };
-  }, [socketConnect, setSocketConnect]);
   
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
@@ -288,8 +256,6 @@ import { useTheme } from '@/contexts/ThemeContext';
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         handleCloseEventDetails();
   
-        // not implemented yet
-        //socket.emit('taskCompleted', { taskId, completed });
       } else {
         throw new Error('Failed to update task');
       }
@@ -345,8 +311,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
   
-          // Emit WebSocket event only after saving completes
-          //socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
         }
