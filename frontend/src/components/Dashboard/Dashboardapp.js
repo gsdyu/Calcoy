@@ -79,15 +79,86 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
+        // Update local state immediately
         setEvents(prevEvents =>
           prevEvents.map(event =>
             event.id === taskId ? { ...event, completed } : event
           )
         );
+        return true;
       }
+      return false;
     } catch (error) {
       console.error('Error updating task:', error);
+      return false;
     }
+  };
+
+  const handleDragDropUpdate = async (taskId, updates) => {
+    try {
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials: 'include',
+      });
+      if (!check.ok) return false;
+
+      const eventToUpdate = events.find(event => event.id === taskId);
+      if (!eventToUpdate) return false;
+
+      // Create the updated event object
+      const updatedEvent = {
+        ...eventToUpdate,
+        completed: updates.completed,
+        status: updates.status,
+        // Ensure we keep all existing event properties
+        calendar: eventToUpdate.calendar,
+        start_time: eventToUpdate.start_time,
+        end_time: eventToUpdate.end_time,
+        title: eventToUpdate.title,
+        description: eventToUpdate.description,
+        location: eventToUpdate.location,
+      };
+
+      const response = await fetch(`http://localhost:5000/events/${taskId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(updatedEvent),
+      });
+
+      if (response.ok) {
+        // Update local state immediately
+        setEvents(prevEvents =>
+          prevEvents.map(event =>
+            event.id === taskId 
+              ? {
+                  ...event,
+                  completed: updates.completed,
+                  status: updates.status
+                }
+              : event
+          )
+        );
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error updating task via drag and drop:', error);
+      return false;
+    }
+  };
+
+  const handleUpdateTask = async (taskId, updates) => {
+    // If it's a drag and drop update (which includes status changes)
+    if (updates.status) {
+      return handleDragDropUpdate(taskId, updates);
+    }
+    // If it's a simple completion toggle
+    else if (updates.hasOwnProperty('completed')) {
+      return handleTaskComplete(taskId, updates.completed);
+    }
+    return false;
   };
 
   return (
@@ -99,6 +170,7 @@ const Dashboard = () => {
             darkMode={darkMode} 
             events={events}
             onTaskComplete={handleTaskComplete}
+            onUpdateTask={handleUpdateTask} 
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
