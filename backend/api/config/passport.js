@@ -8,19 +8,26 @@ require('dotenv').config({ path: path.join(__dirname,'../.env') });
 const { createEmbeddings } = require('../ai/embeddings');
 
 // Helper function to find or create a user by email
-const findOrCreateUser = async (email, pool) => {
+const findOrCreateUser = async (email, googleUsername, pool) => {
   let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   let user = userResult.rows[0];
 
   if (!user) {
+    // If the user doesn't exist, create a new one with Google username
     const newUserResult = await pool.query(
-      'INSERT INTO users (email) VALUES ($1) RETURNING *',
-      [email]
+      'INSERT INTO users (username, email) VALUES ($1, $2) RETURNING *',
+      [googleUsername, email]
     );
     user = newUserResult.rows[0];
+  } else if (!user.username) {
+    // If the user exists but doesn't have a username, update it
+    await pool.query('UPDATE users SET username = $1 WHERE email = $2', [googleUsername, email]);
+    user.username = googleUsername;
   }
+
   return user;
 };
+
 const addGoogleCalendarEvents = async (calendarData, userId, pool) => {
   try {
     const events = calendarData.items.filter(event => {
@@ -174,25 +181,30 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool) => {
 // Set up the Google OAuth strategies for login and calendar access
 module.exports = (pool) => {
   // Google OAuth Strategy for login
-  passport.use(new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
-      accessType: 'offline', // Request offline access to get a refresh token
-      prompt: 'consent' // Force re-consent to receive the refresh token
-    },
-    async (accessToken, refreshToken, profile, done) => {
-      const email = profile.emails[0].value;
-      try {
-        const user = await findOrCreateUser(email, pool);
-        return done(null, user);
-      } catch (error) {
-        console.error('Google signup error:', error);
-        return done(error, null);
+  passport.use(
+    new GoogleStrategy(
+      {
+        clientID: process.env.GOOGLE_CLIENT_ID,
+        clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
+        accessType: 'offline', // Request offline access
+        prompt: 'consent',     // Force re-consent to receive the refresh token
+      },
+      async (accessToken, refreshToken, profile, done) => {
+        const email = profile.emails[0].value;
+        const googleUsername = profile.displayName; // Retrieve the Google username
+  
+        try {
+          // Find or create the user
+          const user = await findOrCreateUser(email, googleUsername, pool); // Include username
+          return done(null, user);
+        } catch (error) {
+          console.error('Google signup error:', error);
+          return done(error, null);
+        }
       }
-    }
-  ));
+    )
+  );
 
 
   // Google OAuth Strategy for Calendar access

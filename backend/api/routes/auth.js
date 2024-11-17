@@ -64,7 +64,9 @@ app.use(passport.session());
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
  
-app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
+app.get(
+  '/auth/google/callback',
+  passport.authenticate('google', { failureRedirect: '/auth/login' }),
   async (req, res) => {
     const email = req.user.email;
 
@@ -72,13 +74,19 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
       let user = userResult.rows[0];
 
+      if (!user.username) {
+        // User exists but no username, use Google username
+        const googleUsername = req.user.displayName; // Retrieved in the Google strategy
+        await pool.query('UPDATE users SET username = $1 WHERE email = $2', [googleUsername, email]);
+        user.username = googleUsername;
+      }
+
       // Create JWT token
       const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
       // Store the token in the express session and cookies
       req.session.token = token;
-      req.session.tempUser = { email }; // Set tempUser here
-      console.log('Session after setting tempUser:', req.session); // Debugging
+      console.log('Session after setting token:', req.session);
 
       res.cookie('auth_token', token, {
         httpOnly: true,
@@ -87,10 +95,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
         path: '/',
       });
 
-      if (!user.username) {
-        return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
-      }
-
+      // Redirect to the calendar page
       res.redirect(`${process.env.CLIENT_URL}/calendar`);
     } catch (error) {
       console.error('Google login error:', error);
@@ -98,6 +103,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
     }
   }
 );
+
 
 
 // Google Auth Route for Importing Calendar Events
