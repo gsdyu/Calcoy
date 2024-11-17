@@ -58,43 +58,39 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     setServerInfo(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmitServerInfo = async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData();
-    formData.append('serverName', serverInfo.serverName);
-    formData.append('userId', userId);
-    
-   
-    if (!userId) {
-      console.error('User ID is missing'); 
-      return;
+  app.post('/api/servers/create', authenticateToken, async (req, res) => {
+    console.log('Request Body:', req.body);
+  
+    const { serverName } = req.body;
+    const userId = req.user.userId;
+  
+    if (!serverName || !userId) {
+      return res.status(400).json({ error: 'Invalid input data' });
     }
   
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ serverName, userId }),
-      });
+      const inviteLink = uuidv4(); // Generate a unique invite link
   
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Error response from server:', text);
-        return;
-      }
+      const { rows } = await pool.query(
+        `INSERT INTO servers (name, created_by, invite_link) VALUES ($1, $2, $3) RETURNING *`,
+        [serverName, userId, inviteLink]
+      );
   
-      const data = await response.json();
-      setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
-      setServers((prevServers) => [...prevServers, data.server]);
-      setShowEventPopup(true);
-    } catch (error) {
-      console.error('Error submitting server info:', error);
+      const server = rows[0];
+  
+      await pool.query(
+        `INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)`,
+        [userId, server.id]
+      );
+  
+      res.json({ server });
+    } catch (err) {
+      console.error('Error creating server:', err);
+      res.status(500).json({ error: 'Error creating server' });
     }
-  };
+  });
+  
+  
  
   const handleEventOptionSelect = async (option) => {
     setEventDisplayOption(option);
