@@ -17,7 +17,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const [eventPositions, setEventPositions] = useState(new Map());
   const [holidays, setHolidays] = useState([]);
   
-  // New state for filtered events
+  // State for filtered events
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [allDayEvents, setAllDayEvents] = useState([]);
   const [timedEvents, setTimedEvents] = useState([]);
@@ -36,34 +36,26 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     shouldAllowDrag: (event) => !event.isHoliday
   });
 
+  // Helper function to check if two dates are the same day
+  const isSameDay = (date1, date2) => {
+    return date1.getDate() === date2.getDate() &&
+           date1.getMonth() === date2.getMonth() &&
+           date1.getFullYear() === date2.getFullYear();
+  };
+
   // Holiday fetching effect
   useEffect(() => {
     const monthHolidays = holidayService.getMonthHolidays(currentDate);
     setHolidays(monthHolidays);
   }, [currentDate]);
 
+  // Current time update effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
     return () => clearInterval(timer);
   }, []);
-
-  // Event filtering effect
-  useEffect(() => {
-    const newFilteredEvents = [...events, ...holidays].filter(event => 
-      shouldShowEventOnDay(event, currentDate)
-    );
-    
-    setFilteredEvents(newFilteredEvents);
-    setAllDayEvents(newFilteredEvents.filter(event => isAllDayEvent(event)));
-    setTimedEvents(newFilteredEvents.filter(event => !isAllDayEvent(event)));
-
-    const positions = calculateEventColumns(
-      newFilteredEvents.filter(event => !isAllDayEvent(event))
-    );
-    setEventPositions(positions);
-  }, [events, holidays, currentDate]);
 
   const isEventCrossingMidnight = (event) => {
     const startDate = new Date(event.start_time);
@@ -79,20 +71,29 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const shouldShowEventOnDay = (event, day) => {
     const eventStart = new Date(event.start_time);
     const eventEnd = new Date(event.end_time);
-    const dayStart = new Date(day);
+    const currentDay = new Date(day);
+    
+    // For holidays, check exact date match
+    if (event.isHoliday) {
+      return isSameDay(new Date(event.date), currentDay);
+    }
+
+    // For all-day events, check if the event starts on this exact day
+    if (isAllDayEvent(event)) {
+      return isSameDay(eventStart, currentDay);
+    }
+
+    // For regular events
+    const dayStart = new Date(currentDay);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day);
+    const dayEnd = new Date(currentDay);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const nextDayStart = new Date(dayStart);
-    nextDayStart.setDate(nextDayStart.getDate() + 1);
-
-    // If this is an event ending at midnight exactly
+    // If event ends exactly at midnight
     if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
       return eventStart <= dayEnd && eventEnd.getTime() !== dayStart.getTime();
     }
 
-    // For regular events
     return eventStart <= dayEnd && eventEnd > dayStart;
   };
 
@@ -110,6 +111,25 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
+  // Event filtering effect
+  useEffect(() => {
+    const newFilteredEvents = [...events, ...holidays].filter(event => 
+      shouldShowEventOnDay(event, currentDate)
+    );
+    
+    setFilteredEvents(newFilteredEvents);
+    setAllDayEvents(newFilteredEvents.filter(event => 
+      event.isHoliday || isAllDayEvent(event)
+    ));
+    setTimedEvents(newFilteredEvents.filter(event => 
+      !event.isHoliday && !isAllDayEvent(event)
+    ));
+
+    const positions = calculateEventColumns(
+      newFilteredEvents.filter(event => !event.isHoliday && !isAllDayEvent(event))
+    );
+    setEventPositions(positions);
+  }, [events, holidays, currentDate]);
   const getEventStyle = (event, isNextDay = false) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -320,7 +340,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const toggleAllDayExpansion = () => {
     setIsAllDayExpanded(!isAllDayExpanded);
   };
-
   const renderTimeSlotEvent = (event) => {
     if (event.calendar === 'Task') {
       const styles = getEventStyleClass(event);
@@ -421,13 +440,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           </div>
           <div className="text-xs">
             {isNextDay ? (
-              // Next day portion
               `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             ) : isEventCrossingMidnight ? (
-              // First day portion
               `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM`
             ) : (
-              // Regular event
               `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
                 end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
             )}
