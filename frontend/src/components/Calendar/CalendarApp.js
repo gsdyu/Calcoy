@@ -229,12 +229,14 @@ import { useTheme } from '@/contexts/ThemeContext';
         otherColor.server=itemColors?.[`server${event.server_id}`]
       }
 
+      if (event.imported_from && itemColors?.[`${event.imported_from}:${event.imported_username}`]) {
+        otherColor.otherCalendar=itemColors?.[`${event.imported_from}:${event.imported_username}`]
+      }
 
     }
 
     const otherBGList=Object.values(otherColor)
     const eventColor = otherBGList.shift()
-    //let eventColor = otherColor.server ? otherColor.server : otherBGList.shift()
     const otherList=otherBGList.map(color => color.replace('bg-',''))
 
     return {eventColor, otherList, otherBGList}
