@@ -168,8 +168,12 @@ const handleJoinServer = async () => {
     const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/join`, {
       method: 'POST',
       credentials: 'include',
-      body: formData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ serverName: serverInfo.serverName, userId }), // Sending as JSON
     });
+  
 
     const joinData = await response.json();
 
