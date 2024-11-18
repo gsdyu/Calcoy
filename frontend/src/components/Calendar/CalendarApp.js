@@ -94,6 +94,36 @@ import { useTheme } from '@/contexts/ThemeContext';
     };
   }, [socketConnect, setSocketConnect]);
   
+  const handleColorChange = async (item, color) => {
+    // Update UI immediately
+    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
+    
+    // Save to server in background
+    try {
+      const response = await fetch('http://localhost:5000/profile/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          preferences: {
+            visibility: visibleItems,
+            colors: { ...itemColors, [item]: color }
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        // If save fails, revert the change
+        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
+        throw new Error('Failed to save color preference');
+      }
+    } catch (error) {
+      console.error('Error saving color preference:', error);
+      showNotification('Failed to save color preference');
+    }
+  };
 
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
@@ -126,6 +156,9 @@ import { useTheme } from '@/contexts/ThemeContext';
         const data = await response.json();
         if (data.preferences?.colors) {
           setItemColors(data.preferences.colors);
+          handleColorChange('server_default', 'bg-blue-500')
+          handleColorChange('other_default', 'bg-green-500')
+          console.log('dog')
         }
         
         if (data.preferences?.visibility) {
@@ -158,36 +191,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
 
-  const handleColorChange = async (item, color) => {
-    // Update UI immediately
-    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
-    
-    // Save to server in background
-    try {
-      const response = await fetch('http://localhost:5000/profile/preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          preferences: {
-            visibility: visibleItems,
-            colors: { ...itemColors, [item]: color }
-          }
-        }),
-      });
-      
-      if (!response.ok) {
-        // If save fails, revert the change
-        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
-        throw new Error('Failed to save color preference');
-      }
-    } catch (error) {
-      console.error('Error saving color preference:', error);
-      showNotification('Failed to save color preference');
-    }
-  };
 
   const getEventColor = (event) => {
     const calendarType = event.calendar || 'default';
@@ -222,15 +225,15 @@ import { useTheme } from '@/contexts/ThemeContext';
           }
         })();
       otherColor.my=tempColor;
-      if (activeCalendar && itemColors?.[`user${event.user_id}`]) {
-        tempColor = itemColors?.[`user${event.user_id}`]
+      if (activeCalendar && (itemColors?.[`user${event.user_id}`] || itemColors?.[`server_default`])) {
+        tempColor = itemColors?.[`user${event.user_id}`] ? itemColors?.[`user${event.user_id}`] : itemColors?.[`server_default`]
         otherColor.user=tempColor
     } else {
-        if (event.server_id && itemColors?.[`server${event.server_id}`]) {
-          otherColor.server=itemColors?.[`server${event.server_id}`]
+        if (event.server_id && (itemColors?.[`server${event.server_id}`] || itemColors?.[`server_default`])) {
+          otherColor.server= itemColors?.[`server${event.server_id}`] ? itemColors?.[`server${event.server_id}`] : itemColors?.[`server_default`]
         }
-        if (event.imported_from && itemColors?.[`${event.imported_from}:${event.imported_username}`]) {
-          otherColor.otherCalendar=itemColors?.[`${event.imported_from}:${event.imported_username}`]
+        if (event.imported_from && (itemColors?.[`${event.imported_from}:${event.imported_username}`] || itemColors?.[`other_default`])) {
+          otherColor.otherCalendar = itemColors?.[`${event.imported_from}:${event.imported_username}`] ? itemColors?.[`${event.imported_from}:${event.imported_username}`] : itemColors?.[`other_default`]
         }
       }
     }
