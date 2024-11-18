@@ -156,8 +156,6 @@ import { useTheme } from '@/contexts/ThemeContext';
         const data = await response.json();
         if (data.preferences?.colors) {
           setItemColors(data.preferences.colors);
-          handleColorChange('server_default', 'bg-blue-500')
-          handleColorChange('other_default', 'bg-green-500')
         }
         
         if (data.preferences?.visibility) {

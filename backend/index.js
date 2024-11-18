@@ -67,7 +67,7 @@ pool.query(`
     sync_token VARCHAR(255),
     refresh_token TEXT,
     dark_mode BOOLEAN DEFAULT false,
-    preferences JSONB DEFAULT '{}',
+    preferences JSONB DEFAULT '{"colors": {"server_default": "bg-blue-500", "other_default": "bg-green-500"}, "dark_mode": "true"}',
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
