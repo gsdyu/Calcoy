@@ -325,8 +325,9 @@ const AiPage = () => {
           let newEventDetails = JSON.parse(eventDetailsMatch[1]);
           // Checks that all values in the json are strings. else retry response again
           let retries = 0;
+          const retriesMax = 2 
           console.log('dog')
-          for (let i = 0; i < 5; i++){
+          for (let i = 0; i < retriesMax; i++){
             let iKey = 0;
             let validJson = false;
             while(iKey < Object.keys(newEventDetails).length && Object.keys(newEventDetails).length == 9) {
@@ -354,7 +355,7 @@ const AiPage = () => {
             newEventDetails = JSON.parse(eventDetailsMatch[1])
             retries+=1;
           }
-          if (retries == 5) console.error("Bot unable to format json event")
+          if (retries == retriesMax) console.error("Bot unable to format json event")
           const newEventId = Date.now();
 
           setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
