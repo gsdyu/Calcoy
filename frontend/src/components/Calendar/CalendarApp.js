@@ -48,37 +48,41 @@ import { useTheme } from '@/contexts/ThemeContext';
       socket = io('http://localhost:5000');
       socket.removeAllListeners();
       socket.on('eventCreated', (event) => {
-        if (event.userId != currentUser.current) return;
+        if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
         const eventList = Array.isArray(event) ? event : [event]
         setEvents((prevEvents) => [...prevEvents, ...eventList]);
       });
       
       socket.on('eventUpdated', (updatedEvent) => {
-        if (event.userId != currentUser.current) return;
+        if (updatedEvent.user_id != currentUser.current && activeCalendar?.id !== updatedEvent.server_id) return;
         setEvents((prevEvents) =>
           prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
         );
       });
 
-      socket.on('eventDeleted', ( eventId ) => {
-        if (event.userId != currentUser.current) return;
-        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== eventId));
+      socket.on('eventDeleted', ( deletedEvent ) => {
+        if (deletedEvent.user_id !== currentUser.current && activeCalendar?.id !== deletedEvent.server_id) return;
+        setEvents((prevEvents) => prevEvents.filter((event) => event.id !== deletedEvent.id));
       });
 
-      socket.on('serverLeft', async ( server ) => {
-        if (!(server.userId === currentUser.current)) return;
-        const serverId = Number(server.serverId)
+      socket.on('serverLeft', ( leftServer ) => {
+        if (!(leftServer.user_id === currentUser.current)) return;
+        const serverId = Number(leftServer.server_id)
         setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
 
         if (activeCalendar === serverId) {
           setActiveCalendar(null);
         };
+      });
 
-        socket.on('userJoined', async (userInfo) => {
-          if (Number(userInfo[1].serverId) != activeCalendar) return;
-          console.log('is active', userInfo)
-          setServerUsers((prevUsers) => [...prevUsers, userInfo[0]])
-        })
+      socket.on('userJoined', (userInfo) => {
+        if (Number(userInfo.server_id) != activeCalendar) return;
+        setServerUsers((prevUsers) => [...prevUsers, userInfo])
+      });
+
+      socket.on('userLeft', (userInfo) => {
+        if (Number(userInfo.server_id) != activeCalendar) return;
+        setServersUsers((prev) => prev.filter((user) => (user.server_id !== userInfo.server_id && user.id !==userInfo.id)));
       });
     };
 
@@ -88,11 +92,12 @@ import { useTheme } from '@/contexts/ThemeContext';
         socket.off('eventUpdated');
         socket.off('eventDeleted');
         socket.off('serverJoined');
-        socket.off('socketLeft');
+        socket.off('userJoined');
+        socket.off('userLeft');
       }
       setSocketConnect(false);
     };
-  }, [socketConnect, setSocketConnect]);
+  }, [socketConnect, setSocketConnect, activeCalendar]);
   
   const handleColorChange = async (item, color) => {
     // Update UI immediately

@@ -189,11 +189,11 @@ module.exports = (app, pool, io) => {
         return res.status(404).json({ error: 'Event not found or you do not have permission to delete this event' });
       }
 
-      const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
+      const deleteResult = await pool.query('DELETE FROM events WHERE id = $1 RETURNING *', [eventId]);
       
       if (deleteResult.rowCount > 0) {
         // Emit the deleted event ID to WebSocket clients
-        io.emit('eventDeleted', { eventId });
+        io.emit('eventDeleted', deleteResult.rows[0] );
 
         res.json({ message: 'Event deleted successfully' });
       } else {

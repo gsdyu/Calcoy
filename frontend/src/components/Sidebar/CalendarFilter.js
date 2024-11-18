@@ -222,7 +222,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
 
     fetchServerUsers();
-  }, [activeServer]);
+  }, [activeServer, serverUsers, setServerUsers]);
 
   const toggleVisibility = (item, e) => {
     if (e) {
