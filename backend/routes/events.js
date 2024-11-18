@@ -1,7 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
 
-module.exports = (app, pool, io) => {
+module.exports = (app, pool, io, hasEmbed) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
     const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
@@ -20,7 +20,7 @@ module.exports = (app, pool, io) => {
     try {
       let embed = '';
       try {
-        embed = await createEmbeddings(JSON.stringify(req.body));
+        if (hasEmbed) embed = await createEmbeddings(JSON.stringify(req.body));
       } catch {
         console.error('Embed error: failed to create embedding for event');
       }

@@ -21,7 +21,7 @@ const findOrCreateUser = async (email, pool) => {
   }
   return user;
 };
-const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
+const addGoogleCalendarEvents = async (calendarData, userId, pool, email, hasEmbed) => {
   try {
     const events = calendarData.items.filter(event => {
       if (event.status === 'cancelled') return false;
@@ -85,19 +85,21 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
           console.log('Import: Event already added')
           return};
         try {
-          const embed = await createEmbeddings(JSON.stringify(row)
-          ).then(embed_result => {
-            if (embed_result === null || embed_result === undefined) { 
-              console.error(`Error: No embeddings were created. Possibly out of tokens.`);
-              return
-            }
-            pool.query(`UPDATE events
-              SET embedding = $6
-              WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
-            );  
-          }
-         ) 
+          if (hasEmbed) {
+            const embed = await createEmbeddings(JSON.stringify(row)
+            ).then(embed_result => {
+              if (embed_result === null || embed_result === undefined) { 
+                console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+                return
+              }
+              pool.query(`UPDATE events
+                SET embedding = $6
+                WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
+                );  
+              }
+             ) 
+         }
        } catch (error) {
          if (error.status===402) {
            console.log("Error: Out of tokens")
@@ -113,7 +115,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
 }
 // Helper function to fetch and save calendar events to PostgreSQL
 // Helper function to fetch and save Google Calendar events with incremental sync
-const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email) => {
+const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email, hasEmbed) => {
   // Retrieve the last sync token for this user, if any
   const result = await pool.query('SELECT sync_token FROM users WHERE id = $1', [userId]);
   let syncToken = result.rows[0]?.sync_token;
@@ -137,13 +139,13 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email
           // Token invalidated, trigger a full sync
           console.warn('Sync token expired, initiating a full sync.');
           await pool.query('UPDATE users SET sync_token = NULL WHERE id = $1', [userId]);
-          return await fetchAndSaveGoogleCalendarEvents(accessToken, userId, pool, email);
+          return await fetchAndSaveGoogleCalendarEvents(accessToken, userId, pool, email, hasEmbed);
       }
       throw new Error('Failed to fetch calendar events');
   }
 
   let calendarData = await response.json();
-  addGoogleCalendarEvents(calendarData, userId, pool, email)
+  addGoogleCalendarEvents(calendarData, userId, pool, email, hasEmbed)
   let newPageToken = calendarData.nextPageToken;
   let page = 0;
   let newEvents = calendarData.items.length;
@@ -157,10 +159,10 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email
     url += `&pageToken=${newPageToken}`
     const response = await fetch(url, {
       method: 'GET',
-      headers: { Authorization: `Bearer ${accessToken}`}})
+      headers: { Authorization: `Bearer ${accessToken}`}}, hasEmbed)
     calendarData = await response.json()
     // Save events to the database
-    addGoogleCalendarEvents(calendarData, userId, pool, email);
+    addGoogleCalendarEvents(calendarData, userId, pool, email, hasEmbed);
 
     newPageToken = calendarData.nextPageToken;
     page+=1
@@ -178,7 +180,7 @@ const fetchAndSaveGoogleCalendarEvents = async (accessToken, userId, pool, email
 
 
 // Set up the Google OAuth strategies for login and calendar access
-module.exports = (pool) => {
+module.exports = (pool, hasEmbed) => {
   // Google OAuth Strategy for login
   passport.use(new GoogleStrategy(
     {
@@ -231,7 +233,7 @@ module.exports = (pool) => {
       );
     }
     // Save calendar events to the database
-    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
+    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email, hasEmbed);
 
     // Webhook URL for Google Calendar notifications
     const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;

@@ -9,10 +9,10 @@ const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
-// not needed for production
-const input = require('readline-sync');
-const hasEmbed = !Boolean(Number(input.question("\nEnter any number (1,2,-2) if no embed extensino on postgresql, otherwise to proceed with embed.")))
-if (!hasEmbed) console.log("\nProceeding without embeddings.\n")
+
+const hasEmbed = process.env.HAS_EMBED ? process.env.HAS_EMBED.toLowerCase() === 'true' : true
+if (!hasEmbed){console.log("\nProceeding WITHOUT embeddings.\n")
+} else {console.log("\nProceeding WITH embeddings\n")}
 
 // Initialize express app
 const app = express();
@@ -33,7 +33,8 @@ const pool = new Pool({
 });
 
 // Load passport configuration after defining the pool
-require('./config/passport')(pool);
+
+require('./config/passport')(pool, hasEmbed);
 
 app.use(express.json());
 app.use(cors({
@@ -177,11 +178,11 @@ pool.query(`
   });
 
 // Additional routes
-require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool, io); // Pass `io` to events for WebSocket broadcasting
-require('./routes/ai')(app, pool);
+require('./routes/auth')(app, pool, io, hasEmbed);
+require('./routes/events')(app, pool, io, hasEmbed); // Pass `io` to events for WebSocket broadcasting
+require('./routes/ai')(app, pool, hasEmbed);
 
-app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool, io));
+app.post('/webhook/google-calendar', handleGoogleCalendarWebhook(pool, io, hasEmbed));
 
 app.get('/', async (req, res) => {
   res.send({ "status": "ready" });

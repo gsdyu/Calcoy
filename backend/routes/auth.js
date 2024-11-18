@@ -4,6 +4,7 @@ const nodemailer = require('nodemailer');
 const msal = require('@azure/msal-node');
 const session = require('express-session');
 const passport = require('passport');
+const { createEmbeddings } = require('../ai/embeddings')
 const ICAL = require('ical.js');
 const ICALgen = require('ical-generator').default
 
@@ -208,7 +209,36 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.time_zone,
           event.imported_from
         ]
-      )
+      ).then(async result => {
+         // checks for embedding on all events. can convert to function
+         // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+         // callback events will always be given even if our calendar already has it stored
+         const row = result.rows;
+         console.log(row)
+         if (!row[0]) {
+           console.log('Import: Event already added')
+           return};
+         try {
+           if (!hasEmbed) console.error(`Warning: Chose no embed to be made.`)
+           const embed = await createEmbeddings(JSON.stringify(row)
+           ).then(embed_result => {
+             if (embed_result === null || embed_result === undefined) { 
+               console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+               return
+             }
+             console.log(embed_result.length)
+             console.log(row)
+             pool.query(`UPDATE events
+                         SET embedding = $6
+                         WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                         [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]);  
+           }) 
+         } catch (error) {
+             if (error.status===402) {
+               console.log("Warning: Out of tokens or no Embed")
+           }
+         }
+      })
     );
 
     await Promise.all(insertPromises);

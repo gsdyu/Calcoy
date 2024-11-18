@@ -179,7 +179,8 @@ async function useRag(userInput, userId, context_query, pool) {
   return output 
 }
      
-module.exports = (app, pool) => {
+module.exports = (app, pool, hasEmbed) => {
+  // module does not need io. ai create events json but does not insert here
   // Create event route
   const agentManager = new SharedAgentsManager(pool);
 
@@ -219,7 +220,11 @@ module.exports = (app, pool) => {
         title = await agentManager.generateAndUpdateTitle(conversationId, userInput);
       }
 
-      const initial_context = await agentManager.contextAgent.inputChat({input: userInput});
+      //const initial_context = await agentManager.contextAgent.inputChat({input: userInput});
+      // default to near context when starting conversation
+      // eventually can use a model or preference or something to determine what time of initial
+      // context the user wants
+      const initial_context = {"type": "context", "time": "near"}
       if (initial_context.type !== "none") {
         await agentManager.saveMessage(conversationId, 'model', JSON.stringify(initial_context));
       }
@@ -228,7 +233,9 @@ module.exports = (app, pool) => {
       if (initial_context.type === "none"){
       } else {
         try { 
-          initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
+          if (hasEmbed) { 
+            initial_events = await useRag(userInput, userId, handleContext(initial_context), pool);
+          }
         } catch (error) {
           console.error("Error calling RAG. Possibly out of embed token", error)
         }

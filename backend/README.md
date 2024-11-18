@@ -3,10 +3,19 @@
 ```
   npm install
 ```
+- run node index.js to start server
+- ensure env key satisfied
+- important: need provide EMAIL_USER, EMAIL_PASS to login, not signup (two factor auth email)
+- use ur own postgresql database and assign link
+- pgvector is used. it is not needed to run but look at Vector Database for Rag section (HAS_EMBED)
 ## env file
 - by default, env name is .env
 - .env file should be in root directory of backend; timewise/backend/.
-- env file location might be different for everyone; just make sure the program access the env location relative to where you have your own env
+
+### two factor auth email
+- env key for google email that sends 2 factor auth code when logging in, however can signup without it
+- EMAIL_USER, EMAIL_PASS
+
 
 ## have a running local Postgre server.
 1. download and configure Postgre (maybe from the website)
@@ -14,6 +23,8 @@
 3. change the env variable (.env) DATABASE_URL to your correspoding database name. (if you look at the URL in .env it should be intuitive on what to change)
 
 ## Vector Database for RAG.
+
+- set .env var HAS_EMBED = [true||false] if you install pgvector on postgresql or not (below)
 
 - Pgvector
   - install pgvector for postgre from their github
@@ -29,6 +40,7 @@
     - using jina ai as embedding model. they provide free tokens
         - https://jina.ai/embeddings/
     - "JINA_API_KEY"=[key]
+  - embedding dimension should/must be 128
 
 
 ## set up your .env variable:
@@ -37,7 +49,7 @@
 	- the part that says "test", should be your postgre password that you set up
 - have "JWT_SECRET" environment variable and set it to my_key. (JWT_SECRET=my_key)
 
-## to get access to chatbot you need an api_key
+## GEMINI: to get access to chatbot you need an api_key
 - current chatbot being used is gemini 
   - website: https://aistudio.google.com/app/apikey
   - "GEMINI_API_KEY" will be the enviroment variable
@@ -45,11 +57,13 @@
 	- website: https://console.groq.com/playground 
 	- "GROQ_API_KEY" will be the environment variable
 
-## run the server
 
-```
-node index.js
-```
+## google and microsoft auth key
+- Google
+  - env variable:
+    - GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET
+    - MICROSOFT_ID, MICROSOFT_SECRET, MICROSOFT_TENANT_ID
+  - these are not needed to run, but not providing=no third party login
 
 ## script
 - theres a script folder intended for personal development automation. 
@@ -57,6 +71,14 @@ node index.js
 - also script for adding some boilerplate events and their embeddings.
     - need to register an account first for events to work
       - no script for a boilerplate account or admin
+
+##
+
+## run the server
+
+```
+node index.js
+```
 
 ## note: 
 
