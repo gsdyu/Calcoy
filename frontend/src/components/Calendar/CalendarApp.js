@@ -177,6 +177,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   }, []);
 
   useEffect(() => {
+    console.log(events)
     const today = new Date();
     const weekStart = new Date(today);
     weekStart.setDate(today.getDate() - today.getDay());
@@ -223,7 +224,7 @@ import { useTheme } from '@/contexts/ThemeContext';
             case 'Work':
               return 'bg-purple-500'; 
             default:
-              return 'bg-gray-400'; 
+              return; 
           }
         })();
       otherColor.my=tempColor;
@@ -240,7 +241,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       }
     }
 
-    const otherColorBGList=Object.values(otherColor);
+    const otherColorBGList=Object.values(otherColor).filter(color=>color!=null);
     const origColorBGList = Array.from(otherColorBGList);
     const eventColor = otherColorBGList.shift();
     const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
