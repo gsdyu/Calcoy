@@ -166,8 +166,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
       )}
     </div>
   );
- 
-  // Fetch users tied to the selected server
   useEffect(() => {
     const fetchServerUsers = async () => {
       if (!activeServer) {
@@ -181,13 +179,15 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
             'Content-Type': 'application/json',
           },
           credentials: 'include', 
-          body: JSON.stringify({ username: users.username, userId: user.id }), 
+          body: JSON.stringify({ serverId: activeServer.id }), 
         });
+  
         if (!response.ok) {
           throw new Error('Failed to fetch server users');
         }
+  
         const data = await response.json();
-        setServerUsers(data || []);
+        setServerUsers(data || []); 
       } catch (error) {
         console.error('Error fetching server users:', error);
         setError('Error fetching server users. Please try again later.');
@@ -195,9 +195,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
     };
   
     fetchServerUsers();
-  }, [activeServer]);  
+  }, [activeServer]);
   
-
   const toggleVisibility = (item, e) => {
     if (e) {
       e.stopPropagation();
