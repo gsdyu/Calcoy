@@ -152,7 +152,7 @@ export const ThemeProvider = ({ children }) => {
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       
       // Sync with backend
-      fetch('http://localhost:5000/profile/preferences', {
+      fetch('http://localhost:5000/profile/preferencesasdf', {
         method: 'PUT',
         credentials: 'include',
         headers: {
