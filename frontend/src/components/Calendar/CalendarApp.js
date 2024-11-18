@@ -109,7 +109,8 @@ import { useTheme } from '@/contexts/ThemeContext';
         body: JSON.stringify({ 
           preferences: {
             visibility: visibleItems,
-            colors: { ...itemColors, [item]: color }
+            colors: { ...itemColors, [item]: color },
+            dark_mode: true
           }
         }),
       });
@@ -127,7 +128,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
-    
     const fetchPreferences = async () => {
       try {
         const check = await fetch('http://localhost:5000/auth/check', {
@@ -158,7 +158,6 @@ import { useTheme } from '@/contexts/ThemeContext';
           setItemColors(data.preferences.colors);
           handleColorChange('server_default', 'bg-blue-500')
           handleColorChange('other_default', 'bg-green-500')
-          console.log('dog')
         }
         
         if (data.preferences?.visibility) {
