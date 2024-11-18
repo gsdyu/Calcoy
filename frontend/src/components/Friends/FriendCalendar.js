@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 
@@ -6,41 +6,28 @@ const FriendCalendar = ({ friend }) => {
   const { darkMode } = useTheme();
   const containerRef = useRef(null);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [events, setEvents] = useState([]);
   const [eventsPerDay] = useState(2);
 
-  // Example events
-  const exampleEvents = [
-    {
-      id: 1,
-      title: "Team Sync",
-      start_time: new Date(2024, 10, 15, 10, 0),
-      calendar: 'Work',
-      isTask: false
-    },
-    {
-      id: 2,
-      title: "Reply to emails",
-      start_time: new Date(2024, 10, 15, 12, 30),
-      calendar: 'Task',
-      isTask: true,
-      completed: true
-    },
-    {
-      id: 3,
-      title: "Project Due",
-      start_time: new Date(2024, 10, 20, 15, 0),
-      calendar: 'Task',
-      isTask: true,
-      completed: false
-    },
-    {
-      id: 4,
-      title: "Movie Night",
-      start_time: new Date(2024, 10, 18, 19, 0),
-      calendar: 'Personal',
-      isTask: false
+  // Fetch friend’s events
+  const fetchFriendEvents = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friends/${friend.id}/events`, {
+        method: 'GET',
+        credentials: 'include', 
+      });
+      const data = await response.json();
+      setEvents(data);
+    } catch (error) {
+      console.error('Error fetching friend events:', error);
     }
-  ];
+  };
+
+  useEffect(() => {
+    if (friend) {
+      fetchFriendEvents();
+    }
+  }, [friend]);
 
   const isToday = (date) => {
     const today = new Date();
@@ -133,7 +120,7 @@ const FriendCalendar = ({ friend }) => {
       const isWeekendDay = date && isWeekend(date);
 
       const dayEvents = date 
-        ? exampleEvents.filter(event => {
+        ? events.filter(event => {
             const eventDate = new Date(event.start_time);
             return eventDate.getDate() === date.getDate() &&
                    eventDate.getMonth() === date.getMonth() &&
