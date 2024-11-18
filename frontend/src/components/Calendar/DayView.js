@@ -36,13 +36,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     shouldAllowDrag: (event) => !event.isHoliday
   });
 
-  // Helper function to check if two dates are the same day
-  const isSameDay = (date1, date2) => {
-    return date1.getDate() === date2.getDate() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getFullYear() === date2.getFullYear();
-  };
-
   // Holiday fetching effect
   useEffect(() => {
     const monthHolidays = holidayService.getMonthHolidays(currentDate);
@@ -71,30 +64,18 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const shouldShowEventOnDay = (event, day) => {
     const eventStart = new Date(event.start_time);
     const eventEnd = new Date(event.end_time);
-    const currentDay = new Date(day);
-    
-    // For holidays, check exact date match
-    if (event.isHoliday) {
-      return isSameDay(new Date(event.date), currentDay);
-    }
-
-    // For all-day events, check if the event starts on this exact day
-    if (isAllDayEvent(event)) {
-      return isSameDay(eventStart, currentDay);
-    }
-
-    // For regular events
-    const dayStart = new Date(currentDay);
+    const dayStart = new Date(day);
     dayStart.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(currentDay);
+    const dayEnd = new Date(day);
     dayEnd.setHours(23, 59, 59, 999);
-
-    // If event ends exactly at midnight
+  
+    // Special case for exact midnight end time
     if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
-      return eventStart <= dayEnd && eventEnd.getTime() !== dayStart.getTime();
+      // Don't show on the end day if it ends exactly at midnight
+      return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
     }
-
-    return eventStart <= dayEnd && eventEnd > dayStart;
+  
+    return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
   };
 
   const isAllDayEvent = (event) => {
@@ -130,6 +111,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     );
     setEventPositions(positions);
   }, [events, holidays, currentDate]);
+
   const getEventStyle = (event, isNextDay = false) => {
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
@@ -184,7 +166,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     onDateDoubleClick(date, isAllDay);
   };
 
-  // Fix for the getEventColor TypeError
   const getEventStyleClass = (event) => {
     const { eventColor } = getEventColor(event);
     const color = eventColor.replace('bg-', '');
