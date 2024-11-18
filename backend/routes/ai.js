@@ -27,7 +27,7 @@ class SharedAgentsManager {
     this.createAgent = new GeminiAgent({
       content: chat_createEvent,
       responseSchema: jsonEvent,
-      responseMimetype: "application/json"
+      responseMimeType: "application/json"
     });
 
     this.titleAgent = new GeminiAgent({
