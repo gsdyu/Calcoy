@@ -170,10 +170,12 @@ async function useRag(userInput, userId, context_query, pool) {
       const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
       // you can use a fileReader to read the context
       output = textContext;
+      /*
       fs.writeFile('scripts/logs/context.txt',`${context_query}:\n${textContext.join('\n')}`, (err) => { if (err) {
           console.error("Error writing file: ", err);
         }
       })
+      */
     })
   })
   return output 
