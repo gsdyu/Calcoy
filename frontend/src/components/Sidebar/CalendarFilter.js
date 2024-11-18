@@ -442,7 +442,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || itemColors?.[`server${user.server_id}`]||itemColors?.server_default))}
+            {serverUsers.map(user => renderCalendarItem(`server${user.server_id}:user${user.id}`, user.username, itemColors?.[`server${user.server_id}:user${user.id}`] || itemColors?.[`server${user.server_id}`]||itemColors?.server_default))}
           </div>
         )}
       </div>

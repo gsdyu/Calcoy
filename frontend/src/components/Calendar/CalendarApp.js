@@ -228,8 +228,8 @@ import { useTheme } from '@/contexts/ThemeContext';
           }
         })();
       otherColor.my=tempColor;
-      if (activeCalendar && (itemColors?.[`user${event.user_id}`] || itemColors?.[`server_default`])) {
-        tempColor = itemColors?.[`user${event.user_id}`] ? itemColors?.[`user${event.user_id}`] : itemColors?.[`server_default`]
+      if (activeCalendar && (itemColors?.[`server${event.server_id}:user${event.user_id}`] || itemColors?.[`server_default`])) {
+        tempColor = itemColors?.[`server${event.server_id}:user${event.user_id}`] ? itemColors?.[`server${event.server_id}:user${event.user_id}`] : itemColors?.[`server_default`]
         otherColor.user=tempColor
     } else {
         if (event.server_id && (itemColors?.[`server${event.server_id}`] || itemColors?.[`server_default`])) {
