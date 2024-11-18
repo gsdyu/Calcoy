@@ -32,25 +32,29 @@ module.exports = (app, pool) => {
     }
   });
 
-  app.get('/api/servers/:serverId/users', authenticateToken, async (req, res) => {
+  app.post('/api/servers/:serverId/users', authenticateToken, async (req, res) => {
     const { serverId } = req.params;
   
     try {
       const { rows } = await pool.query(
-       `SELECT users.username, users.email FROM user_servers 
-        INNER JOIN users ON user_servers.user_id = users.id
-        WHERE user_servers.server_id = $1`, [serverId]
+        `SELECT users.username, users.email 
+         FROM user_servers 
+         INNER JOIN users ON user_servers.user_id = users.id
+         WHERE user_servers.server_id = $1`,
+        [serverId]
       );
-      if (rows.rowCount === 0) {
-        return res.status(404).json({error: "Server not found or there are no users."});
+  
+      if (rows.length === 0) {
+        return res.status(404).json({ error: 'Server not found or there are no users.' });
       }
-      
-      return(res.json(rows))
+  
+      res.json(rows); // Return the fetched users
     } catch (error) {
-      console.error('Error:', error)
-      res.status(500).json( { error: 'Internal Server Error'})
+      console.error('Error fetching server users:', error);
+      res.status(500).json({ error: 'Internal Server Error' });
     }
-  })
+  });
+  
   
     // Route to leave a server
   app.delete('/api/servers/:serverId/leave', authenticateToken, async (req, res) => {

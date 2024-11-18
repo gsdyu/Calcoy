@@ -174,12 +174,11 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
       }
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${activeServer.id}/users`, {
-          method: 'POST', 
+          method: 'GET', // Change to GET
           headers: {
             'Content-Type': 'application/json',
           },
-          credentials: 'include', 
-          body: JSON.stringify({ serverId: activeServer.id }), 
+          credentials: 'include',
         });
   
         if (!response.ok) {
@@ -187,7 +186,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         }
   
         const data = await response.json();
-        setServerUsers(data || []); 
+        setServerUsers(data || []);
       } catch (error) {
         console.error('Error fetching server users:', error);
         setError('Error fetching server users. Please try again later.');
@@ -196,6 +195,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
   
     fetchServerUsers();
   }, [activeServer]);
+  
   
   const toggleVisibility = (item, e) => {
     if (e) {
