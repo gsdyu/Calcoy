@@ -16,13 +16,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
   const [eventPositions, setEventPositions] = useState(new Map());
   const [holidays, setHolidays] = useState([]);
-  
-  // State for filtered events
   const [filteredEvents, setFilteredEvents] = useState([]);
   const [allDayEvents, setAllDayEvents] = useState([]);
   const [timedEvents, setTimedEvents] = useState([]);
 
-  // Initialize drag and drop hook
   const { 
     draggedEvent,
     dropPreview,
@@ -38,17 +35,47 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   // Holiday fetching effect
   useEffect(() => {
-    const monthHolidays = holidayService.getMonthHolidays(currentDate);
-    setHolidays(monthHolidays);
+    const fetchAndFormatHolidays = async () => {
+      const monthHolidays = holidayService.getMonthHolidays(currentDate);
+      const formattedHolidays = monthHolidays.map(holiday => {
+        const holidayDate = new Date(holiday.date || holiday.start_time);
+        const startDate = new Date(holidayDate);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(holidayDate);
+        endDate.setHours(23, 59, 59, 999);
+        
+        return {
+          ...holiday,
+          id: `holiday-${holidayDate.toISOString()}`,
+          title: holiday.title || holiday.name,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          date: holidayDate.toISOString(),
+          isHoliday: true,
+          calendar: 'holiday',
+          type: holiday.type || 'Public Holiday'
+        };
+      });
+      setHolidays(formattedHolidays);
+    };
+    fetchAndFormatHolidays();
   }, [currentDate]);
 
-  // Current time update effect
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const isSameDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getDate() === d2.getDate() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getFullYear() === d2.getFullYear();
+  };
 
   const isEventCrossingMidnight = (event) => {
     const startDate = new Date(event.start_time);
@@ -61,40 +88,51 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return endDate.getTime() > nextDay.getTime();
   };
 
+
   const shouldShowEventOnDay = (event, day) => {
+    if (event.isHoliday) {
+      const holidayDate = new Date(event.date);
+      const checkDate = new Date(day);
+      return isSameDay(holidayDate, checkDate);
+    }
+
     const eventStart = new Date(event.start_time);
     const eventEnd = new Date(event.end_time);
     const dayStart = new Date(day);
     dayStart.setHours(0, 0, 0, 0);
     const dayEnd = new Date(day);
     dayEnd.setHours(23, 59, 59, 999);
-  
-    // Special case for exact midnight end time
+
     if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
-      // Don't show on the end day if it ends exactly at midnight
-      return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
+      const eventEndDay = new Date(eventEnd);
+      eventEndDay.setHours(0, 0, 0, 0);
+      return eventStart <= dayEnd && eventEndDay.getTime() > dayStart.getTime();
     }
-  
-    return eventStart.getTime() <= dayEnd.getTime() && eventEnd.getTime() > dayStart.getTime();
+
+    return eventStart <= dayEnd && eventEnd > dayStart;
   };
 
   const isAllDayEvent = (event) => {
+    if (event.isHoliday) return true;
+    
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     
-    // Check if event starts at midnight (00:00)
     const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
     
-    // Check if event ends at midnight of the next day
     const nextDay = new Date(startDate);
     nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setHours(0, 0, 0, 0);
     
     return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
 
   // Event filtering effect
   useEffect(() => {
-    const newFilteredEvents = [...events, ...holidays].filter(event => 
+    const validEvents = events.filter(event => event.start_time && event.end_time);
+    const validHolidays = holidays.filter(holiday => holiday.date && holiday.start_time && holiday.end_time);
+    
+    const newFilteredEvents = [...validEvents, ...validHolidays].filter(event => 
       shouldShowEventOnDay(event, currentDate)
     );
     
@@ -121,7 +159,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     let endHour = endDate.getHours();
     let endMinute = endDate.getMinutes();
   
-    if (endHour === 0 && endMinute === 0) {
+    if (endHour === 0 && endMinute === 0 && !isNextDay) {
       endHour = 24;
       endMinute = 0;
     }
@@ -134,7 +172,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       height = minHeight;
     }
   
-    // Get positioning from eventPositions
     const position = eventPositions.get(event.id) || {
       left: '0%',
       width: '100%',
@@ -167,6 +204,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   };
 
   const getEventStyleClass = (event) => {
+    if (event.isHoliday) {
+      return {
+        regularClass: 'bg-yellow-500 bg-opacity-20 border-yellow-500 text-yellow-500',
+        darkClass: 'text-yellow-300',
+        lightClass: 'text-yellow-700',
+        color: 'yellow'
+      };
+    }
+    
     const { eventColor } = getEventColor(event);
     const color = eventColor.replace('bg-', '');
     return {
@@ -176,7 +222,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       color
     };
   };
-
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
       width: 12px;
@@ -213,7 +258,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             e.stopPropagation();
             onEventClick({
               ...event,
-              description: `${event.type} Holiday in United States`,
+              description: `${event.type} Holiday`,
               date: event.date,
               time: '-',
               isReadOnly: true
@@ -294,6 +339,9 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const sortedEvents = [...allDayEvents].sort((a, b) => {
       if (a.isHoliday && !b.isHoliday) return -1;
       if (!a.isHoliday && b.isHoliday) return 1;
+      if (a.isHoliday && b.isHoliday) {
+        return new Date(a.date) - new Date(b.date);
+      }
       if (a.calendar === 'Task' && b.calendar === 'Task') {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
       }
@@ -321,6 +369,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
   const toggleAllDayExpansion = () => {
     setIsAllDayExpanded(!isAllDayExpanded);
   };
+
   const renderTimeSlotEvent = (event) => {
     if (event.calendar === 'Task') {
       const styles = getEventStyleClass(event);
@@ -374,7 +423,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           style={getEventStyle(event)}
           onClick={(e) => handleEventClick({
             ...event,
-            description: `${event.type} Holiday in United States`,
+            description: `${event.type} Holiday`,
             time: '-',
             isReadOnly: true
           }, e)}
@@ -422,7 +471,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           <div className="text-xs">
             {isNextDay ? (
               `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-            ) : isEventCrossingMidnight ? (
+            ) : isCrossingMidnight ? (
               `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM`
             ) : (
               `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
@@ -550,7 +599,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
-                className="absolute left-0 right-0 z-20"
+              className="absolute left-0 right-0 z-20"
                 style={{ top: `${getCurrentTimePosition()}px` }}
               >
                 <div className="relative w-full">
