@@ -175,23 +175,28 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer }) => {
         return;
       }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/servers/${activeServer.id}/users`, {
-          credentials: 'include',
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${activeServer.id}/users`, {
+          method: 'POST', 
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', 
+          body: JSON.stringify({ username: users.username, userId: user.id }), 
         });
         if (!response.ok) {
           throw new Error('Failed to fetch server users');
         }
         const data = await response.json();
-        
         setServerUsers(data || []);
       } catch (error) {
         console.error('Error fetching server users:', error);
         setError('Error fetching server users. Please try again later.');
       }
     };
-
+  
     fetchServerUsers();
-  }, [activeServer]);
+  }, [activeServer, user]);  
+  
 
   const toggleVisibility = (item, e) => {
     if (e) {
