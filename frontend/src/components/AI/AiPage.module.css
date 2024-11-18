@@ -255,34 +255,65 @@
 
   .clipTip {
     visibility: hidden;
-    background-color: #333;
-    color: #fff;
+    background-color: rgb(255, 255, 255);
+    color: rgb(26, 26, 26);
     padding: 8px;
     position: absolute;
-    transform:  translateY(20%) rotate(225deg) scaleY(-1);
+    transform: translateY(-125%);
     white-space: nowrap;
     z-index: 1;
     opacity: 0;
     transition: opacity 0.2s;
     border-radius: 6px;
+    font-size: 14px;
   }
-
+  
+  .inputContainerDark .clipTip {
+    background-color: rgb(26, 26, 26);
+    color: rgb(255, 255, 255);
+  }
+  
   .clip {
-  height: 20px;
-  width: 20px;
-  border-radius: 50px;
-  color: white;
-  margin-left: 20px;
-  margin-top: auto;
-  margin-bottom: 16px;
-  transform: rotate(-135deg) scaleY(-1);
+    height: 35px;
+    width: 35px;
+    border-radius: 50%;
+    margin-left: 10px;
+    margin-top: auto;
+    margin-bottom: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    transition: background-color 0.2s;
+    cursor: pointer;
   }
-
-  .clip:hover .clipTip{
+  
+  .clip:hover {
+    background-color: rgba(0, 0, 0, 0.05);
+  }
+  
+  .inputContainerDark .clip:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .clip:hover .clipTip {
     visibility: visible;
-    opacity:1;
+    opacity: 1;
   }
-
+  
+  .clipIcon {
+    color: #6e6e6e;
+    transition: color 0.2s;
+  }
+  
+  .inputContainerDark .clipIcon {
+    color: #dadada;
+  }
+  
+  .clip:hover .clipIcon {
+    color: #3e7bdf;
+  }
+  
   .buttonActive {
     background-color: #3e7bdf;
     color: rgb(255, 255, 255);
@@ -293,12 +324,14 @@
     color: rgb(255, 255, 255);
   }
   
-  .clipIcon {
-    color: #dadada;
-  }
   .sendicon {
     color: #272727;
   }
+  
+  .inputContainerDark .sendicon {
+    color: #ffffff;
+  }
+
 
   /* scrollbar stuff */
   .chatWindow::-webkit-scrollbar, .chatScroll::-webkit-scrollbar {
