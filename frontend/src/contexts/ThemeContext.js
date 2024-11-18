@@ -104,47 +104,78 @@ const THEMES = {
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [darkMode, setDarkMode] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('darkMode');
-      return saved ? JSON.parse(saved) : undefined;
-    }
-    return undefined;
-  });
+  // Initialize darkMode with null to prevent flash of wrong theme
+  const [darkMode, setDarkMode] = useState(null);
+  const [selectedTheme, setSelectedTheme] = useState('default');
 
-  const [selectedTheme, setSelectedTheme] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('theme') || 'default';
-    }
-    return 'default';
-  });
-
+  // Handle initial theme setup and backend sync
   useEffect(() => {
-    if (darkMode === undefined) {
-      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-      
-      const handleChange = (e) => {
-        if (darkMode === undefined) {
-          setDarkMode(e.matches);
+    const initializeTheme = async () => {
+      try {
+        // First try to get user preferences from backend
+        const response = await fetch('http://localhost:5000/api/user/preferences', {
+          credentials: 'include'
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.dark_mode !== undefined) {
+            setDarkMode(data.dark_mode);
+            localStorage.setItem('darkMode', JSON.stringify(data.dark_mode));
+            return;
+          }
         }
-      };
 
-      handleChange(mediaQuery);
+        // If backend request fails or no preference, fall back to local storage
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode !== null) {
+          setDarkMode(JSON.parse(savedDarkMode));
+        } else {
+          // If no saved preference, check system preference
+          const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+          setDarkMode(mediaQuery.matches);
+        }
+      } catch (error) {
+        console.error('Error fetching theme preferences:', error);
+        // Fallback to system preference if everything fails
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setDarkMode(mediaQuery.matches);
+      }
+    };
+
+    initializeTheme();
+  }, []);
+
+  // Save preferences whenever they change
+  useEffect(() => {
+    if (darkMode !== null) {
+      localStorage.setItem('darkMode', JSON.stringify(darkMode));
       
-      mediaQuery.addEventListener('change', handleChange);
-      return () => mediaQuery.removeEventListener('change', handleChange);
+      // Sync with backend
+      fetch('http://localhost:5000/api/user/preferences', {
+        method: 'PUT',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          dark_mode: darkMode
+        })
+      }).catch(error => {
+        console.error('Error saving theme preference to backend:', error);
+      });
     }
   }, [darkMode]);
 
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('darkMode', JSON.stringify(darkMode));
-      localStorage.setItem('theme', selectedTheme);
+  const toggleDarkMode = async (value) => {
+    if (value === undefined) {
+      // Remove saved preference and use system
+      localStorage.removeItem('darkMode');
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      setDarkMode(mediaQuery.matches);
+    } else {
+      setDarkMode(value);
     }
-  }, [darkMode, selectedTheme]);
-
-  const toggleDarkMode = (value) => {
-    setDarkMode(value);
   };
 
   const getCurrentTheme = () => {
@@ -155,6 +186,11 @@ export const ThemeProvider = ({ children }) => {
       colors: theme.colors[mode]
     };
   };
+
+  // Don't render until we've determined the theme
+  if (darkMode === null) {
+    return null;
+  }
 
   return (
     <ThemeContext.Provider value={{ 
