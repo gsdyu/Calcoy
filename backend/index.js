@@ -9,6 +9,10 @@ const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
+// not needed for production
+const input = require('readline-sync');
+const hasEmbed = !Boolean(Number(input.question("\nEnter any number (1,2,-2) if no embed extensino on postgresql, otherwise to proceed with embed.")))
+if (!hasEmbed) console.log("\nProceeding without embeddings.\n")
 
 // Initialize express app
 const app = express();
@@ -47,13 +51,15 @@ app.use(session({
 
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool, io); // Pass `io` to the routes for real-time events
+require('./routes/events')(app, pool, io, hasEmbed); // Pass `io` to the routes for real-time events
 require('./routes/profile')(app, pool);
 require('./routes/servers')(app, pool, io); // Pass `io` to the servers route
 
-pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
-  .then(() => { console.log("Vector extension ready"); })
-  .catch(err => { console.error('Error creating vector extension: ', err); });
+if (hasEmbed) {
+  pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
+    .then(() => { console.log("Vector extension ready"); })
+    .catch(err => { console.error('Error creating vector extension: ', err); });
+}
 
 // Create or alter users table to add 2FA columns
 pool.query(`
@@ -109,7 +115,7 @@ pool.query(`
 
 `).then(() => {
   console.log("Users and Servers table is ready");
-  pool.query(`
+  let eventQuery = `
     CREATE TABLE IF NOT EXISTS events (
       id SERIAL PRIMARY KEY,
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -122,16 +128,17 @@ pool.query(`
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
-
-      embedding vector(128),
       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
       imported_from VARCHAR(50),
       imported_username VARCHAR(50),
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
-    );
   `
-    );
+  if (hasEmbed){ eventQuery += `
+    ,embedding vector(128)`
+  }
+  eventQuery+=');'
+  pool.query(eventQuery);
   })
   .then(() => {
     console.log('Events table is ready');
