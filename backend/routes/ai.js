@@ -95,14 +95,20 @@ class SharedAgentsManager {
   // Save message to database
   async saveMessage(conversationId, sender, content) {
     try {
-
-      if (typeof content === 'string' && (content.includes('"type":"createEvent"') || content.includes('"type":"context"'))) {
+      if (
+        typeof content === 'string' &&
+        (
+          content.trim() === '{"type":"createEvent"}' ||
+          content.includes('"type":"context"')
+        )
+      ) {
+        // Do not save messages that are exactly {"type":"createEvent"} or include "type":"context"
         return;
       }
 
       await this.pool.query(
         `INSERT INTO messages (conversation_id, sender, content)
-         VALUES ($1, $2, $3)`,
+        VALUES ($1, $2, $3)`,
         [conversationId, sender, content]
       );
     } catch (error) {
@@ -266,7 +272,7 @@ module.exports = (app, pool) => {
         let sendString = eventDetailsString[0]
         console.log(sendString)
 
-        await agentManager.saveMessage(conversationId, 'model', eventDetailsString);
+        await agentManager.saveMessage(conversationId, 'model', sendString);
         
         agentManager.chatAgent.setHistory(agentManager.createAgent.getHistory());
 
