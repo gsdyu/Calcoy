@@ -218,8 +218,8 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Mina"
-              role=" CIO | Backend Developer"
-              description="Backend developer. Immortal Valorant player. Roblox enthusiast."
+              role=" CIO | Backend Developer | Software Deployment"
+              description="Expertise in backend systems and authentication solutions. Dedicated to creating efficient and secure solutions."
               image="/mina.png"
               imagePosition="object-center"
               socials={{

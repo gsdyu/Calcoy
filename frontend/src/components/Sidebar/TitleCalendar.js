@@ -193,7 +193,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
             <div className="flex items-center space-x-3">
               <input
                 type="text"
-                value={`https://timewise.com/invite/${activeCalendar.invite_link}`} 
+                value={`https://calcoy.com/invite/${activeCalendar.invite_link}`} 
                 readOnly
                 className="w-full p-3 rounded-full bg-gray-800/50 text-gray-200 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50"
               />
