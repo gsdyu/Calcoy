@@ -104,15 +104,20 @@ const THEMES = {
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  // Initialize darkMode with null to prevent flash of wrong theme
   const [darkMode, setDarkMode] = useState(null);
   const [selectedTheme, setSelectedTheme] = useState('default');
 
-  // Handle initial theme setup and backend sync
   useEffect(() => {
     const initializeTheme = async () => {
       try {
-        // First try to get user preferences from backend
+        // First check localStorage
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode !== null) {
+          setDarkMode(JSON.parse(savedDarkMode));
+          return;
+        }
+
+        // Then try to get user preferences from backend
         const response = await fetch('http://localhost:5000/profile', {
           credentials: 'include'
         });
@@ -126,33 +131,32 @@ export const ThemeProvider = ({ children }) => {
           }
         }
 
-        // If backend request fails or no preference, fall back to local storage
+        // If no saved preference or backend preference, use system preference
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        setDarkMode(mediaQuery.matches);
+      } catch (error) {
+        console.error('Error fetching theme preferences:', error);
+        // Even if backend fails, we should still honor localStorage if it exists
         const savedDarkMode = localStorage.getItem('darkMode');
         if (savedDarkMode !== null) {
           setDarkMode(JSON.parse(savedDarkMode));
         } else {
-          // If no saved preference, check system preference
+          // Only fall back to system preference if no localStorage value exists
           const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
           setDarkMode(mediaQuery.matches);
         }
-      } catch (error) {
-        console.error('Error fetching theme preferences:', error);
-        // Fallback to system preference if everything fails
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        setDarkMode(mediaQuery.matches);
       }
     };
 
     initializeTheme();
   }, []);
 
-  // Save preferences whenever they change
   useEffect(() => {
     if (darkMode !== null) {
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       
       // Sync with backend
-      fetch('http://localhost:5000/profile/preferencesasdf', {
+      fetch('http://localhost:5000/profile/preferences', {
         method: 'PUT',
         credentials: 'include',
         headers: {
