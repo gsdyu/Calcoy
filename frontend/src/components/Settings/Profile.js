@@ -30,10 +30,6 @@ const ProfileImage = ({
             src={`http://localhost:5000/${profileImage}`} 
             alt="Profile" 
             className="absolute w-full h-full object-cover transition-opacity duration-200 group-hover:opacity-50"
-            style={{
-              transform: `translate(${profileImageX * 100}%, ${profileImageY * 100}%) scale(${profileImageScale})`,
-              transformOrigin: 'center'
-            }}
           />
         ) : (
           <div className="group-hover:opacity-50 transition-opacity duration-200">
