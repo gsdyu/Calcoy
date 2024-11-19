@@ -9,6 +9,56 @@ const DefaultProfileIcon = () => (
   </svg>
 );
 
+const ProfileImage = ({ 
+  profileImage, 
+  profileImageX, 
+  profileImageY, 
+  profileImageScale,
+  onImageClick 
+}) => {
+  const fileInputRef = useRef(null);
+
+  return (
+    <div 
+      className="relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group"
+      onClick={() => fileInputRef.current.click()}
+    >
+      {/* Profile Image or Default Icon */}
+      <div className="w-full h-full">
+        {profileImage ? (
+          <img 
+            src={`http://localhost:5000/${profileImage}`} 
+            alt="Profile" 
+            className="absolute w-full h-full object-cover transition-opacity duration-200 group-hover:opacity-50"
+            style={{
+              transform: `translate(${profileImageX * 100}%, ${profileImageY * 100}%) scale(${profileImageScale})`,
+              transformOrigin: 'center'
+            }}
+          />
+        ) : (
+          <div className="group-hover:opacity-50 transition-opacity duration-200">
+            <DefaultProfileIcon />
+          </div>
+        )}
+      </div>
+
+      {/* Hover Overlay with Edit Icon */}
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200 bg-black bg-opacity-30">
+        <Edit2 className="text-white" size={24} />
+      </div>
+
+      {/* Hidden File Input */}
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={onImageClick} 
+        className="hidden" 
+        accept="image/*"
+      />
+    </div>
+  );
+};
+
 const Profile = () => {
   const { darkMode } = useTheme();
   const [displayName, setDisplayName] = useState("");
@@ -18,7 +68,6 @@ const Profile = () => {
   const [profileImageX, setProfileImageX] = useState(0);
   const [profileImageY, setProfileImageY] = useState(0);
   const [profileImageScale, setProfileImageScale] = useState(1);
-  const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -79,8 +128,8 @@ const Profile = () => {
     }	
 
     try {
-      if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
-      if (displayName.length==0) throw new Error('Username cannot be empty');
+      if (displayName.length > 32) throw new Error('Username is too long. Between 1-32 characters please.');
+      if (displayName.length == 0) throw new Error('Username cannot be empty');
 
       const response = await fetch('http://localhost:5000/profile/name', {
         method: 'PUT',
@@ -177,34 +226,13 @@ const Profile = () => {
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
 
       <div className="flex items-center mb-8">
-        <div className="relative w-24 h-24 rounded-full overflow-hidden mr-6"
-             style={{ zIndex: 1 }}>
-          {profileImage ? (
-            <img 
-              src={`http://localhost:5000/${profileImage}`} 
-              alt="Profile" 
-              className="absolute w-full h-full object-cover"
-              style={{
-                transform: `translate(${profileImageX * 100}%, ${profileImageY * 100}%) scale(${profileImageScale})`,
-                transformOrigin: 'center'
-              }}
-            />
-          ) : (
-            <DefaultProfileIcon />
-          )}
-          <button 
-            onClick={() => fileInputRef.current.click()} 
-            className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 text-white hover:bg-blue-600 transition-colors"
-            style={{ zIndex: 10 }}
-          >
-            <Edit2 size={16} />
-          </button>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleImageChange} 
-            className="hidden" 
-            accept="image/*"
+        <div className="mr-6">
+          <ProfileImage 
+            profileImage={profileImage}
+            profileImageX={profileImageX}
+            profileImageY={profileImageY}
+            profileImageScale={profileImageScale}
+            onImageClick={handleImageChange}
           />
         </div>
         <div>
