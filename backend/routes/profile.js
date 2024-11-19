@@ -29,65 +29,67 @@ module.exports = (app, pool) => {
     const userId = req.user.userId;
 
     try {
-        const result = await pool.query('SELECT username, email, profile_image, dark_mode, preferences FROM users WHERE id = $1', [userId]);
-        if (result.rows.length === 0) {
-          return res.status(404).json({ error: 'User not found' });
-        }
-  
-        const user = result.rows[0];
-        // Provide default preferences if they don't exist
-        const preferences = user.preferences || { visibility: {}, colors: {} };
-  
-        res.json({
-          username: user.username,
-          email: user.email,
-          profile_image: user.profile_image,
-          dark_mode: user.dark_mode,
-          preferences, // Return default preferences if undefined
-        });
-      } catch (error) {
-        console.error('Error fetching profile:', error);
-        res.status(500).json({ error: 'Internal server error' });
+      const result = await pool.query(
+        'SELECT username, email, profile_image, profile_image_x, profile_image_y, profile_image_scale, dark_mode, preferences FROM users WHERE id = $1', 
+        [userId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'User not found' });
       }
-    });
-  
-    app.put('/profile/preferences', authenticateToken, async (req, res) => {
-      const userId = req.user.userId;
-      const { preferences } = req.body;
-    
-      try {
-        await pool.query('UPDATE users SET preferences = $1 WHERE id = $2', [preferences, userId]);
-        res.json({ message: 'Preferences updated successfully' });
-      } catch (error) {
-        console.error('Error updating preferences:', error);
-        res.status(500).json({ error: 'Internal server error' });
-      }
-    });
-    
 
+      const user = result.rows[0];
+      const preferences = user.preferences || { visibility: {}, colors: {} };
+
+      res.json({
+        username: user.username,
+        email: user.email,
+        profile_image: user.profile_image,
+        profile_image_x: user.profile_image_x || 0,
+        profile_image_y: user.profile_image_y || 0,
+        profile_image_scale: user.profile_image_scale || 1,
+        dark_mode: user.dark_mode,
+        preferences,
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+
+  app.put('/profile/preferences', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { preferences } = req.body;
+    
+    try {
+      await pool.query('UPDATE users SET preferences = $1 WHERE id = $2', [preferences, userId]);
+      res.json({ message: 'Preferences updated successfully' });
+    } catch (error) {
+      console.error('Error updating preferences:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+    
   // Route to update the username
-
   app.put('/profile/name', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
     const { username } = req.body;
 	
     try {
 	  //Check that username is not taken
-	  const result = await pool.query('SELECT username FROM users WHERE username = $1 AND id = $2', [username, userId])
-	  if (result.rows.username) {
-	    const error_unique = `Username ${username} already taken.`
-		console.error(error_unique)
-		res.status(409).json({error: error_unique})
-		return;
-	  }
+      const result = await pool.query('SELECT username FROM users WHERE username = $1 AND id = $2', [username, userId])
+      if (result.rows.username) {
+        const error_unique = `Username ${username} already taken.`
+        console.error(error_unique)
+        res.status(409).json({error: error_unique})
+        return;
+      }
 	  //Update username
       await pool.query('UPDATE users SET username = $1 WHERE id = $2', [username, userId]);
       return res.json({ message: 'Username updated successfully' });
     } catch (error) {
-	  
       console.error('Error updating username:', error);
-	  console.error(error.code)
-		if (error.code == 23505) {return res.status(409).json({error:`Username ${username} already taken.`})}
+      console.error(error.code)
+      if (error.code == 23505) {return res.status(409).json({error:`Username ${username} already taken.`})}
       return res.status(500).json({ error: 'Internal server error' });
     }
   });
@@ -96,10 +98,30 @@ module.exports = (app, pool) => {
   app.put('/profile/picture', authenticateToken, upload.single('profile_image'), async (req, res) => {
     const userId = req.user.userId;
     const profileImagePath = req.file.path;
+    
+    // Get position and scale data from the request body
+    const x_offset = parseFloat(req.body.x_offset) || 0;
+    const y_offset = parseFloat(req.body.y_offset) || 0;
+    const scale = parseFloat(req.body.scale) || 1;
 
     try {
-      await pool.query('UPDATE users SET profile_image = $1 WHERE id = $2', [profileImagePath, userId]);
-      res.json({ message: 'Profile picture updated', profile_image: profileImagePath });
+      await pool.query(
+        `UPDATE users 
+         SET profile_image = $1,
+             profile_image_x = $2,
+             profile_image_y = $3,
+             profile_image_scale = $4
+         WHERE id = $5`,
+        [profileImagePath, x_offset, y_offset, scale, userId]
+      );
+      
+      res.json({ 
+        message: 'Profile picture updated', 
+        profile_image: profileImagePath,
+        profile_image_x: x_offset,
+        profile_image_y: y_offset,
+        profile_image_scale: scale
+      });
     } catch (error) {
       console.error('Error uploading profile picture:', error);
       res.status(500).json({ error: 'Internal server error' });
@@ -133,6 +155,7 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
   app.post('/api/friend-request', authenticateToken, async (req, res) => {
     const { receiverUsername } = req.body;
     const senderId = req.user.userId; // Extract userId from the token
@@ -203,7 +226,6 @@ module.exports = (app, pool) => {
     }
   });
   
-
   app.post('/api/friend-request/decline', authenticateToken, async (req, res) => {
     const { requestId } = req.body;
   
@@ -238,12 +260,12 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to fetch friends' });
     }
   });
+
   app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
     const friendId = parseInt(req.params.friendId, 10);  
   
     try {
-    
       await pool.query(
         `DELETE FROM friend_requests 
          WHERE (sender_id = $1 AND receiver_id = $2) 
@@ -257,6 +279,7 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to remove friend' });
     }
   });
+
   app.get('/api/friends/:friendId/events', authenticateToken, async (req, res) => {
     const friendId = parseInt(req.params.friendId, 10);
     const userId = req.user.userId;
@@ -275,7 +298,7 @@ module.exports = (app, pool) => {
         return res.status(403).json({ message: 'Access denied: Not friends' });
       }
   
-       const events = await pool.query(
+      const events = await pool.query(
         `SELECT * FROM events 
          WHERE user_id = $1 AND server_id IS NULL
          ORDER BY start_time`,
@@ -289,41 +312,41 @@ module.exports = (app, pool) => {
     }
   });
 
-app.get('/api/user/theme', authenticateToken, async (req, res) => {
-  const userId = req.user.userId;
+  app.get('/api/user/theme', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
 
-  try {
-    const result = await pool.query(
-      `SELECT dark_mode FROM users WHERE id = $1`,
-      [userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
+    try {
+      const result = await pool.query(
+        `SELECT dark_mode FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({ dark_mode: result.rows[0].dark_mode });
+    } catch (error) {
+      console.error('Error fetching theme preference:', error);
+      res.status(500).json({ message: 'Failed to fetch theme preference' });
     }
-    res.json({ dark_mode: result.rows[0].dark_mode });
-  } catch (error) {
-    console.error('Error fetching theme preference:', error);
-    res.status(500).json({ message: 'Failed to fetch theme preference' });
-  }
-});
+  });
 
- app.put('/api/user/theme', authenticateToken, async (req, res) => {
-  const userId = req.user.userId;
-  const { dark_mode } = req.body;
+  app.put('/api/user/theme', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { dark_mode } = req.body;
 
-  try {
-    await pool.query(
-      `UPDATE users SET dark_mode = $1 WHERE id = $2`,
-      [dark_mode, userId]
-    );
-    res.json({ message: 'Theme preference updated successfully' });
-  } catch (error) {
-    console.error('Error updating theme preference:', error);
-    res.status(500).json({ message: 'Failed to update theme preference' });
-  }
-});
+    try {
+      await pool.query(
+        `UPDATE users SET dark_mode = $1 WHERE id = $2`,
+        [dark_mode, userId]
+      );
+      res.json({ message: 'Theme preference updated successfully' });
+    } catch (error) {
+      console.error('Error updating theme preference:', error);
+      res.status(500).json({ message: 'Failed to update theme preference' });
+    }
+  });
 
 
-  // Serve uploaded profile pictures statically
+  // Serve uploaded profile pictures statically  
   app.use('/uploads', express.static('uploads'));
 };

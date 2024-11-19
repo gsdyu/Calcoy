@@ -15,6 +15,9 @@ const Profile = () => {
   const [email, setEmail] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
+  const [profileImageX, setProfileImageX] = useState(0);
+  const [profileImageY, setProfileImageY] = useState(0);
+  const [profileImageScale, setProfileImageScale] = useState(1);
   const fileInputRef = useRef(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,6 +49,9 @@ const Profile = () => {
         setDisplayName(data.username);
         setEmail(data.email);
         setProfileImage(data.profile_image);
+        setProfileImageX(data.profile_image_x || 0);
+        setProfileImageY(data.profile_image_y || 0);
+        setProfileImageScale(data.profile_image_scale || 1);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');
@@ -107,8 +113,8 @@ const Profile = () => {
     }
   };
 
-  const handleSaveEdit = async ({ x, y, scale }) => {
-    if (!selectedFile) return;
+  const handleSaveEdit = async ({ file, x, y, scale }) => {
+    if (!file) return;
 
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
@@ -120,7 +126,7 @@ const Profile = () => {
 
     try {
       const formData = new FormData();
-      formData.append('profile_image', selectedFile);
+      formData.append('profile_image', file);
       formData.append('x_offset', x);
       formData.append('y_offset', y);
       formData.append('scale', scale);
@@ -132,6 +138,9 @@ const Profile = () => {
       });
       const data = await response.json();
       setProfileImage(data.profile_image);
+      setProfileImageX(data.profile_image_x);
+      setProfileImageY(data.profile_image_y);
+      setProfileImageScale(data.profile_image_scale);
       setIsEditModalOpen(false);
       setSelectedImage(null);
       setSelectedFile(null);
@@ -168,17 +177,25 @@ const Profile = () => {
       <h1 className="text-3xl font-bold mb-6">Profile</h1>
 
       <div className="flex items-center mb-8">
-        <div className="relative w-24 h-24 rounded-full flex items-center justify-center mr-6"
-             style = {{zIndex: 1}}>
+        <div className="relative w-24 h-24 rounded-full overflow-hidden mr-6"
+             style={{ zIndex: 1 }}>
           {profileImage ? (
-            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            <img 
+              src={`http://localhost:5000/${profileImage}`} 
+              alt="Profile" 
+              className="absolute w-full h-full object-cover"
+              style={{
+                transform: `translate(${profileImageX * 100}%, ${profileImageY * 100}%) scale(${profileImageScale})`,
+                transformOrigin: 'center'
+              }}
+            />
           ) : (
             <DefaultProfileIcon />
           )}
           <button 
             onClick={() => fileInputRef.current.click()} 
             className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 text-white hover:bg-blue-600 transition-colors"
-            style = {{zIndex: 10}}
+            style={{ zIndex: 10 }}
           >
             <Edit2 size={16} />
           </button>

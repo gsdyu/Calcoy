@@ -1,122 +1,76 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Slider } from "@/components/ui/slider";
+import React, { useRef, useState, useEffect } from 'react';
+import Cropper from 'react-cropper';
+import 'cropperjs/dist/cropper.css';
 import { Button } from "@/components/ui/button";
+import { Slider } from "@/components/ui/slider";
 import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
   const { darkMode } = useTheme();
-  const [scale, setScale] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const imageRef = useRef(null);
-  const containerRef = useRef(null);
-  const [imageSize, setImageSize] = useState({ width: 0, height: 0 });
+  const cropperRef = useRef(null);
+  const [scale, setScale] = useState(0); // Start at 0 for the slider
 
-  // Center image when it loads
   useEffect(() => {
-    const image = imageRef.current;
-    const container = containerRef.current;
-    
-    const centerImage = () => {
-      if (image && container) {
-        const x = (container.offsetWidth - image.offsetWidth) / 2;
-        const y = (container.offsetHeight - image.offsetHeight) / 2;
-        setPosition({ x, y });
-        setImageSize({
-          width: image.naturalWidth,
-          height: image.naturalHeight
+    // Reset scale when modal opens
+    setScale(0);
+  }, [isOpen]);
+
+  const handleZoom = (value) => {
+    const cropper = cropperRef.current?.cropper;
+    if (cropper) {
+      // Convert slider value to zoom scale (0.5 to 3)
+      const zoomValue = 0.5 + (value[0] / 100) * 2.5;
+      cropper.zoomTo(zoomValue);
+    }
+  };
+
+  const handleSave = async () => {
+    const cropper = cropperRef.current?.cropper;
+    if (!cropper) return;
+
+    // Get the cropped canvas
+    const croppedCanvas = cropper.getCroppedCanvas({
+      width: 256,
+      height: 256,
+      fillColor: '#fff'
+    });
+
+    if (croppedCanvas) {
+      try {
+        // Convert canvas to blob
+        const blob = await new Promise((resolve) => 
+          croppedCanvas.toBlob(resolve, 'image/png')
+        );
+
+        if (!blob) throw new Error('Failed to create image blob');
+
+        // Create a File object from the blob
+        const file = new File([blob], 'profile.png', {
+          type: 'image/png'
         });
-      }
-    };
 
-    if (image) {
-      if (image.complete) {
-        centerImage();
-      } else {
-        image.addEventListener('load', centerImage);
+        // Get cropping and transformation data
+        const data = cropper.getData();
+        const canvasData = cropper.getCanvasData();
+        const imageData = cropper.getImageData();
+
+        // Calculate normalized positions and scale
+        const x = data.x / canvasData.width;
+        const y = data.y / canvasData.height;
+        const scale = imageData.width / canvasData.naturalWidth;
+
+        onSave({
+          file,
+          x,
+          y,
+          scale
+        });
+      } catch (error) {
+        console.error('Error processing cropped image:', error);
       }
     }
-
-    return () => {
-      if (image) {
-        image.removeEventListener('load', centerImage);
-      }
-    };
-  }, [imageUrl]);
-
-  const handleDragStart = (e) => {
-    e.preventDefault();
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-    setIsDragging(true);
-    setDragStart({
-      x: clientX - position.x,
-      y: clientY - position.y
-    });
   };
-
-  const handleDragMove = (e) => {
-    if (!isDragging) return;
-
-    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-    
-    const newX = clientX - dragStart.x;
-    const newY = clientY - dragStart.y;
-
-    setPosition({
-      x: newX,
-      y: newY
-    });
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  const handleSave = () => {
-    // Calculate relative position from the center
-    const container = containerRef.current;
-    const image = imageRef.current;
-    
-    if (!container || !image) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const containerCenterX = containerRect.width / 2;
-    const containerCenterY = containerRect.height / 2;
-
-    // Calculate the offset from center
-    const offsetX = position.x - containerCenterX;
-    const offsetY = position.y - containerCenterY;
-
-    // Calculate position as percentages
-    const positionData = {
-      x: offsetX / containerRect.width,
-      y: offsetY / containerRect.height,
-      scale: scale
-    };
-
-    onSave(positionData);
-  };
-
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleDragMove);
-      window.addEventListener('mouseup', handleDragEnd);
-      window.addEventListener('touchmove', handleDragMove);
-      window.addEventListener('touchend', handleDragEnd);
-
-      return () => {
-        window.removeEventListener('mousemove', handleDragMove);
-        window.removeEventListener('mouseup', handleDragEnd);
-        window.removeEventListener('touchmove', handleDragMove);
-        window.removeEventListener('touchend', handleDragEnd);
-      };
-    }
-  }, [isDragging]);
 
   if (!isOpen) return null;
 
@@ -142,42 +96,33 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
         </div>
 
         <div 
-          ref={containerRef}
           className={`relative w-full h-64 rounded-lg overflow-hidden mb-4 ${
             darkMode ? 'bg-gray-800' : 'bg-gray-100'
           }`}
         >
-          {/* Draggable Image Container */}
-          <div
-            className="absolute select-none touch-none"
-            style={{
-              transform: `translate(${position.x}px, ${position.y}px) scale(${scale})`,
-              cursor: isDragging ? 'grabbing' : 'grab',
-              touchAction: 'none'
-            }}
-            onMouseDown={handleDragStart}
-            onTouchStart={handleDragStart}
-          >
-            <img
-              ref={imageRef}
-              src={imageUrl || "/api/placeholder/400/400"}
-              alt="Edit preview"
-              className="max-w-none"
-              draggable="false"
-            />
-          </div>
-
-          {/* Overlay with Circle Cutout */}
-          <div className="absolute inset-0 pointer-events-none" style={{
-            background: `radial-gradient(circle at center, 
-              transparent 64px,
-              ${darkMode ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.6)'} 65px
-            )`
-          }} />
-          
-          {/* Circle Border */}
-          <div 
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 rounded-full border-2 border-white pointer-events-none"
+          <Cropper
+            ref={cropperRef}
+            src={imageUrl || "/api/placeholder/400/400"}
+            style={{ height: '100%', width: '100%' }}
+            aspectRatio={1}
+            guides={true}
+            dragMode="move"
+            cropBoxMovable={false}
+            cropBoxResizable={false}
+            toggleDragModeOnDblclick={false}
+            viewMode={1}
+            minCropBoxHeight={128}
+            minCropBoxWidth={128}
+            cropBoxShape="circle"
+            background={false}
+            autoCropArea={1}
+            className={darkMode ? 'cropper-dark' : ''}
+            checkOrientation={false}
+            zoomable={true}
+            scalable={true}
+            initialAspectRatio={1}
+            zoomOnTouch={false}
+            zoomOnWheel={false}
           />
         </div>
 
@@ -187,10 +132,13 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
               Zoom
             </label>
             <Slider
-              value={[scale * 100]}
-              onValueChange={(value) => setScale(value[0] / 100)}
-              min={100}
-              max={300}
+              value={[scale]}
+              onValueChange={(value) => {
+                setScale(value[0]);
+                handleZoom(value);
+              }}
+              min={0}
+              max={100}
               step={1}
               className="w-full"
             />
