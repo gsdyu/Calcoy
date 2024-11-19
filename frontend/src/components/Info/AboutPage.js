@@ -206,7 +206,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Nam Ton"
-              role="Full-Stack | UI designer | Project Lead"
+              role=" CEO | Full-Stack | UI designer | Project Lead"
               description="Creative visionary with a passion for user experience and interface design. Minimal design advocate."
               image="/nam.png"
               imagePosition="object-center"
@@ -218,7 +218,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Mina"
-              role="Backend Devleoper"
+              role=" CIO | Backend Devleoper"
               description="Backend developer. Immortal Valorant player. Roblox enthusiast."
               image="/mina.png"
               imagePosition="object-center"
@@ -231,7 +231,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Toan"
-              role="Full-Stack & AI Developer | UI Designer"
+              role=" CIO Full-Stack & AI Developer | UI Designer"
               description="loves his gf"
               image="/toan.png"
               imagePosition="object-[50%_40%]"
@@ -244,7 +244,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Justin"
-              role="Backend & AI Developer | DevOps"
+              role=" CTO Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
               image="/Justin.png"
               imagePosition="object-[50%_40%]"
