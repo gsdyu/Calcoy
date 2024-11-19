@@ -42,7 +42,7 @@ const FriendPage = ({ userId }) => {
   
   useEffect(() => {
     if (searchTerm) {
-      setFilteredFriends(
+      setFilteredFriends( //test
         friends.filter(friend =>
           friend.name.toLowerCase().includes(searchTerm.toLowerCase())
         )
