@@ -162,4 +162,38 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Error fetching servers' });
     }
   });
+  app.post('/api/servers/info', authenticateToken,   async (req, res) => {
+    const { inviteLink } = req.body;
+  
+    try {
+      if (!inviteLink || typeof inviteLink !== 'string') {
+        return res.status(400).json({ error: 'Invalid invite link format' });
+      }
+  
+      // Extract the invite identifier (last part of the URL)
+      const inviteIdentifier = inviteLink.split('/').pop().trim();
+      if (!inviteIdentifier) {
+        return res.status(400).json({ error: 'Invalid invite identifier' });
+      }  
+      // Query for server details based on invite_link
+      const serverResult = await pool.query(
+        'SELECT id, name FROM servers WHERE invite_link = $1',
+        [inviteIdentifier]
+      );
+  
+      if (serverResult.rowCount === 0) {
+        return res.status(404).json({ error: 'Server not found for the given invite link' });
+      }
+  
+      const server = serverResult.rows[0];
+  
+      res.status(200).json({
+        serverName: server.name,
+        serverId: server.id,
+      });
+    } catch (error) {
+      console.error('Error fetching server details:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
 };
