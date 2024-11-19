@@ -218,7 +218,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Mina"
-              role=" CIO | Backend Devleoper"
+              role=" CIO | Backend Developer"
               description="Backend developer. Immortal Valorant player. Roblox enthusiast."
               image="/mina.png"
               imagePosition="object-center"
