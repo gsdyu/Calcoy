@@ -1,9 +1,11 @@
 import React, { useRef, useState, useEffect } from 'react';
 import Cropper from 'react-cropper';
+import 'cropperjs/dist/cropper.css';
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+
 
 const styles = `
   .cropper-view-box,
