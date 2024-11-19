@@ -25,7 +25,18 @@ const InvitePage = ({ inviteLink }) => {
           credentials: 'include',
         });
 
+
+        if (response.status === 401) {
+          // If the user is not logged in, redirect to login
+          setMessage('Unauthorized: Redirecting to login...');
+          setTimeout(() => {
+            router.push('/auth/login');
+          }, 2000);
+          return;
+        }
+    
         const data = await response.json();
+    
         if (response.ok) {
           setServerName(data.serverName || 'Unnamed Server');
         } else {
