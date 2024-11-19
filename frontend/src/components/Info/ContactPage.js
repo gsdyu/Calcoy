@@ -107,7 +107,7 @@ const ContactPage = () => {
             variants={fadeIn}
             className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            We value your input! Whether you have questions, suggestions, or just want to share your Timewise experience, we're here to listen.
+            We value your input! Whether you have questions, suggestions, or just want to share your Calcoy experience, we're here to listen.
           </motion.p>
         </motion.div>
       </section>
@@ -195,7 +195,7 @@ const ContactPage = () => {
                   <ContactInfo icon={<Phone className="w-6 h-6" />} text="+placeholderphonenumber" />
                 </div>
                 <p className="mt-12 text-lg text-white/90">
-                  We strive to respond to all inquiries within 24 hours. Your feedback helps us improve Timewise for everyone!
+                  We strive to respond to all inquiries within 24 hours. Your feedback helps us improve Calcoy for everyone!
                 </p>
               </div>
             </motion.div>
