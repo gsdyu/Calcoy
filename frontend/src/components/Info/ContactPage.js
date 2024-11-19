@@ -65,7 +65,7 @@ const ContactPage = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Timewise
+            Calcoy
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -107,7 +107,7 @@ const ContactPage = () => {
             variants={fadeIn}
             className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            We value your input! Whether you have questions, suggestions, or just want to share your Timewise experience, we're here to listen.
+            We value your input! Whether you have questions, suggestions, or just want to share your Calcoy experience, we're here to listen.
           </motion.p>
         </motion.div>
       </section>

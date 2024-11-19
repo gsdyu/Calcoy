@@ -56,7 +56,7 @@ const LandingPage = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Timewise
+            Calcoy
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -170,7 +170,7 @@ const LandingPage = () => {
               variants={fadeIn}
               className="text-4xl font-bold mb-6"
             >
-              Why Teams Choose Timewise
+              Why Teams Choose Calcoy
             </motion.h2>
             <motion.p 
               variants={fadeIn}
@@ -228,7 +228,7 @@ const LandingPage = () => {
           >
             <h2 className="text-4xl font-bold text-white mb-6">Ready to Transform Your Time?</h2>
             <p className="text-white/90 text-xl mb-8">
-              Join thousands of professionals already mastering their schedule with Timewise.
+              Join thousands of professionals already mastering their schedule with Calcoy.
             </p>
             <Link 
               href="/auth/signup" 

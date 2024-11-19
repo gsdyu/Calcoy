@@ -49,7 +49,7 @@ const AboutPage = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Timewise
+            Calcoy
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -85,13 +85,13 @@ const AboutPage = () => {
             variants={fadeIn}
             className="text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
           >
-            About Timewise
+            About Calcoy
           </motion.h1>
           <motion.p 
             variants={fadeIn}
             className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            We created Timewise because we've experienced the frustration of using calendar apps that were either too simple or had a steep learning curve. Our mission is to provide a perfect balance of simplicity and powerful features.
+            We created Calcoy because we've experienced the frustration of using calendar apps that were either too simple or had a steep learning curve. Our mission is to provide a perfect balance of simplicity and powerful features.
           </motion.p>
         </motion.div>
       </section>
@@ -137,13 +137,13 @@ const AboutPage = () => {
             <StoryCard 
               icon={<Zap className="w-8 h-8" />}
               title="The Solution"
-              description="We built Timewise to be intuitive yet powerful, striking the perfect balance for users of all levels."
+              description="We built Calcoy to be intuitive yet powerful, striking the perfect balance for users of all levels."
               gradient="from-purple-500 to-pink-500"
             />
             <StoryCard 
               icon={<Users className="w-8 h-8" />}
               title="Our Promise"
-              description="We're committed to continuous improvement, always listening to our users to make Timewise even better."
+              description="We're committed to continuous improvement, always listening to our users to make Calcoy even better."
               gradient="from-orange-500 to-red-500"
             />
           </motion.div>

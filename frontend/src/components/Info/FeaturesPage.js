@@ -49,7 +49,7 @@ const FeaturesPage = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Timewise
+            Calcoy
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -93,7 +93,7 @@ const FeaturesPage = () => {
             variants={fadeIn}
             className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            Discover the powerful features that make Timewise the perfect balance of simplicity and functionality for all your scheduling needs.
+            Discover the powerful features that make Calcoy the perfect balance of simplicity and functionality for all your scheduling needs.
           </motion.p>
         </motion.div>
       </section>
@@ -164,7 +164,7 @@ const FeaturesPage = () => {
             transition={{ duration: 1 }}
             className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-12 text-center shadow-xl"
           >
-            <h2 className="text-4xl font-bold text-white mb-6">Ready to Experience Timewise?</h2>
+            <h2 className="text-4xl font-bold text-white mb-6">Ready to Experience Calcoy?</h2>
             <p className="text-white/90 text-xl mb-8">
               Join thousands of users who have transformed their scheduling experience.
             </p>
