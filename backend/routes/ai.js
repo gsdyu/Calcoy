@@ -27,7 +27,7 @@ class SharedAgentsManager {
     this.createAgent = new GeminiAgent({
       content: chat_createEvent,
       responseSchema: jsonEvent,
-      responseMimetype: "application/json"
+      responseMimeType: "application/json"
     });
 
     this.titleAgent = new GeminiAgent({
@@ -170,10 +170,12 @@ async function useRag(userInput, userId, context_query, pool) {
       const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
       // you can use a fileReader to read the context
       output = textContext;
+      /*
       fs.writeFile('scripts/logs/context.txt',`${context_query}:\n${textContext.join('\n')}`, (err) => { if (err) {
           console.error("Error writing file: ", err);
         }
       })
+      */
     })
   })
   return output 
@@ -253,27 +255,29 @@ module.exports = (app, pool, hasEmbed) => {
       } else if (response.type === "createEvent"){
         // starts workflow for chatbot creating an event
         agentManager.createAgent.setHistory(agentManager.chatAgent.getHistory());
-        const create_json = await agentManager.createAgent.inputChat({input: userInput, temperature: 0});
-        console.log(create_json)
-        
-        const eventDetailsString = JSON.stringify({
+        const create_jsons = await agentManager.createAgent.inputChat({input: userInput, temperature: 0});
+        console.log(create_jsons)
+        const eventDetailsString = (create_jsons.map(event => JSON.stringify({
           type: "createEvent",
-          title: create_json.title,
-          description: create_json.description || '',
-          start_time: create_json.start_time,
-          end_time: create_json.end_time,
-          location: create_json.location || 'N/A',
-          frequency: create_json.frequency || 'Do not Repeat',
-          calendar: create_json.calendar || 'Personal',
-          time_zone: Intl.DateTimeFormat().resolvedOptions().timeZone
-        });
-        console.log(eventDetailsString)
+          title: event.title,
+          description: event.description || '',
+          start_time: event.start_time,
+          end_time: event.end_time,
+          location: event.location || 'N/A',
+          frequency: event.frequency || 'Do not Repeat',
+          calendar: event.calendar || 'Personal',
+          time_zone: Intl.DateTimeFormat().resolvedOptions().timezone,
+          ai: 'true'}
+        )))
+        
+        let sendString = eventDetailsString[0]
+        console.log(sendString)
 
         await agentManager.saveMessage(conversationId, 'model', eventDetailsString);
         
         agentManager.chatAgent.setHistory(agentManager.createAgent.getHistory());
 
-        return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${eventDetailsString}`, conversationId})
+        return res.send({message: `AI has created an event for you. Please confirm or deny. Details: ${sendString}`, conversationId})
       } else {
         return res.send({
           message: response,

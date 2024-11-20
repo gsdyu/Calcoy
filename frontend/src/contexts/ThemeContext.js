@@ -113,14 +113,14 @@ export const ThemeProvider = ({ children }) => {
     const initializeTheme = async () => {
       try {
         // First try to get user preferences from backend
-        const response = await fetch('http://localhost:5000/api/user/preferences', {
+        const response = await fetch('http://localhost:5000/profile', {
           credentials: 'include'
         });
         
         if (response.ok) {
           const data = await response.json();
           if (data.dark_mode !== undefined) {
-            setDarkMode(data.dark_mode);
+            setDarkMode(data.preferences.dark_mode);
             localStorage.setItem('darkMode', JSON.stringify(data.dark_mode));
             return;
           }
@@ -152,7 +152,7 @@ export const ThemeProvider = ({ children }) => {
       localStorage.setItem('darkMode', JSON.stringify(darkMode));
       
       // Sync with backend
-      fetch('http://localhost:5000/api/user/preferences', {
+      fetch('http://localhost:5000/profile/preferencesasdf', {
         method: 'PUT',
         credentials: 'include',
         headers: {

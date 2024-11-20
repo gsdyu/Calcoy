@@ -33,6 +33,7 @@ ______
 	{"type": "createEvent"}
       \`\`\`
 
+      --max token of 100. do not go above
       --Do not write in markdown/add comment notes lines like \`\`\`json or \`\`\`
       --Users can create events in the past
       --Do not ask for more information about the event being created         if the user insist on not specifying just output the json
@@ -243,7 +244,9 @@ const chat_createEvent = `createevent:
    * calendar: which calendar event is for, default is Personal unless given
 
 
+   - max token is 100, do not go above
    - todays date is ${new Date()}. make events relative to this date
+   - when ask to create a random event, actually make a random event, like go karting, watching a movie, shopping; do not just say that this is a random event. best situation is a random event that fits with the time period. for example, random event in 1600 is heading to the ball.
    - users can create events before todays date.
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
 	 - always start with { and end with }

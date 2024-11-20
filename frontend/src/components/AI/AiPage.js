@@ -323,38 +323,6 @@ const AiPage = () => {
       if (eventDetailsMatch && eventDetailsMatch[1]) {
         try {
           let newEventDetails = JSON.parse(eventDetailsMatch[1]);
-          // Checks that all values in the json are strings. else retry response again
-          let retries = 0;
-          console.log('dog')
-          for (let i = 0; i < 5; i++){
-            let iKey = 0;
-            let validJson = false;
-            while(iKey < Object.keys(newEventDetails).length && Object.keys(newEventDetails).length == 9) {
-              try {
-                JSON.parse(newEventDetails[Object.keys(newEventDetails)[iKey]])
-              } catch {
-                if (iKey === Object.keys(newEventDetails).length-1){ 
-                  console.log(`Correct event json with ${i} retries`);
-                  validJson = true;
-                }
-                iKey += 1;
-              }
-            }
-            if (validJson) break;
-            let response = await fetch('http://localhost:5000/ai', {
-              method: 'POST',
-              credentials: 'include',
-              body: payload,
-            });
-            if (!response.ok) {
-              throw new Error(`Network response was not ok. status: ${response.status}`);
-            }
-            data = await response.json();
-            eventDetailsMatch = data.message.match(/Details:\s*(.*)$/); 
-            newEventDetails = JSON.parse(eventDetailsMatch[1])
-            retries+=1;
-          }
-          if (retries == 5) console.error("Bot unable to format json event")
           const newEventId = Date.now();
 
           setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);

@@ -74,7 +74,7 @@ pool.query(`
     sync_token VARCHAR(255),
     refresh_token TEXT,
     dark_mode BOOLEAN DEFAULT false,
-    preferences JSONB DEFAULT '{}',
+    preferences JSONB DEFAULT '{"colors": {"server_default": "bg-blue-500", "other_default": "bg-green-500"}, "dark_mode": "true"}',
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
@@ -129,6 +129,7 @@ pool.query(`
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
+      ai BOOLEAN,
       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
       imported_from VARCHAR(50),

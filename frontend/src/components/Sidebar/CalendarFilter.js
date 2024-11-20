@@ -29,6 +29,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
   
   // Fetch profile information
   useEffect(() => {
+    console.log(itemColors)
     const fetchProfile = async () => {
       const check = await fetch('http://localhost:5000/auth/check', {
         credentials: 'include',
@@ -221,7 +222,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
 
     fetchServerUsers();
-  }, [activeServer]);
+  }, [activeServer, serverUsers, setServerUsers]);
 
   const toggleVisibility = (item, e) => {
     if (e) {
@@ -390,7 +391,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             </div>
             {showServers && (
               <div className="space-y-1 pl-2">
-                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || 'bg-blue-500'))}
+                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || itemColors?.server_default))}
                 
               </div>
             )}
@@ -426,7 +427,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
               </div>
             )}
           </div>
-          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} />}
+          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)}
+            onColorChange={onColorChange}/>}
         </div>
         </>
       ) : (
@@ -440,7 +442,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
         {showUsers && (
           <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(`user${user.id}`, user.username, itemColors?.[`user${user.id}`] || itemColors?.[`server${user.server_id}`]||'bg-blue-500'))}
+            {serverUsers.map(user => renderCalendarItem(`server${user.server_id}:user${user.id}`, user.username, itemColors?.[`server${user.server_id}:user${user.id}`] || itemColors?.[`server${user.server_id}`]||itemColors?.server_default))}
           </div>
         )}
       </div>
