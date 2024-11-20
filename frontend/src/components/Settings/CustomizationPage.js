@@ -13,7 +13,7 @@ const CustomizationPage = () => {
   ];
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-[#0B0F17]' : 'bg-white'} p-8`}>
+    <div className="p-8">
       <div className="max-w-3xl mx-auto">
         <h1 className={`text-2xl font-semibold mb-8 ${darkMode ? 'text-white' : 'text-black'}`}>
           Themes
