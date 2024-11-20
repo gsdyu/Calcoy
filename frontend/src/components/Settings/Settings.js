@@ -31,7 +31,11 @@ const Settings = () => {
           <h2 className="text-lg font-bold">Settings</h2>
         </div>
         <div className="p-4">
-          <SearchBar searchQuery={searchQuery} setSearchQuery={setSearchQuery} />
+        <SearchBar 
+          searchQuery={searchQuery} 
+          setSearchQuery={setSearchQuery}
+          setCurrentSection={setCurrentSection}
+        />
         </div>
         <NavBar currentSection={currentSection} setCurrentSection={setCurrentSection} />
       </div>
