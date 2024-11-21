@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Bell, Shield, Edit2, Check, Camera } from 'lucide-react';
+import { User, Lock, Bell, Shield, Edit2, Check, Edit } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import ImageEditModal from '@/components/Modals/ImageEditModal';
 
@@ -27,18 +27,16 @@ const ProfileImage = ({
           <img 
             src={`http://localhost:5000/${profileImage}`} 
             alt="Profile" 
-            className="w-full h-full object-cover transition-all duration-200 group-hover:brightness-75"
+            className="w-full h-full object-cover"
           />
         ) : (
-          <div className="group-hover:opacity-75 transition-all duration-200">
-            <DefaultProfileIcon />
-          </div>
+          <DefaultProfileIcon />
         )}
       </div>
 
-      <div className={`absolute bottom-0 right-0 p-1.5 rounded-tl-xl
-        ${darkMode ? 'bg-[#2A2D34] text-gray-400' : 'bg-gray-100 text-gray-600'}`}>
-        <Camera size={14} />
+      {/* Edit Overlay */}
+      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <Edit className="text-white" size={20} />
       </div>
 
       <input 
