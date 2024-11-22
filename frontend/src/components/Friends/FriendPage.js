@@ -16,7 +16,6 @@ const FriendPage = ({ userId }) => {
   const [inbox, setInbox] = useState([]);
   const [newFriend, setNewFriend] = useState('');
   const [selectedFriend, setSelectedFriend] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeItem, setActiveItem] = useState('Friends');
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('friends');  
@@ -41,6 +40,18 @@ const FriendPage = ({ userId }) => {
     setFilteredFriends(friends);  
   };
   
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('navbarCollapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
   useEffect(() => {
     if (searchTerm) {
       setFilteredFriends(
