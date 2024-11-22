@@ -79,7 +79,16 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    const checkDate = new Date(miniCalendarDate.getFullYear(), miniCalendarDate.getMonth() + (isCurrentMonth ? 0 : day > 20 ? -1 : 1), day);
+    const checkDate = new Date(
+      miniCalendarDate.getFullYear(), 
+      miniCalendarDate.getMonth() + (isCurrentMonth ? 0 : day > 20 ? -1 : 1), 
+      day
+    );
+    
+    // Normalize the time portion to avoid any time-of-day issues
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    checkDate.setHours(12, 0, 0, 0);
     
     return checkDate >= weekStart && checkDate <= weekEnd;
   };
