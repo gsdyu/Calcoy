@@ -93,6 +93,15 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
     return checkDate >= weekStart && checkDate <= weekEnd;
   };
 
+  // Helper function to determine if a day is at the start or end of its week
+  const getWeekPosition = (index) => {
+    const position = index % 7;
+    return {
+      isStart: position === 0,
+      isEnd: position === 6
+    };
+  };
+
   return (
     <div className={`p-4 ${darkMode ? 'bg-gray-800 text-white' : 'bg-white text-gray-800'}`}>
       <div className="flex justify-between items-center mb-2">
@@ -142,6 +151,7 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
                           new Date().getFullYear() === miniCalendarDate.getFullYear() &&
                           isCurrentMonth;
           const isInWeek = isInSelectedWeek(day, isCurrentMonth);
+          const { isStart, isEnd } = getWeekPosition(index);
           
           return (
             <div 
@@ -149,7 +159,10 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
               onClick={() => handleDateClick(day, isCurrentMonth)}
               className={`relative text-center p-1 text-xs cursor-pointer
                 ${isCurrentMonth ? '' : 'text-gray-500'}
-                ${isInWeek ? (darkMode ? 'bg-gray-700' : 'bg-gray-200') : ''}
+                ${isInWeek ? `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}
+                  ${isStart ? 'rounded-l-2xl' : ''}
+                  ${isEnd ? 'rounded-r-2xl' : ''}
+                ` : ''}
               `}
             >
               <div className={`
