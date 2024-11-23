@@ -339,6 +339,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
 
         {/* Toggle between Event and Task */}
         {!event && (
+          <div className="flex justify-center mb-4">
           <div className={`relative ${darkMode ? 'bg-gray-400 border-gray-400' : 'bg-gray-200 border-gray-200'} rounded-[7px] flex items-center w-1/2 mb-4 border-4`}>
             <div
               className={`absolute h-full w-1/2 ${darkMode ? 'bg-white' : 'bg-blue-300'} rounded-[7px] transition-transform duration-200 ease-in-out ${
@@ -366,6 +367,7 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
               <Check className="w-4 h-4 mr-1" />
               Task
             </button>
+            </div>
           </div>
         )}
 
