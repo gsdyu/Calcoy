@@ -9,17 +9,27 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
 
   const goToPrevious = () => {
     const newDate = new Date(currentDate);
-    if (view === 'Day') newDate.setDate(newDate.getDate() - 1);
-    else if (view === 'Week') newDate.setDate(newDate.getDate() - 7);
-    else newDate.setMonth(newDate.getMonth() - 1);
+    if (view === 'Day') {
+      newDate.setDate(newDate.getDate() - 1);
+    } else if (view === 'Week') {
+      newDate.setDate(newDate.getDate() - 7);
+    } else {
+      newDate.setDate(1);
+      newDate.setMonth(newDate.getMonth() - 1);
+    }
     onDateChange(newDate, 'left');
   };
 
   const goToNext = () => {
     const newDate = new Date(currentDate);
-    if (view === 'Day') newDate.setDate(newDate.getDate() + 1);
-    else if (view === 'Week') newDate.setDate(newDate.getDate() + 7);
-    else newDate.setMonth(newDate.getMonth() + 1);
+    if (view === 'Day') {
+      newDate.setDate(newDate.getDate() + 1);
+    } else if (view === 'Week') {
+      newDate.setDate(newDate.getDate() + 7);
+    } else {
+      newDate.setDate(1);
+      newDate.setMonth(newDate.getMonth() + 1);
+    }
     onDateChange(newDate, 'right');
   };
 
