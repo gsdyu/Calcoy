@@ -6,7 +6,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   const { darkMode } = useTheme();
 
   const goToToday = () => onDateChange(new Date(), 'none');
-
+  
   const goToPrevious = () => {
     const newDate = new Date(currentDate);
     if (view === 'Day') {
@@ -72,24 +72,24 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
   };
 
   return (
-    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-black'} text-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} text-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
       <div className="flex-1">
-        <h2 className="text-lg font-semibold">
+        <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
           {formatHeaderDate()}
         </h2>
       </div>
       
       <div className="flex-1 flex justify-center">
-        <div className="flex rounded-full overflow-hidden shadow-md">
+        <div className="flex rounded-xl overflow-hidden shadow-md">
           {['Day', 'Week', 'Month'].map((v) => (
             <button 
               key={v}
-              className={`px-4 py-2 transition-colors ${
+              className={`px-4 py-2 transition-all ${
                 view === v 
-                  ? 'bg-blue-600 text-white' 
+                  ? 'bg-blue-500 text-white' 
                   : darkMode 
-                    ? 'bg-gray-800 text-gray-300 hover:bg-gray-700' 
-                    : 'bg-white text-gray-700 hover:bg-gray-200'
+                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
+                    : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
               onClick={() => onViewChange(v)}
             >
@@ -99,18 +99,22 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
         </div>
       </div>
 
-      <div className="flex-1 flex justify-end items-center space-x-2">
+      <div className="flex-1 flex justify-end items-center space-x-3">
         <button 
           onClick={goToPrevious}
-          className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'} transition-colors`}
+          className={`p-2 rounded-xl ${
+            darkMode 
+              ? 'hover:bg-gray-700 text-gray-300' 
+              : 'hover:bg-gray-100 text-gray-600'
+          } transition-colors`}
         >
           <ChevronLeft size={20} />
         </button>
         <button 
-          className={`px-3 py-1 rounded-full ${
+          className={`px-4 py-1.5 rounded-xl font-medium ${
             darkMode 
-              ? 'bg-gray-800 hover:bg-gray-700 text-white' 
-              : 'bg-white hover:bg-gray-100 text-black'
+              ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
+              : 'bg-white hover:bg-gray-100 text-gray-700'
           } transition-colors shadow-md`}
           onClick={goToToday}
         >
@@ -118,7 +122,11 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
         </button>
         <button 
           onClick={goToNext}
-          className={`p-2 rounded-full ${darkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'} transition-colors`}
+          className={`p-2 rounded-xl ${
+            darkMode 
+              ? 'hover:bg-gray-700 text-gray-300' 
+              : 'hover:bg-gray-100 text-gray-600'
+          } transition-colors`}
         >
           <ChevronRight size={20} />
         </button>
