@@ -57,41 +57,51 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
   };
-
   const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-  
+
     if (!serverInfo.serverName || !userId) {
-      console.error('Missing serverName or userId');
-      return;
-    }
-  
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ serverName: serverInfo.serverName, userId }),
-        
-      });
-  
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Error response from server:', text);
+        console.error('Missing serverName or userId');
         return;
-      }
-  
-      const data = await response.json();
-      setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
-      setServers((prevServers) => [...prevServers, data.server]);
-      setShowEventPopup(true);
-    } catch (error) {
-      console.error('Error submitting server info:', error);
     }
-  };
-  
+
+    try {
+        const base64SizeMB = serverInfo.imageBase64
+            ? (serverInfo.imageBase64.length * 3) / 4 / (1024 * 1024)
+            : 0;
+
+        if (base64SizeMB > 4) {
+            alert('The image is too large. Please use a smaller image.');
+            return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                serverName: serverInfo.serverName,
+                userId,
+                imageBase64: serverInfo.imageBase64 || null, // Include Base64 only if available
+            }),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Error response from server:', text);
+            return;
+        }
+
+        const data = await response.json();
+        setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
+        setServers((prevServers) => [...prevServers, data.server]);
+        setShowEventPopup(true);
+    } catch (error) {
+        console.error('Error submitting server info:', error);
+    }
+};
 
   
  

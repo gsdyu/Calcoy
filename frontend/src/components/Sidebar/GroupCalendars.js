@@ -100,10 +100,10 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
             >
               <Avatar className="w-10 h-10">
                 {server.image_url ? (
-                  <AvatarImage 
-                    src={`${process.env.NEXT_PUBLIC_SERVER_URL}${server.image_url}`} 
-                    alt={server.name} 
-                    className="object-cover w-full h-full rounded-full" 
+                  <AvatarImage
+                    src={server.image_url.startsWith('http') ? server.image_url : `${process.env.NEXT_PUBLIC_SERVER_URL}${server.image_url}`}
+                    alt={server.name}
+                    className="object-cover w-full h-full rounded-full"
                     onError={(e) => { e.target.style.display = 'none'; }}
                   />
                 ) : (

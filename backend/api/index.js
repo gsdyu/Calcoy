@@ -76,7 +76,7 @@ pool.query(`
   CREATE TABLE IF NOT EXISTS servers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    image_url VARCHAR(255),
+    image_url VARCHAR(2083),
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
     invite_link VARCHAR(255) UNIQUE
   );
