@@ -3,7 +3,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
-  const { darkMode } = useTheme();
+  const { selectedTheme, presetThemes, colors } = useTheme();
 
   const goToToday = () => onDateChange(new Date(), 'none');
   
@@ -48,14 +48,14 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
         return (
           <>
             <span className="font-bold">{startMonth}</span>
-            <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+            <span className={`font-normal ${colors.textSecondary} ml-1`}>{year}</span>
           </>
         );
       } else {
         return (
           <>
             <span className="font-bold">{`${startMonth} - ${endMonth}`}</span>
-            <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+            <span className={`font-normal ${colors.textSecondary} ml-1`}>{year}</span>
           </>
         );
       }
@@ -65,16 +65,28 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
       return (
         <>
           <span className="font-bold">{month}</span>
-          <span className={`font-normal ${darkMode ? 'text-gray-400' : 'text-gray-500'} ml-1`}>{year}</span>
+          <span className={`font-normal ${colors.textSecondary} ml-1`}>{year}</span>
         </>
       );
     }
   };
 
+  // Get background styles based on selected theme
+  const getBackgroundStyles = () => {
+    if (selectedTheme && presetThemes[selectedTheme]) {
+      return presetThemes[selectedTheme].gradient;
+    }
+    return colors.background;
+  };
+
   return (
-    <div className={`flex items-center p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} text-sm border-b ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+    <div className={`
+      flex items-center p-4 
+      ${getBackgroundStyles()}
+      text-sm border-b ${colors.buttonBorder}
+    `}>
       <div className="flex-1">
-        <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+        <h2 className={`text-lg font-semibold ${colors.text}`}>
           {formatHeaderDate()}
         </h2>
       </div>
@@ -84,13 +96,13 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
           {['Day', 'Week', 'Month'].map((v) => (
             <button 
               key={v}
-              className={`px-4 py-2 transition-all ${
-                view === v 
+              className={`
+                px-4 py-2 transition-all 
+                ${view === v 
                   ? 'bg-blue-500 text-white' 
-                  : darkMode 
-                    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600' 
-                    : 'bg-white text-gray-600 hover:bg-gray-100'
-              }`}
+                  : `${colors.buttonBg} ${colors.text}`
+                }
+              `}
               onClick={() => onViewChange(v)}
             >
               {v}
@@ -102,31 +114,34 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
       <div className="flex-1 flex justify-end items-center space-x-3">
         <button 
           onClick={goToPrevious}
-          className={`p-2 rounded-xl ${
-            darkMode 
-              ? 'hover:bg-gray-700 text-gray-300' 
-              : 'hover:bg-gray-100 text-gray-600'
-          } transition-colors`}
+          className={`
+            p-2 rounded-xl
+            ${colors.buttonBg}
+            ${colors.text}
+            transition-colors
+          `}
         >
           <ChevronLeft size={20} />
         </button>
         <button 
-          className={`px-4 py-1.5 rounded-xl font-medium ${
-            darkMode 
-              ? 'bg-gray-700 hover:bg-gray-600 text-gray-200' 
-              : 'bg-white hover:bg-gray-100 text-gray-700'
-          } transition-colors shadow-md`}
+          className={`
+            px-4 py-1.5 rounded-xl font-medium
+            ${colors.buttonBg}
+            ${colors.text}
+            transition-colors shadow-md
+          `}
           onClick={goToToday}
         >
           Today
         </button>
         <button 
           onClick={goToNext}
-          className={`p-2 rounded-xl ${
-            darkMode 
-              ? 'hover:bg-gray-700 text-gray-300' 
-              : 'hover:bg-gray-100 text-gray-600'
-          } transition-colors`}
+          className={`
+            p-2 rounded-xl
+            ${colors.buttonBg}
+            ${colors.text}
+            transition-colors
+          `}
         >
           <ChevronRight size={20} />
         </button>
