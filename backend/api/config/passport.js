@@ -211,7 +211,7 @@ module.exports = (pool) => {
  passport.use('google-calendar', new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.SERVER_URL}/auth/google/calendar/callback`,
+  callbackURL: `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google/calendar/callback`,
   
   scope: [
     'https://www.googleapis.com/auth/calendar.readonly',
