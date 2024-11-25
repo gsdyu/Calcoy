@@ -384,4 +384,21 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error.' });
     }
   });
+
+  app.post('/messages', authenticateToken, async (req, res) => {
+    const { conversationId, sender, text } = req.body;
+  
+    if (!conversationId || !sender || !text) {
+      return res.status(400).json({ error: 'conversationId, sender, and text are required.' });
+    }
+  
+    try {
+      await agentManager.saveMessage(conversationId, sender, text);
+      res.status(200).json({ message: 'Message saved successfully.' });
+    } catch (error) {
+      console.error('Error saving message:', error);
+      res.status(500).json({ error: 'Failed to save message.' });
+    }
+  });
 }
+
