@@ -43,28 +43,40 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     fetchUserId();
   }, []);
 
-  const handleIconChange = (e) => {
+
+  const handleIconChange = async (e) => {
     const file = e.target.files[0];
   
     if (file) {
-      const toBase64 = (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 part only
-          reader.onerror = (error) => reject(error);
-          reader.readAsDataURL(file);
-        });
+      try {
+        // Compress the image before conversion
+        const options = {
+          maxSizeMB: .3,  
+          maxWidthOrHeight: 300, // Resize to 500px max dimension
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
   
-      toBase64(file)
-        .then((base64) => {
-          setServerInfo((prev) => ({
-            ...prev,
-            icon: file,
-            iconPreview: URL.createObjectURL(file),
-            imageBase64: base64, // Store Base64 string
-          }));
-        })
-        .catch((error) => console.error("Failed to convert image to Base64:", error));
+        // Convert the compressed file to Base64
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 part only
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+          });
+  
+        const base64 = await toBase64(compressedFile);
+  
+        setServerInfo((prev) => ({
+          ...prev,
+          icon: file,
+          iconPreview: URL.createObjectURL(compressedFile),
+          imageBase64: base64, // Store Base64 string
+        }));
+      } catch (error) {
+        console.error("Failed to compress and convert image to Base64:", error);
+      }
     } else {
       setServerInfo((prev) => ({
         ...prev,

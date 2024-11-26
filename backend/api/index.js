@@ -19,8 +19,8 @@ app.use(cors({
     credentials: true
 }));
 app.use(cookieParser());
-app.use(express.json({ limit: '50mb' })); // For JSON payloads
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use(express.json({ limit: '1000000mb' })); // For JSON payloads
+app.use(express.urlencoded({ limit: '1000000mb', extended: true })); 
 
 // Initialize PostgreSQL connection pool
 const pool = new Pool({

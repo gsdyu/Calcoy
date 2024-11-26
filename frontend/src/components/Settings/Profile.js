@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { User, Lock, Bell, Shield, Edit2, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
-
+import imageCompression from 'browser-image-compression'; 
 const DefaultProfileIcon = () => (
   <svg className="w-full h-full text-gray-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
@@ -94,31 +94,55 @@ const Profile = () => {
 		alert(err_msg);
     }
   };
-
   const handleImageChange = async (event) => {
     const file = event.target.files[0];
+  
     if (file) {
-	  //FormData uses encoding type "multipart/form-data"
-      const formData = new FormData();
-      formData.append('profile_image', file);
-
-      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-        credentials: 'include',
-      });
-      if (!check.ok) {
-        alert("No token found. Please login.")
-        return
-      }
-
       try {
+        // Compress the image
+        const options = {
+          maxSizeMB: 0.5,
+          maxWidthOrHeight: 500,
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+  
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+          });
+  
+        const base64 = await toBase64(compressedFile);
+  
+        const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
+          credentials: 'include',
+        });
+  
+        if (!check.ok) {
+          alert("No token found. Please login.");
+          return;
+        }
+  
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
           method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
           credentials: 'include',
-          body: formData,
-
+          body: JSON.stringify({ imageBase64: base64 }),
         });
+  
         const data = await response.json();
-        setProfileImage(data.profile_image);
+  
+        if (!response.ok) {
+          alert(`Error updating profile picture: ${data.error}`);
+          return;
+        }
+  
+        setProfileImage(data.profile_image); // Store the full URL
         alert('Profile picture updated successfully!');
       } catch (error) {
         console.error('Error uploading profile picture:', error);
@@ -126,6 +150,9 @@ const Profile = () => {
       }
     }
   };
+  
+ 
+  
 
   const ProfileSection = ({ title, description, icon, action }) => (
     <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6 mt-6`}>
@@ -156,7 +183,7 @@ const Profile = () => {
         <div className="relative w-24 h-24 rounded-full flex items-center justify-center mr-6"
              style = {{zIndex: 1}}>
           {profileImage ? (
-            <img src={`${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
+            <img src={profileImage} alt="Profile" className="w-full h-full object-cover rounded-full" />
           ) : (
             <DefaultProfileIcon />
           )}

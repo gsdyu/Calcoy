@@ -1,6 +1,6 @@
 const express = require('express');
 const { authenticateToken } = require('../authMiddleware');
-
+const { put } = require('@vercel/blob');
 module.exports = (app, pool) => {
   // Route to fetch user profile
   app.get('/profile', authenticateToken, async (req, res) => {
@@ -32,6 +32,65 @@ module.exports = (app, pool) => {
     }
   });
 
+  const { v4: uuidv4 } = require('uuid');
+  const { put } = require('@vercel/blob');
+  
+  app.put('/profile/picture', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { imageBase64 } = req.body; // Expecting Base64 string of the image
+  
+    console.log("Request Body:", req.body); // Debugging the request payload
+  
+    try {
+      let imageUrl = null;
+  
+      // Check if Base64 image data is provided
+      if (imageBase64) {
+        // Generate a unique filename for the profile image
+        const fileName = `profile-images/${uuidv4()}.png`;
+  
+        // Convert Base64 string to binary buffer
+        const buffer = Buffer.from(imageBase64, 'base64');
+  
+        // Upload the image to Vercel Blob
+        const blob = await put(fileName, buffer, { access: 'public' });
+  
+        // Ensure the blob upload was successful
+        if (!blob || !blob.url) {
+          throw new Error('Failed to upload image to Vercel Blob');
+        }
+  
+        imageUrl = blob.url; // Public URL for the uploaded image
+        console.log("Uploaded Image URL:", imageUrl);
+      } else {
+        return res.status(400).json({ error: 'No image provided' });
+      }
+  
+      // Store the image URL in the database
+      const result = await pool.query(
+        'UPDATE users SET profile_image = $1 WHERE id = $2 RETURNING profile_image',
+        [imageUrl, userId]
+      );
+  
+      const updatedProfileImage = result.rows[0]?.profile_image;
+  
+      if (!updatedProfileImage) {
+        throw new Error('Failed to update profile image in the database');
+      }
+  
+      res.json({
+        message: 'Profile picture updated successfully!',
+        profile_image: updatedProfileImage,
+      });
+    } catch (error) {
+      console.error('Error uploading profile picture:', error);
+      res.status(500).json({ error: 'Internal server error' });
+    }
+  });
+  
+  
+  
+ 
   // Route to update preferences
   app.put('/profile/preferences', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
