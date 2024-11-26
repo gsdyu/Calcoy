@@ -8,7 +8,7 @@ import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
 const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, servers, setServers, serverUsers, setServerUsers, otherCalendars}) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
 
@@ -53,13 +53,28 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
     }
   };
 
+  // Get the current theme's gradient or fall back to the default background
+  const backgroundClasses = selectedTheme 
+    ? presetThemes[selectedTheme]?.gradient
+    : darkMode 
+      ? colors.background
+      : 'bg-gray-100';
+
   return (
-    <div className={`w-60 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex flex-col relative transition-all duration-300 h-full`}>
+    <div 
+      className={`
+        w-60 flex flex-col relative transition-all duration-300 h-full
+        ${backgroundClasses}
+        ${selectedTheme ? 'bg-opacity-95' : ''}
+        ${colors.text}
+      `}
+    >
       <div className="flex-grow overflow-hidden">
         <TitleCalendar 
           activeCalendar={activeCalendar}
           handleChangeActiveCalendar={handleChangeActiveCalendar}
-          onLeave={onLeave} // Pass onLeave to TitleCalendar
+          onLeave={onLeave}
+          colors={colors}
         />
         
         <MiniCalendar 
@@ -68,7 +83,9 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           onViewChange={onViewChange}
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
+          colors={colors}
         />
+        
         <CalendarFilter 
           onColorChange={onColorChange}
           itemColors={itemColors}
@@ -78,12 +95,14 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           serverUsers={serverUsers}
           setServerUsers={setServerUsers}
           otherCalendars={otherCalendars}
+          colors={colors}
         />
         
         <Tasks 
           events={events}
           selectedDate={selectedDate || mainCalendarDate}
           onTaskComplete={onTaskComplete}
+          colors={colors}
         />
       </div>
     </div>
