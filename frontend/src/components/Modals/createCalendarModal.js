@@ -4,6 +4,7 @@ import { X, Plus, Users, CalendarPlus } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import EventOptionsPopup from '@/components/Modals/EventOptionsPopup';
+import imageCompression from 'browser-image-compression';
 
 const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) => {
   const { darkMode } = useTheme();
@@ -42,11 +43,16 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     fetchUserId();
   }, []);
 
+
   const handleIconChange = async (e) => {
     const file = e.target.files[0];
   
     if (file) {
-      // Convert file to Base64
+      // Compress the image
+      const options = { maxSizeMB: 1, maxWidthOrHeight: 500, useWebWorker: true };
+      const compressedFile = await imageCompression(file, options);
+  
+      // Convert the compressed file to Base64
       const toBase64 = (file) => new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
@@ -55,7 +61,7 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       });
   
       try {
-        const base64Image = await toBase64(file);
+        const base64Image = await toBase64(compressedFile);
   
         // Update server info and state
         setServerInfo((prev) => ({
@@ -67,9 +73,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
       } catch (error) {
         console.error("Failed to convert file to base64:", error);
       }
-  
-      setIcon(file);
-      setIconPreview(URL.createObjectURL(file));
     } else {
       // If no file is selected, clear the state
       setServerInfo((prev) => ({
@@ -78,8 +81,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
         iconPreview: null,
         imageBase64: null,
       }));
-      setIcon(null);
-      setIconPreview(null);
     }
   };
   
