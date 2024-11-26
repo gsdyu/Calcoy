@@ -120,29 +120,26 @@ module.exports = (app, pool) => {
   
 
   app.post('/api/servers/create', authenticateToken, async (req, res) => {
-    const { serverName, imageBase64 } = req.body; // Expecting imageBase64 string
+    const { serverName, imageBase64 } = req.body;
     const userId = req.user.userId;
+
     console.log("Request Body:", req.body); // Log the request body
     console.log("Received Base64:", imageBase64?.substring(0, 50)); // Log the first 50 characters of Base64
-
-    console.log("Request Body:", req.body); // Debugging
 
     try {
         let imageUrl = null;
 
-        // If an image is provided, upload it to Vercel Blob
         if (imageBase64) {
             const fileName = `server-icons/${uuidv4()}.png`;
             const blob = await put(fileName, Buffer.from(imageBase64, 'base64'), {
                 access: 'public',
             });
-            imageUrl = blob.url; // Get public URL of the uploaded image
+            imageUrl = blob.url;
             console.log("Uploaded Image URL:", imageUrl);
         }
 
-        const inviteLink = uuidv4(); // Generate a unique invite link
+        const inviteLink = uuidv4();
 
-        // Insert the server details into the database
         const { rows } = await pool.query(
             `INSERT INTO servers (name, image_url, created_by, invite_link) VALUES ($1, $2, $3, $4) RETURNING *`,
             [serverName, imageUrl, userId, inviteLink]
@@ -150,7 +147,6 @@ module.exports = (app, pool) => {
 
         const server = rows[0];
 
-        // Insert the user-server relationship
         await pool.query(
             `INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)`,
             [userId, server.id]
@@ -162,6 +158,7 @@ module.exports = (app, pool) => {
         res.status(500).json({ error: 'Error creating server' });
     }
 });
+
 
   // Route to get all servers for a user
   app.get('/api/servers', authenticateToken, async (req, res) => {

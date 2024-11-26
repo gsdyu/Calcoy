@@ -96,61 +96,66 @@ const Profile = () => {
   };
   const handleImageChange = async (event) => {
     const file = event.target.files[0];
-  
+
     if (file) {
-      try {
-        // Compress the image
-        const options = {
-          maxSizeMB: 0.5,
-          maxWidthOrHeight: 500,
-          useWebWorker: true,
-        };
-        const compressedFile = await imageCompression(file, options);
-  
-        const toBase64 = (file) =>
-          new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64
-            reader.onerror = (error) => reject(error);
-            reader.readAsDataURL(file);
-          });
-  
-        const base64 = await toBase64(compressedFile);
-  
-        const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-          credentials: 'include',
-        });
-  
-        if (!check.ok) {
-          alert("No token found. Please login.");
-          return;
+        try {
+            // Compress the image
+            const options = {
+                maxSizeMB: 0.5, // Maximum file size in MB
+                maxWidthOrHeight: 500, // Maximum width or height in pixels
+                useWebWorker: true, // Use a web worker for compression
+            };
+
+            const compressedFile = await imageCompression(file, options);
+
+            // Convert compressed image to Base64
+            const toBase64 = (file) =>
+                new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 data
+                    reader.onerror = (error) => reject(error);
+                    reader.readAsDataURL(file);
+                });
+
+            const base64 = await toBase64(compressedFile);
+
+            // Ensure user is authenticated
+            const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
+                credentials: 'include',
+            });
+
+            if (!check.ok) {
+                alert("No token found. Please login.");
+                return;
+            }
+
+            // Upload the Base64 image to the server
+            const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                credentials: 'include',
+                body: JSON.stringify({ imageBase64: base64 }),
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                alert(`Error updating profile picture: ${data.error}`);
+                return;
+            }
+
+            // Update profile picture state
+            setProfileImage(data.profile_image); // Use the returned URL
+            alert('Profile picture updated successfully!');
+        } catch (error) {
+            console.error('Error uploading profile picture:', error);
+            alert('Picture is too large');
         }
-  
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          credentials: 'include',
-          body: JSON.stringify({ imageBase64: base64 }),
-        });
-  
-        const data = await response.json();
-  
-        if (!response.ok) {
-          alert(`Error updating profile picture: ${data.error}`);
-          return;
-        }
-  
-        setProfileImage(data.profile_image); // Store the full URL
-        alert('Profile picture updated successfully!');
-      } catch (error) {
-        console.error('Error uploading profile picture:', error);
-        alert('Error updating profile picture.');
-      }
     }
-  };
-  
+};
+
  
   
 

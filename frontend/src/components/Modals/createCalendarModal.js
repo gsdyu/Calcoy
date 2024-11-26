@@ -76,6 +76,8 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
         }));
       } catch (error) {
         console.error("Failed to compress and convert image to Base64:", error);
+        alert('Picture is too large');
+
       }
     } else {
       setServerInfo((prev) => ({
@@ -101,11 +103,11 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
 
     try {
         const base64SizeMB = serverInfo.imageBase64
-            ? (serverInfo.imageBase64.length * 3) / 4 / (1024 * 1024)
+            ? (serverInfo.imageBase64.length * 3) / 4 / (1024 * 1024) // Convert Base64 size to MB
             : 0;
 
         if (base64SizeMB > 4) {
-            alert('The image is too large. Please use a smaller image.');
+            alert('Warning: The selected image is too large. Please upload an image smaller than 4MB.');
             return;
         }
 
@@ -125,6 +127,8 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
         if (!response.ok) {
             const text = await response.text();
             console.error('Error response from server:', text);
+            alert('Picture is too large');
+
             return;
         }
 
@@ -134,6 +138,8 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
         setShowEventPopup(true);
     } catch (error) {
         console.error('Error submitting server info:', error);
+        alert('Picture is too large');
+
     }
 };
 
