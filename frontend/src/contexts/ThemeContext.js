@@ -41,7 +41,7 @@ const BASE_COLORS = {
     selectedBorder: 'border-gray-200'
   },
   dark: {
-    background: 'bg-[#0B0F17]',
+    background: 'bg-gray-800',
     text: 'text-gray-300',
     textSecondary: 'text-gray-400',
     buttonBg: 'bg-gray-900/40 hover:bg-gray-800/40',
