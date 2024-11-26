@@ -8,7 +8,15 @@ const pgSession = require('connect-pg-simple')(expressSession);
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
+const Pusher = require("pusher");
 
+const pusher = new Pusher({
+  appId: "1902181",
+  key: "c6510a0a80e178701624",
+  secret: "dd5ed59959277833f4e2",
+  cluster: "us3",
+  useTLS: true
+});
 // Initialize express app
 const app = express();
 

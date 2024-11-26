@@ -1,10 +1,19 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
+const Pusher = require('pusher');
+
+// Initialize Pusher instance
+const pusher = new Pusher({
+  appId: "1902181",
+  key: "c6510a0a80e178701624",
+  secret: "dd5ed59959277833f4e2",
+  cluster: "us3",
+  useTLS: true
+});
 
 module.exports = (app, pool) => {
   // Create event route
-// Create event route
-app.post('/events', authenticateToken, async (req, res) => {
+ app.post('/events', authenticateToken, async (req, res) => {
   const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
   const userId = req.user.userId;
 
@@ -19,28 +28,30 @@ app.post('/events', authenticateToken, async (req, res) => {
   }
 
   try {
- 
-
-     const result = await pool.query(
+    const result = await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
        RETURNING *`,
       [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal]
     );
 
-    // Update embeddings if created
- 
+    const newEvent = result.rows[0];
+
+    // Trigger Pusher event
+    pusher.trigger("events-channel", "new-event", {
+      event: newEvent
+    });
 
     res.status(201).json({
       message: 'Event created successfully',
-      event: result.rows[0],
+      event: newEvent,
     });
   } catch (error) {
-    await pool.query('ROLLBACK');
     console.error('Create event error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
   
   

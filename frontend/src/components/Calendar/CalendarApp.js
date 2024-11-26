@@ -14,6 +14,7 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
+import Pusher from 'pusher-js';
 
  const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
@@ -91,8 +92,36 @@ import { useTheme } from '@/contexts/ThemeContext';
     fetchEvents();
   }, [displayName, activeCalendar]); 
   
+  useEffect(() => {
+    // Initialize Pusher
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    });
   
-    
+    const channel = pusher.subscribe('events-channel');
+  
+    channel.bind('new-event', (data) => {
+      console.log('New event received:', data);
+      const newEvent = data.event;
+  
+      // Update state with the new event
+      setEvents((prevEvents) => {
+        // Prevent duplicates
+        if (prevEvents.some((e) => e.id === newEvent.id)) {
+          return prevEvents;
+        }
+        return [...prevEvents, newEvent];
+      });
+  
+      showNotification('A new event has been added!', 'Undo');
+    });
+  
+    return () => {
+      // Clean up subscription on component unmount
+      pusher.unsubscribe('events-channel');
+    };
+  }, []);
+
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
@@ -275,7 +304,9 @@ import { useTheme } from '@/contexts/ThemeContext';
   
     try {
       const method = event.id ? 'PUT' : 'POST';
-      const url = event.id ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}` : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
+      const url = event.id
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
   
       const eventData = {
         ...event,
@@ -298,19 +329,15 @@ import { useTheme } from '@/contexts/ThemeContext';
   
         if (savedEvent) {
           setEvents((prevEvents) => {
-            // Prevent duplicates by ensuring no other event has the same ID
-            if (prevEvents.some(e => e.id === savedEvent.id)) {
-              return prevEvents;
-            }
             if (event.id) {
               return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
             } else {
-              return [...prevEvents, savedEvent];
+              // The real-time update via Pusher should already add the event
+              return prevEvents;
             }
           });
   
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
-  
         } else {
           throw new Error('Response did not include event data');
         }
