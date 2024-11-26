@@ -42,16 +42,47 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     fetchUserId();
   }, []);
 
-  const handleIconChange = (e) => {
+  const handleIconChange = async (e) => {
     const file = e.target.files[0];
-    setServerInfo(prev => ({
-      ...prev,
-      icon: file,
-      iconPreview: file ? URL.createObjectURL(file) : null  
-    }));
-    setIcon(file);  
-    setIconPreview(file ? URL.createObjectURL(file) : null);
+  
+    if (file) {
+      // Convert file to Base64
+      const toBase64 = (file) => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+  
+      try {
+        const base64Image = await toBase64(file);
+  
+        // Update server info and state
+        setServerInfo((prev) => ({
+          ...prev,
+          icon: file,
+          iconPreview: URL.createObjectURL(file),
+          imageBase64: base64Image,
+        }));
+      } catch (error) {
+        console.error("Failed to convert file to base64:", error);
+      }
+  
+      setIcon(file);
+      setIconPreview(URL.createObjectURL(file));
+    } else {
+      // If no file is selected, clear the state
+      setServerInfo((prev) => ({
+        ...prev,
+        icon: null,
+        iconPreview: null,
+        imageBase64: null,
+      }));
+      setIcon(null);
+      setIconPreview(null);
+    }
   };
+  
 
   const handleServerChange = (e) => {
     const { name, value } = e.target;
