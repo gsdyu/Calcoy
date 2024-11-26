@@ -8,7 +8,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 
 const FriendPage = ({ userId }) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
   const [friends, setFriends] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
   const [inbox, setInbox] = useState([]);
@@ -34,11 +34,22 @@ const FriendPage = ({ userId }) => {
     return false;
   });
 
+  // Get background classes based on theme
+  const backgroundClasses = selectedTheme 
+    ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
+    : colors.background;
+
+  // Get secondary background for cards
+  const cardBackgroundClasses = selectedTheme
+    ? `${colors.buttonBg} border ${colors.buttonBorder}`
+    : darkMode
+      ? 'bg-gray-800 border-gray-700'
+      : 'bg-gray-50 border-gray-200';
+
   useEffect(() => {
     localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
-  // Updated filtering logic to always show friends
   useEffect(() => {
     const filtered = friends.filter(friend =>
       friend.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -231,21 +242,16 @@ const FriendPage = ({ userId }) => {
         setActiveItem={setActiveItem}
       />
 
-      <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 
-        ${darkMode ? 'bg-gray-900' : 'bg-white'}`}>
-
+      <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 ${backgroundClasses}`}>
         <div className="h-full p-8">
           {selectedFriend ? (
             <div className="h-full">
               <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={onBackToFriendsList}
-                  className={`p-2 rounded-full transition-colors
-                    ${darkMode
-                      ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
-                      : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
+                  className={`p-2 rounded-full transition-colors ${colors.buttonBg}`}
                 >
-                  <ArrowLeft className="w-5 h-5" />
+                  <ArrowLeft className={`w-5 h-5 ${colors.text}`} />
                 </button>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   {selectedFriend.name}'s Calendar
@@ -265,19 +271,15 @@ const FriendPage = ({ userId }) => {
                 </h1>
                 <div className="relative flex gap-4">
                   <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4
-                      ${darkMode ? 'text-gray-400' : 'text-gray-500'}`} />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${colors.textSecondary}`} />
                     <input
                       type="text"
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className={`pl-10 pr-4 py-2 rounded-full w-64 text-sm focus:outline-none focus:ring-2 
-                        focus:ring-purple-500/50 transition-colors
-                        ${darkMode
-                          ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400'
-                          : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'} 
-                        border`}
+                        focus:ring-purple-500/50 transition-colors ${colors.buttonBg} border ${colors.buttonBorder}
+                        ${colors.text} placeholder:${colors.textSecondary}`}
                     />
                   </div>
                   <div className="relative flex items-center">
@@ -286,9 +288,7 @@ const FriendPage = ({ userId }) => {
                       className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors 
                         ${activeTab === 'inbox'
                           ? 'bg-blue-600 text-white'
-                          : darkMode
-                            ? 'bg-gray-800 text-gray-200 hover:bg-gray-700'
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+                          : `${colors.buttonBg} ${colors.text}`}`}
                     >
                       Inbox <Inbox className="w-5 h-5" />
                     </button>
@@ -305,19 +305,13 @@ const FriendPage = ({ userId }) => {
                 <div className="space-y-4 mt-4">
                   <button
                     onClick={handleBackToMainTab}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors
-                      ${darkMode
-                        ? 'hover:bg-gray-800 text-gray-400 hover:text-gray-200'
-                        : 'hover:bg-gray-100 text-gray-600 hover:text-gray-800'}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${colors.buttonBg}`}
                   >
-                    <ArrowLeft className="w-5 h-5" /> Back
+                    <ArrowLeft className={`w-5 h-5 ${colors.text}`} /> Back
                   </button>
                   {inbox.map((request) => (
-                    <div key={request.id} className={`flex items-center justify-between p-4 rounded-2xl border
-                      ${darkMode
-                        ? 'bg-gray-800 border-gray-700'
-                        : 'bg-gray-50 border-gray-200'}`}>
-                      <span className={`font-medium ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>
+                    <div key={request.id} className={`flex items-center justify-between p-4 rounded-2xl ${cardBackgroundClasses}`}>
+                      <span className={colors.text}>
                         Request from {request.sender}
                       </span>
                       <div className="flex gap-3">
@@ -337,20 +331,16 @@ const FriendPage = ({ userId }) => {
                     </div>
                   ))}
                   {inbox.length === 0 && (
-                    <div className={`text-center py-12 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+                    <div className={`text-center py-12 ${colors.textSecondary}`}>
                       No friend requests at the moment
                     </div>
                   )}
                 </div>
               ) : (
                 <>
-                  <div className={`relative p-6 rounded-2xl border
-                    ${darkMode
-                      ? 'bg-gray-800 border-gray-700'
-                      : 'bg-gray-50 border-gray-200'}`}>
+                  <div className={`relative p-6 rounded-2xl ${cardBackgroundClasses}`}>
                     <div className="relative">
-                      <h2 className={`text-xl font-semibold mb-4
-                        ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+                      <h2 className={`text-xl font-semibold mb-4 ${colors.text}`}>
                         Add New Friend
                       </h2>
                       <div className="flex gap-3">
@@ -360,90 +350,77 @@ const FriendPage = ({ userId }) => {
                           value={newFriend}
                           onChange={(e) => setNewFriend(e.target.value)}
                           className={`flex-1 px-4 py-2 rounded-full border focus:outline-none focus:ring-2 
-                            focus:ring-purple-500/50 transition-colors
-                            ${darkMode
-                              ? 'bg-gray-900 border-gray-700 text-gray-200 placeholder-gray-400'
-                              : 'bg-white border-gray-200 text-gray-900 placeholder-gray-500'}`}
-                              />
-                              <button
-                                onClick={handleAddFriend}
-                                disabled={!newFriend.trim()}
-                                className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
-                                  hover:from-blue-600 hover:to-purple-600 text-white font-medium flex items-center gap-2 
-                                  disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-                              >
-                                <UserPlus className="w-4 h-4" />
-                                Add Friend
-                              </button>
+                            focus:ring-purple-500/50 transition-colors ${colors.buttonBg} border ${colors.buttonBorder}
+                            ${colors.text} placeholder:${colors.textSecondary}`}
+                        />
+                        <button
+                          onClick={handleAddFriend}
+                          disabled={!newFriend.trim()}
+                          className="px-6 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
+                            hover:from-blue-600 hover:to-purple-600 text-white font-medium flex items-center gap-2 
+                            disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                        >
+                          <UserPlus className="w-4 h-4" />
+                          Add Friend
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    {filteredFriends.map((friend) => (
+                      <div
+                        key={friend.id}
+                        className={`group p-4 rounded-2xl transition-all duration-200 ${cardBackgroundClasses}`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
+                              flex items-center justify-center text-white font-bold">
+                              {friend.name[0].toUpperCase()}
                             </div>
+                            <span className={colors.text}>
+                              {friend.name}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() => onViewCalendar(friend)}
+                              className={`p-2 rounded-full transition-colors ${colors.buttonBg}`}
+                            >
+                              <Calendar className={`w-5 h-5 ${colors.text}`} />
+                            </button>
+                            <button
+                              onClick={() => onRemoveFriend(friend.id)}
+                              className={`p-2 rounded-full transition-colors hover:bg-red-500/10 
+                                ${colors.buttonBg}`}
+                            >
+                              <X className={`w-5 h-5 ${colors.text} hover:text-red-500`} />
+                            </button>
                           </div>
                         </div>
-      
-                        <div className="space-y-4">
-                          {/* Always show filtered friends list */}
-                          {filteredFriends.map((friend) => (
-                            <div
-                              key={friend.id}
-                              className={`group p-4 rounded-2xl border transition-all duration-200
-                                ${darkMode 
-                                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700' 
-                                  : 'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 
-                                    flex items-center justify-center text-white font-bold">
-                                    {friend.name[0].toUpperCase()}
-                                  </div>
-                                  <span className={`font-medium
-                                    ${darkMode ? 'text-gray-200' : 'text-gray-900'}`}>
-                                    {friend.name}
-                                  </span>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                  <button
-                                    onClick={() => onViewCalendar(friend)}
-                                    className={`p-2 rounded-full transition-colors
-                                      ${darkMode 
-                                        ? 'hover:bg-gray-600 text-gray-400 hover:text-gray-200' 
-                                        : 'hover:bg-gray-200 text-gray-600 hover:text-gray-800'}`}
-                                  >
-                                    <Calendar className="w-5 h-5" />
-                                  </button>
-                                  <button
-                                    onClick={() => onRemoveFriend(friend.id)}
-                                    className={`p-2 rounded-full transition-colors
-                                      ${darkMode 
-                                        ? 'hover:bg-red-900/20 text-gray-400 hover:text-red-400' 
-                                        : 'hover:bg-red-100 text-gray-500 hover:text-red-600'}`}
-                                  >
-                                    <X className="w-5 h-5" />
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          ))}
-      
-                          {filteredFriends.length === 0 && (
-                            <div className={`text-center py-12 
-                              ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
-                              {searchTerm ? 'No friends found matching your search' : 'No friends added yet'}
-                            </div>
-                          )}
-                        </div>
-                      </>
+                      </div>
+                    ))}
+
+                    {filteredFriends.length === 0 && (
+                      <div className={`text-center py-12 ${colors.textSecondary}`}>
+                        {searchTerm ? 'No friends found matching your search' : 'No friends added yet'}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+                </>
+              )}
             </div>
-      
-            <NotificationSnackbar
-              message={notification.message}
-              isVisible={notification.isVisible}
-            />
-          </div>
-        );
-      };
-      
-      export default FriendPage;
+          )}
+        </div>
+      </div>
+
+      <NotificationSnackbar
+        message={notification.message}
+        isVisible={notification.isVisible}
+      />
+    </div>
+  );
+};
+
+export default FriendPage;
