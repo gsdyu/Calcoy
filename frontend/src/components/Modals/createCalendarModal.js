@@ -43,38 +43,29 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     fetchUserId();
   }, []);
 
-
-  const handleIconChange = async (e) => {
+  const handleIconChange = (e) => {
     const file = e.target.files[0];
   
     if (file) {
-      // Compress the image
-      const options = { maxSizeMB: 1, maxWidthOrHeight: 500, useWebWorker: true };
-      const compressedFile = await imageCompression(file, options);
+      const toBase64 = (file) =>
+        new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 part only
+          reader.onerror = (error) => reject(error);
+          reader.readAsDataURL(file);
+        });
   
-      // Convert the compressed file to Base64
-      const toBase64 = (file) => new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-        reader.readAsDataURL(file);
-      });
-  
-      try {
-        const base64Image = await toBase64(compressedFile);
-  
-        // Update server info and state
-        setServerInfo((prev) => ({
-          ...prev,
-          icon: file,
-          iconPreview: URL.createObjectURL(file),
-          imageBase64: base64Image,
-        }));
-      } catch (error) {
-        console.error("Failed to convert file to base64:", error);
-      }
+      toBase64(file)
+        .then((base64) => {
+          setServerInfo((prev) => ({
+            ...prev,
+            icon: file,
+            iconPreview: URL.createObjectURL(file),
+            imageBase64: base64, // Store Base64 string
+          }));
+        })
+        .catch((error) => console.error("Failed to convert image to Base64:", error));
     } else {
-      // If no file is selected, clear the state
       setServerInfo((prev) => ({
         ...prev,
         icon: null,
@@ -84,7 +75,6 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     }
   };
   
-
   const handleServerChange = (e) => {
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
