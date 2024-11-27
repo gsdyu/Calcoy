@@ -232,7 +232,17 @@ const ChatSidebar = ({
   darkMode,
   selectedTheme,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chatSidebarCollapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('chatSidebarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   return (
     <div
