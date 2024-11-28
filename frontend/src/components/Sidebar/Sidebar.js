@@ -1,18 +1,33 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import TitleCalendar from '@/components/Sidebar/TitleCalendar';
 import CalendarFilter from '@/components/Sidebar/CalendarFilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, servers, setServers, serverUsers, setServerUsers, otherCalendars}) => {
-  const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
+const Sidebar = ({ 
+  onDateSelect, 
+  currentView, 
+  onViewChange, 
+  mainCalendarDate, 
+  events, 
+  onTaskComplete, 
+  activeCalendar, 
+  handleChangeActiveCalendar, 
+  itemColors, 
+  onColorChange, 
+  servers, 
+  setServers, 
+  serverUsers, 
+  setServerUsers, 
+  otherCalendars
+}) => {
+  const { darkMode, selectedTheme, presetThemes } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
 
-  // Define the onLeave function
   const onLeave = async (serverId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/servers/${serverId}/leave`, {
@@ -22,7 +37,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
 
       if (response.ok) {
         setServers((prev) => prev.filter((server) => server.id !== serverId));
-        handleChangeActiveCalendar(null); // Set to null or default calendar after leaving
+        handleChangeActiveCalendar(null);
       } else {
         console.error('Failed to leave server');
       }
@@ -53,28 +68,20 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
     }
   };
 
-  // Get the current theme's gradient or fall back to the default background
-  const backgroundClasses = selectedTheme 
-    ? presetThemes[selectedTheme]?.gradient
-    : darkMode 
-      ? colors.background
-      : 'bg-gray-100';
+  // Combine theme gradient with original color scheme
+  const backgroundClasses = `
+    ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}
+    ${selectedTheme && presetThemes[selectedTheme]?.gradient}
+    ${selectedTheme ? 'bg-opacity-95' : ''}
+  `;
 
   return (
-    <div 
-      className={`
-        w-60 flex flex-col relative transition-all duration-300 h-full
-        ${backgroundClasses}
-        ${selectedTheme ? 'bg-opacity-95' : ''}
-        ${colors.text}
-      `}
-    >
+    <div className={`w-60 ${backgroundClasses} flex flex-col relative transition-all duration-300 h-full`}>
       <div className="flex-grow overflow-hidden">
         <TitleCalendar 
           activeCalendar={activeCalendar}
           handleChangeActiveCalendar={handleChangeActiveCalendar}
           onLeave={onLeave}
-          colors={colors}
         />
         
         <MiniCalendar 
@@ -83,7 +90,6 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           onViewChange={onViewChange}
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
-          colors={colors}
         />
         
         <CalendarFilter 
@@ -95,14 +101,12 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           serverUsers={serverUsers}
           setServerUsers={setServerUsers}
           otherCalendars={otherCalendars}
-          colors={colors}
         />
         
         <Tasks 
           events={events}
           selectedDate={selectedDate || mainCalendarDate}
           onTaskComplete={onTaskComplete}
-          colors={colors}
         />
       </div>
     </div>
