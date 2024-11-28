@@ -37,7 +37,9 @@ const FriendPage = ({ userId }) => {
   // Get background classes based on theme
   const backgroundClasses = selectedTheme 
     ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
-    : colors.background;
+    : darkMode 
+      ? 'bg-gray-900'
+      : 'bg-white';
 
   // Get secondary background for cards
   const cardBackgroundClasses = selectedTheme
@@ -45,6 +47,19 @@ const FriendPage = ({ userId }) => {
     : darkMode
       ? 'bg-gray-800 border-gray-700'
       : 'bg-gray-50 border-gray-200';
+
+  // Text colors
+  const textClasses = selectedTheme
+    ? colors.text
+    : darkMode
+      ? 'text-gray-200'
+      : 'text-gray-900';
+
+  const secondaryTextClasses = selectedTheme
+    ? colors.textSecondary
+    : darkMode
+      ? 'text-gray-400'
+      : 'text-gray-500';
 
   useEffect(() => {
     localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
@@ -249,9 +264,9 @@ const FriendPage = ({ userId }) => {
               <div className="flex items-center gap-4 mb-6">
                 <button
                   onClick={onBackToFriendsList}
-                  className={`p-2 rounded-full transition-colors ${colors.buttonBg}`}
+                  className={`p-2 rounded-full transition-colors ${cardBackgroundClasses} ${textClasses}`}
                 >
-                  <ArrowLeft className={`w-5 h-5 ${colors.text}`} />
+                  <ArrowLeft className="w-5 h-5" />
                 </button>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                   {selectedFriend.name}'s Calendar
@@ -271,15 +286,19 @@ const FriendPage = ({ userId }) => {
                 </h1>
                 <div className="relative flex gap-4">
                   <div className="relative">
-                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${colors.textSecondary}`} />
+                    <Search className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 ${secondaryTextClasses}`} />
                     <input
                       type="text"
                       placeholder="Search friends..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className={`pl-10 pr-4 py-2 rounded-full w-64 text-sm focus:outline-none focus:ring-2 
-                        focus:ring-purple-500/50 transition-colors ${colors.buttonBg} border ${colors.buttonBorder}
-                        ${colors.text} placeholder:${colors.textSecondary}`}
+                      focus:ring-purple-500/50 transition-colors border
+                      ${selectedTheme 
+                        ? `${colors.buttonBg} border-${colors.buttonBorder} ${colors.text}`
+                        : darkMode
+                          ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400'
+                          : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'}`}
                     />
                   </div>
                   <div className="relative flex items-center">
@@ -288,7 +307,7 @@ const FriendPage = ({ userId }) => {
                       className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors 
                         ${activeTab === 'inbox'
                           ? 'bg-blue-600 text-white'
-                          : `${colors.buttonBg} ${colors.text}`}`}
+                          : `${cardBackgroundClasses} ${textClasses}`}`}
                     >
                       Inbox <Inbox className="w-5 h-5" />
                     </button>
@@ -305,13 +324,14 @@ const FriendPage = ({ userId }) => {
                 <div className="space-y-4 mt-4">
                   <button
                     onClick={handleBackToMainTab}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors ${colors.buttonBg}`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full transition-colors 
+                      ${cardBackgroundClasses} ${textClasses}`}
                   >
-                    <ArrowLeft className={`w-5 h-5 ${colors.text}`} /> Back
+                    <ArrowLeft className="w-5 h-5" /> Back
                   </button>
                   {inbox.map((request) => (
                     <div key={request.id} className={`flex items-center justify-between p-4 rounded-2xl ${cardBackgroundClasses}`}>
-                      <span className={colors.text}>
+                      <span className={textClasses}>
                         Request from {request.sender}
                       </span>
                       <div className="flex gap-3">
@@ -331,7 +351,7 @@ const FriendPage = ({ userId }) => {
                     </div>
                   ))}
                   {inbox.length === 0 && (
-                    <div className={`text-center py-12 ${colors.textSecondary}`}>
+                    <div className={`text-center py-12 ${secondaryTextClasses}`}>
                       No friend requests at the moment
                     </div>
                   )}
@@ -340,7 +360,7 @@ const FriendPage = ({ userId }) => {
                 <>
                   <div className={`relative p-6 rounded-2xl ${cardBackgroundClasses}`}>
                     <div className="relative">
-                      <h2 className={`text-xl font-semibold mb-4 ${colors.text}`}>
+                      <h2 className={`text-xl font-semibold mb-4 ${textClasses}`}>
                         Add New Friend
                       </h2>
                       <div className="flex gap-3">
@@ -349,9 +369,13 @@ const FriendPage = ({ userId }) => {
                           placeholder="Enter friend's username"
                           value={newFriend}
                           onChange={(e) => setNewFriend(e.target.value)}
-                          className={`flex-1 px-4 py-2 rounded-full border focus:outline-none focus:ring-2 
-                            focus:ring-purple-500/50 transition-colors ${colors.buttonBg} border ${colors.buttonBorder}
-                            ${colors.text} placeholder:${colors.textSecondary}`}
+                          className={`pl-10 pr-4 py-2 rounded-full flex-1 text-sm focus:outline-none focus:ring-2 
+                          focus:ring-purple-500/50 transition-colors border
+                          ${selectedTheme 
+                            ? `${colors.buttonBg} border-${colors.buttonBorder} ${colors.text}`
+                            : darkMode
+                              ? 'bg-gray-800 border-gray-700 text-gray-200 placeholder-gray-400'
+                              : 'bg-gray-100 border-gray-200 text-gray-900 placeholder-gray-500'}`}
                         />
                         <button
                           onClick={handleAddFriend}
@@ -364,8 +388,8 @@ const FriendPage = ({ userId }) => {
                           Add Friend
                         </button>
                       </div>
+                      </div>
                     </div>
-                  </div>
 
                   <div className="space-y-4">
                     {filteredFriends.map((friend) => (
@@ -379,23 +403,23 @@ const FriendPage = ({ userId }) => {
                               flex items-center justify-center text-white font-bold">
                               {friend.name[0].toUpperCase()}
                             </div>
-                            <span className={colors.text}>
+                            <span className={textClasses}>
                               {friend.name}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() => onViewCalendar(friend)}
-                              className={`p-2 rounded-full transition-colors ${colors.buttonBg}`}
+                              className={`p-2 rounded-full transition-colors ${cardBackgroundClasses}`}
                             >
-                              <Calendar className={`w-5 h-5 ${colors.text}`} />
+                              <Calendar className={`w-5 h-5 ${textClasses}`} />
                             </button>
                             <button
                               onClick={() => onRemoveFriend(friend.id)}
                               className={`p-2 rounded-full transition-colors hover:bg-red-500/10 
-                                ${colors.buttonBg}`}
+                                ${cardBackgroundClasses}`}
                             >
-                              <X className={`w-5 h-5 ${colors.text} hover:text-red-500`} />
+                              <X className={`w-5 h-5 ${textClasses} hover:text-red-500`} />
                             </button>
                           </div>
                         </div>
@@ -403,7 +427,7 @@ const FriendPage = ({ userId }) => {
                     ))}
 
                     {filteredFriends.length === 0 && (
-                      <div className={`text-center py-12 ${colors.textSecondary}`}>
+                      <div className={`text-center py-12 ${secondaryTextClasses}`}>
                         {searchTerm ? 'No friends found matching your search' : 'No friends added yet'}
                       </div>
                     )}
