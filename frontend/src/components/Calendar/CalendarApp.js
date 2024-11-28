@@ -679,7 +679,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         </div>
       </div>
       <div className="flex">
-        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+        <div className={`transition-all duration-0 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
           {isSidebarOpen && !preferencesLoading && (
             <Sidebar 
               onDateSelect={handleMiniCalendarDateSelect}
