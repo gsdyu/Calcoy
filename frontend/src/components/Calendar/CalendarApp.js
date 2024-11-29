@@ -299,7 +299,18 @@ import { useTheme } from '@/contexts/ThemeContext';
         });
 
         const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
-        if (tempOtherCalendars) setOtherCalendars(tempOtherCalendars)
+        if (tempOtherCalendars)
+        { 
+          const updatedCalendar = ([...otherCalendars,
+                                    ...tempOtherCalendars.filter(temp=>{
+                                      return Object.keys(temp).length>0 && !(otherCalendars.some(current=>{
+                                        return (current.imported_from === temp.imported_from && current.imported_username === temp.imported_username)
+                                      }))
+                                  })])
+          if (!(updatedCalendar.length===0)) {
+            setOtherCalendars(updatedCalendar)
+          }
+        }
   
         setEvents(formattedEvents);
       } else {
