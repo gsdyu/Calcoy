@@ -26,7 +26,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [otherCalendars, setOtherCalendars] = useState([])
   const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState(null);
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -41,6 +40,19 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
   const [socketConnect, setSocketConnect] = useState(false);
   const currentUser = useRef(null);
+
+  // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('groupCalendarCollapsed');
+      return saved ? !JSON.parse(saved) : false;  
+    }
+    return false;
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('groupCalendarCollapsed', JSON.stringify(!isSidebarOpen));
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     let socket = null
