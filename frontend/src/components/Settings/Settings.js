@@ -17,7 +17,7 @@ const Settings = () => {
     if (selectedTheme && presetThemes[selectedTheme]) {
       return presetThemes[selectedTheme].gradient;
     }
-    return colors.background;
+    return darkMode ? 'bg-gray-800' : 'bg-white';  
   };
 
   // Get text color based on theme
@@ -50,8 +50,12 @@ const Settings = () => {
   };
 
   return (
-    <div className={`flex h-screen ${getBackgroundStyles()}`}>
-      {/* Sidebar - Fixed */}
+          <div
+        className={`flex h-screen ${
+          darkMode ? 'bg-gray-900' : ''
+        } ${getBackgroundStyles()}`}
+      >
+      {/* Sidebar - */}
       <div className={`
         w-64 fixed left-0 top-0 h-full overflow-y-auto
         ${getBackgroundStyles()}
