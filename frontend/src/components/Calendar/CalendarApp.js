@@ -76,12 +76,12 @@ import { useTheme } from '@/contexts/ThemeContext';
       });
 
       socket.on('userJoined', (userInfo) => {
-        if (Number(userInfo.server_id) != activeCalendar) return;
+        if (Number(userInfo.server_id) != activeCalendar.id) return;
         setServerUsers((prevUsers) => [...prevUsers, userInfo])
       });
 
       socket.on('userLeft', (userInfo) => {
-        if (Number(userInfo.server_id) != activeCalendar) return;
+        if (Number(userInfo.server_id) != activeCalendar.id) return;
         setServersUsers((prev) => prev.filter((user) => (user.server_id !== userInfo.server_id && user.id !==userInfo.id)));
       });
     };
@@ -200,8 +200,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     const visibleServer = visibleItems[`server${event.server_id}`] ? visibleItems[`server${event.server_id}`] : true;
     const visibleImport = visibleItems[`${event.imported_from}:${event.imported_username}`] ? visibleItems[`${event.imported_from}:${event.imported_username}`] : true;
     const visibleAll = (visibleHolidays && visibleType && visibleUser && visibleServer && visibleImport)
-    console.log('dog', event.title, event.start_time, visibleAll)
-    console.log('cat', visibleItems)
 
     return {visibleHolidays, visibleType, visibleUser, visibleServer, visibleImport, visibleAll}
   }
@@ -261,7 +259,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
-    console.log('mat', visibleItems)
   
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',

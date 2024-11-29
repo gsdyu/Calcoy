@@ -64,7 +64,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
   
     fetchProfile();
-  }, []);
+  }, [itemColors]);
   const scrollbarStyles = darkMode ? `
   .dark-scrollbar::-webkit-scrollbar {
     width: 12px;
@@ -98,7 +98,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       }
     };
     fetchServers();
-  }, []);
+  }, [setServers]);
  
   const renderServerItem = (server, color , showEyeIcon = true) => (
     <div
@@ -222,7 +222,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
 
     fetchServerUsers();
-  }, [activeServer, serverUsers, setServerUsers]);
+  }, [activeServer, setServerUsers]);
 
   const toggleVisibility = (item, e) => {
     if (e) {
