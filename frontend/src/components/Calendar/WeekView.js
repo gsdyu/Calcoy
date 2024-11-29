@@ -290,7 +290,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            ${bgGradientOther} text-white
+            ${bgGradientOther} text-${eventColor}
             hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
@@ -570,10 +570,10 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   
                   const calendarType = event.calendar || 'default';
                   let {eventColor, otherColorList} = getEventColor(event, calendarType, activeCalendar);
+                  if (eventColor == null) return;
                   const bgGradientOther = otherColorList.length > 0 
                     ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
                     : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
-                  if (eventColor == null) return;
                   eventColor = eventColor.replace('bg-', '');
 
                   const augmentedEvent = {
@@ -645,7 +645,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                       {...(event.isHoliday ? {} : getDragHandleProps(augmentedEvent))}
                       className={`absolute ${bgGradientOther} text-xs overflow-hidden rounded cursor-pointer 
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
-                        ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                        ${darkMode ? `text-${eventColor.replace('-500','')}-300` : `text-${eventColor.replace('-500','')}-700`}
                         ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}

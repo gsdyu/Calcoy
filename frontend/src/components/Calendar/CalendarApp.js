@@ -221,6 +221,9 @@ import { useTheme } from '@/contexts/ThemeContext';
     //the bottom logic is the order of the calendar shown on the sidebar
     //if statement are for which sidebar is being shown
     const {visibleType, visibleUser, visibleServer, visibleImport, visibleAny} = getVisibility(event, calendarType, activeCalendar);
+    //do not need to return all attribute since if there is no eventColor, that mean the event should not be displayed.
+    //color attributes related are irrelevant then
+    if (visibleAny === false) return {eventColor: null, otherColorList: null} 
     tempColor = (itemColors?.[calendarType]) 
     ? itemColors[calendarType]
     : (() => {
