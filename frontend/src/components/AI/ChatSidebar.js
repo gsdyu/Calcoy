@@ -266,10 +266,12 @@ const ChatSidebar = ({
           className={`
             p-3 m-2 rounded-xl transition-colors duration-200
             ${selectedTheme
-              ? 'hover:bg-white/20 text-white/90 hover:text-white'
+              ? darkMode 
+                ? 'hover:bg-black/20 text-white/80'
+                : 'hover:bg-white/20 text-black/80'
               : darkMode
-                ? 'hover:bg-gray-700 text-gray-300 hover:text-gray-100'
-                : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'}
+                ? 'hover:bg-gray-700 text-gray-300'
+                : 'hover:bg-gray-100 text-gray-600'}
           `}
         >
           <Menu size={24} />
