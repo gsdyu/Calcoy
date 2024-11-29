@@ -119,8 +119,8 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
         </div>
       </div>
       <div className="grid grid-cols-7 gap-0">
-        {days.map(day => (
-          <div key={day} className="text-center text-xs font-medium">{day}</div>
+        {days.map((day, index) => (
+          <div key={`${day}:${index}`} className="text-center text-xs font-medium">{day}</div>
         ))}
         {renderCalendarDays().map(({ day, isCurrentMonth }, index) => {
           const isSelected = mainCalendarDate && 
