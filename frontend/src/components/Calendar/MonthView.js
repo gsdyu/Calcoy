@@ -163,6 +163,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       isTask,
       isCompleted,
       eventTime,
+      bgGradientOther,
       onDragStart: (e) => {
         // Create a custom drag image
         const dragElement = e.target.cloneNode(true);
@@ -330,7 +331,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
                   ${dropPreview.isCompleted ? 'opacity-50' : ''}
                   ${dropPreview.isAllDay 
                     ? `${dropPreview.eventColor} text-white` 
-                    : `border border-${dropPreview.eventColor.replace('bg-', '')} bg-opacity-20 text-${dropPreview.eventColor.replace('bg-', '')}`
+                    : `border border-${dropPreview.eventColor.replace('bg-', '')} ${dropPreview.bgGradientOther} text-${dropPreview.eventColor.replace('bg-', '')}`
                   }
                   ${darkMode && !dropPreview.isAllDay 
                     ? `border-${dropPreview.eventColor.replace('bg-', '')}-400 text-${dropPreview.eventColor.replace('bg-', '')}-300` 
