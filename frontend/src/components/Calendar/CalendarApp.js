@@ -198,7 +198,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     
     // default for calendarType is true cause all events have a type.
     // default false for other visibilities as their attributes is nullable; ex some events do not belong in a server
-    const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : true;
+    const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
     const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
     const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
     const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
@@ -224,6 +224,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     tempColor = (itemColors?.[calendarType]) 
     ? itemColors[calendarType]
     : (() => {
+        if (!visibleType) return
         switch (calendarType) {
           case 'Task':
             return itemColors?.tasks || 'bg-red-500';  
@@ -238,14 +239,14 @@ import { useTheme } from '@/contexts/ThemeContext';
         }
       })();
     otherColor.my=tempColor;
-    if (activeCalendar && (itemColors?.[`server${event.server_id}:user${event.user_id}`] || itemColors?.[`server_default`])) {
+    if (visibleUser) {
       tempColor = itemColors?.[`server${event.server_id}:user${event.user_id}`] ? itemColors?.[`server${event.server_id}:user${event.user_id}`] : itemColors?.[`server_default`]
       otherColor.user=tempColor
   } else {
-      if (event.server_id && (itemColors?.[`server${event.server_id}`] || itemColors?.[`server_default`])) {
+      if (visibleServer) {
         otherColor.server= itemColors?.[`server${event.server_id}`] ? itemColors?.[`server${event.server_id}`] : itemColors?.[`server_default`]
       }
-      if (event.imported_from && (itemColors?.[`${event.imported_from}:${event.imported_username}`] || itemColors?.[`other_default`])) {
+      if (visibleImport) {
         otherColor.otherCalendar = itemColors?.[`${event.imported_from}:${event.imported_username}`] ? itemColors?.[`${event.imported_from}:${event.imported_username}`] : itemColors?.[`other_default`]
       }
     }
@@ -659,6 +660,7 @@ import { useTheme } from '@/contexts/ThemeContext';
               servers={servers}
               serverUsers={serverUsers}
               getEventColor={getEventColor}
+              visibleItems={visibleItems}
             />
           )}
           {view === 'Week' && (
@@ -672,7 +674,10 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
               getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
           {view === 'Day' && (
@@ -684,7 +689,10 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
               getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
         </div>

@@ -9,7 +9,7 @@ import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
 
-const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, getEventColor }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, activeCalendar, getEventColor, visibleItems, getVisibility }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -129,8 +129,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   // Event filtering effect
   useEffect(() => {
-    const validEvents = events.filter(event => event.start_time && event.end_time);
-    const validHolidays = holidays.filter(holiday => holiday.date && holiday.start_time && holiday.end_time);
+    const validEvents = events.filter(event => {
+      const calendarType = event.calendar || 'default';
+      const { visibleAny } = getVisibility(event, calendarType, activeCalendar);
+      return (event.start_time && event.end_time && visibleAny)
+    });
+    const validHolidays = holidays.filter(holiday => {
+      if (!visibleItems[`holidays`]) return
+      return (holiday.date && holiday.start_time && holiday.end_time)
+    });
     
     const newFilteredEvents = [...validEvents, ...validHolidays].filter(event => 
       shouldShowEventOnDay(event, currentDate)
@@ -148,7 +155,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       newFilteredEvents.filter(event => !event.isHoliday && !isAllDayEvent(event))
     );
     setEventPositions(positions);
-  }, [events, holidays, currentDate]);
+  }, [events, holidays, currentDate, visibleItems, activeCalendar]);
 
   const getEventStyle = (event, isNextDay = false) => {
     const startDate = new Date(event.start_time);
@@ -213,10 +220,14 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       };
     }
     
-    const { eventColor } = getEventColor(event);
+    const { eventColor, otherColorList } = getEventColor(event);
+    if (eventColor == null) return;
     const color = eventColor.replace('bg-', '');
+    const bgGradientOther = otherColorList.length > 0 
+      ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
     return {
-      regularClass: `bg-${color} bg-opacity-20 border-${color} text-${color}`,
+      regularClass: `${bgGradientOther} border-${color} text-${color}`,
       darkClass: `text-${color}-300`,
       lightClass: `text-${color}-700`,
       color
@@ -274,6 +285,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     }
 
     const styles = getEventStyleClass(event);
+    if (styles == null) return;
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
 
@@ -441,6 +453,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const isCrossingMidnight = isEventCrossingMidnight(event);
     const isNextDay = start.getDate() !== currentDate.getDate();
     const styles = getEventStyleClass(event);
+    if (styles == null) return;
 
     return (
       <div
@@ -487,6 +500,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     if (!dropPreview) return null;
     
     const styles = getEventStyleClass(dropPreview);
+    if (styles == null) return
     return (
       <div
         className={`absolute pointer-events-none opacity-50 

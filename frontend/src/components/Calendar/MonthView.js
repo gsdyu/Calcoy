@@ -8,7 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeCalendar, servers, serverUsers, getEventColor}) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeCalendar, servers, serverUsers, getEventColor, visibleItems}) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
@@ -106,6 +106,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
   const renderEventCompact = (event) => {
     if (event.isHoliday) {
+      if (!visibleItems['holidays']) return
       return (
         <div
           key={event.id}
@@ -138,7 +139,11 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
     
 
-    const {eventColor, otherColorList, otherColorBGList} = getEventColor(event)
+    const {eventColor, otherColorList} = getEventColor(event)
+    if (eventColor == null) {
+      return
+    }
+
 
     //temp solution to showing other color. shows other color through a gradient bg
     const bgGradientOther = otherColorList.length > 0 
