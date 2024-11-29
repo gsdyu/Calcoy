@@ -115,7 +115,6 @@ import { useTheme } from '@/contexts/ThemeContext';
           preferences: {
             visibility: visibleItems,
             colors: { ...itemColors, [item]: color },
-            dark_mode: true
           }
         }),
       });
@@ -185,7 +184,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     setSelectedDate(today);
 
     fetchEvents();
-  }, [displayName, activeCalendar]); 
+  }, [displayName, activeCalendar, visibleItems]); 
   
   
     
@@ -194,6 +193,18 @@ import { useTheme } from '@/contexts/ThemeContext';
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
 
+  const getVisibility = (event, calendarType) => {
+    const visibleHolidays = visibleItems[`holidays`] ? visibleItems[`holidays`] : true;
+    const visibleType = visibleItems[calendarType] ? visibleItems[calendarType] : true;
+    const visibleUser = visibleItems[`server${event.server_id}:user${event.user_id}`] ? visibleItems[`server${event.server_id}:user${event.user_id}`] : true; 
+    const visibleServer = visibleItems[`server${event.server_id}`] ? visibleItems[`server${event.server_id}`] : true;
+    const visibleImport = visibleItems[`${event.imported_from}:${event.imported_username}`] ? visibleItems[`${event.imported_from}:${event.imported_username}`] : true;
+    const visibleAll = (visibleHolidays && visibleType && visibleUser && visibleServer && visibleImport)
+    console.log('dog', event.title, event.start_time, visibleAll)
+    console.log('cat', visibleItems)
+
+    return {visibleHolidays, visibleType, visibleUser, visibleServer, visibleImport, visibleAll}
+  }
 
   const getEventColor = (event) => {
     const calendarType = event.calendar || 'default';
@@ -211,7 +222,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     } else {
       //the bottom logic is the order of the calendar shown on the sidebar
       //if statement are for which sidebar is being shown
-      tempColor = itemColors?.[calendarType] 
+      tempColor = (itemColors?.[calendarType]) 
       ? itemColors[calendarType]
       : (() => {
           switch (calendarType) {
@@ -250,6 +261,7 @@ import { useTheme } from '@/contexts/ThemeContext';
   }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
+    console.log('mat', visibleItems)
   
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
@@ -270,7 +282,9 @@ import { useTheme } from '@/contexts/ThemeContext';
         const formattedEvents = data.map(event => {
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
-          return {
+          const calendarType = event.calendar || 'default';
+          const {visibleAll} = getVisibility(event, calendarType);
+          return (visibleAll) ? {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -280,7 +294,7 @@ import { useTheme } from '@/contexts/ThemeContext';
             server_id: event.server_id,
             imported_from: event.imported_from,
             imported_username: event.imported_username || event.imported_from
-          };
+          } : {};
         });
 
         const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
