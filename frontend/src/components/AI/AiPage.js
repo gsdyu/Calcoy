@@ -476,7 +476,7 @@ const AiPage = () => {
     <div className={containerClasses}>
       <div className={mainContentClasses}>
         <h1 className={styles.aiheader}>
-          Timewise AI<Sparkles className={styles.ailogo} />
+          Calcoy AI<Sparkles className={styles.ailogo} />
         </h1>
 
         <AiPromptExamples onExampleClick={handleExampleClick} visible={showPrompts && messages.length === 0} />
@@ -558,7 +558,7 @@ const AiPage = () => {
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Ask Timewise AI..."
+            placeholder="Ask Calcoy AI..."
             className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''} ${
               selectedTheme ? 'bg-white/80 dark:bg-gray-900/80' : ''
             }`}

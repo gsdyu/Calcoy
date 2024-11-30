@@ -36,7 +36,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
     const blobUrl = URL.createObjectURL(blob);
     const link = document.getElementById('icsLink');
     link.href = blobUrl;
-    link.download = 'timewise_calendar';
+    link.download = 'calcoy_calendar';
     link.textContent = blobUrl.replace('blob:','');
     link.addEventListener('click', () => {
       setTimeout(() => URL.revokeObjectURL(link.href), 1000);
@@ -248,7 +248,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
               </button>
             </div>
             <p className={`mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-              Use this ics file to export ALL your timewise events from Main Calendar:
+              Use this ics file to export ALL your Calcoy events from Main Calendar:
             </p>
             <div className="flex items-center space-x-3">
               <a 

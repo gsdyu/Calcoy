@@ -184,7 +184,7 @@ const handleJoinServer = async () => {
 
   const handleGenerateInviteLink = () => {
     // Generates new invite link for the current calendar
-    const newInviteLink = `https://timewise.com/invite/${Math.random().toString(36).substr(2, 8)}`;
+    const newInviteLink = `https://calcoy.com/invite/${Math.random().toString(36).substr(2, 8)}`;
     setInviteLink(newInviteLink);
     console.log('Generated new invite link:', newInviteLink);
   };
@@ -343,7 +343,7 @@ const handleJoinServer = async () => {
                   <input
                     type="text"
                     name="inviteLink"
-                    placeholder="https://timewise.com/invite/es167y6o"
+                    placeholder="https://calcoy.com/invite/es167y6o"
                     value={inviteLink}
                     onChange={(e) => setInviteLink(e.target.value)}
                     className={`
@@ -360,8 +360,8 @@ const handleJoinServer = async () => {
                 <div className="bg-gray-800/30 rounded-2xl p-4">
                   <div className="font-medium text-gray-400 mb-2">Example Invite Links:</div>
                   <div className="space-y-1 text-sm text-gray-500">
-                    <div>https://timewise.com/invite/es589y9v</div>
-                    <div>https://timewise.com/invite/es323y6c</div>
+                    <div>https://calcoy.com/invite/es589y9v</div>
+                    <div>https://calcoy.com/invite/es323y6c</div>
                   </div>
                 </div>
               </div>
@@ -428,7 +428,7 @@ const handleJoinServer = async () => {
               </div>
 
               <p className="text-xs text-gray-500">
-                By creating a server, you agree to TimeWise's Community Guidelines
+                By creating a server, you agree to Calcoy's Community Guidelines
               </p>
 
               <div className="flex justify-between">

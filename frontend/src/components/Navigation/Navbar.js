@@ -77,7 +77,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
     >
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} p-3`}>
         {!isCollapsed && (
-          <h1 className={`text-xl font-bold font-serif ml-2 ${colors.text}`}>TimeWise</h1>
+          <h1 className={`text-xl font-bold font-serif ml-2 ${colors.text}`}>Calcoy</h1>
         )}
         <Button 
           variant="ghost" 

@@ -271,7 +271,7 @@ const AboutPage = () => {
           >
             <h2 className="text-4xl font-bold text-white mb-6">Ready to Transform Your Scheduling?</h2>
             <p className="text-white/90 text-xl mb-8">
-              Experience the perfect balance of simplicity and power with Timewise.
+              Experience the perfect balance of simplicity and power with Calcoy.
             </p>
             <Link 
               href="/auth/signup" 
