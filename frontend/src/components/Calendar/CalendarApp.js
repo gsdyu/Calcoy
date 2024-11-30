@@ -222,7 +222,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     try {
       const url = activeCalendar !== null 
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events?server_id=${activeCalendar.id}` 
-        : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
       
       const response = await fetch(url, {
         credentials: 'include',

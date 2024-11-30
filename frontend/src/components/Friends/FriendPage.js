@@ -7,7 +7,6 @@ import FriendCalendar from '@/components/Friends/FriendCalendar';
 import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import axios from 'axios';
-import {   Inbox } from 'lucide-react';
 
 const FriendPage = ({ userId }) => {
   const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
