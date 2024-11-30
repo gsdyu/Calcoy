@@ -71,7 +71,6 @@ module.exports = (app, pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Server not found or user not a member' });
       }
-      io.emit('userLeft', {server_id:serverId, user_id:userId})
 
       res.json({ message: 'Successfully left the server' });
     } catch (err) {
@@ -113,7 +112,6 @@ module.exports = (app, pool) => {
                                          WHERE users.id=$1`, [userId]);
       result.rows[0].server_id=serverId
       console.log(result.rows)
-      io.emit('userJoined', result.rows[0])
       res.status(201).json({ message: 'Successfully joined the server', serverId });
     } catch (error) {
       console.error('Error joining server:', error);
@@ -151,7 +149,7 @@ module.exports = (app, pool) => {
         const server = rows[0];
 
         await pool.query(
-            `INSERT INTO user_servers (user_id, server_id) VALUES ($1, $2)`,
+            `INSERT INTO "userServers" (user_id, server_id) VALUES ($1, $2)`,
             [userId, server.id]
         );
 

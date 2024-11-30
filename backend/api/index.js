@@ -14,7 +14,7 @@ const app = express();
 
 app.use(express.json())
 app.use(cors({
-    origin: 'https://www.calcoy.com',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
@@ -46,11 +46,12 @@ require('./config/passport')(pool);
     })
   );
 
-// Routes for authentication and events
+//routes
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool); 
 require('./routes/profile')(app, pool);
 require('./routes/servers')(app, pool); 
+require('./routes/ai')(app,pool);
 
 /**
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
