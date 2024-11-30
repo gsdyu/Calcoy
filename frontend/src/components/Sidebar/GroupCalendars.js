@@ -75,10 +75,10 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
     : darkMode 
       ? 'bg-gray-800' 
-      : 'bg-gray-200';
+      : 'bg-white';
 
   return (
-    <div className={`w-16 ${backgroundClasses} flex flex-col items-center py-4 h-screen relative z-40`}>
+    <div className={`w-16 ${backgroundClasses} flex flex-col items-center py-4 h-screen relative z-40 shadow-lg`}>
       <button 
         onClick={toggleSidebar}
         className="absolute -left-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition-all duration-300"
