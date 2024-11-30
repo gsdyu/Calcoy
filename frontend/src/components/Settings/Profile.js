@@ -153,46 +153,72 @@ const Profile = () => {
     }
 };
 
- 
-  
+const handleSaveEdit = async ({ file, x, y, scale }) => {
+  if (!file) return;
 
-  const handleSaveEdit = async ({ file, x, y, scale }) => {
-    if (!file) return;
+  // Check authentication
+  const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
+    credentials: 'include',
+  });
+  if (!check.ok) {
+    alert("No token found. Please login.");
+    return;
+  }
 
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
+  try {
+    // Convert image file to Base64
+    const toBase64 = (file) =>
+      new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 data
+        reader.onerror = (error) => reject(error);
+        reader.readAsDataURL(file);
+      });
+
+    const base64 = await toBase64(file);
+
+    // Prepare the payload
+    const payload = {
+      imageBase64: base64,
+      x_offset: x,
+      y_offset: y,
+      scale: scale,
+    };
+
+    // Send the request
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
       credentials: 'include',
+      body: JSON.stringify(payload),
     });
-    if (!check.ok) {
-      alert("No token found. Please login.")
+
+    const data = await response.json();
+    if (!response.ok) {
+      alert(`Error updating profile picture: ${data.error}`);
       return;
     }
 
-    try {
-      const formData = new FormData();
-      formData.append('profile_image', file);
-      formData.append('x_offset', x);
-      formData.append('y_offset', y);
-      formData.append('scale', scale);
+    // Update profile picture state
+    setProfileImage(data.profile_image);
+    setProfileImageX(data.profile_image_x);
+    setProfileImageY(data.profile_image_y);
+    setProfileImageScale(data.profile_image_scale);
+    alert('Profile picture updated successfully!');
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
-        method: 'PUT',
-        credentials: 'include',
-        body: formData,
-      });
-      const data = await response.json();
-      setProfileImage(data.profile_image);
-      setProfileImageX(data.profile_image_x);
-      setProfileImageY(data.profile_image_y);
-      setProfileImageScale(data.profile_image_scale);
-      setIsEditModalOpen(false);
-      setSelectedImage(null);
-      setSelectedFile(null);
-      alert('Profile picture updated successfully!');
-    } catch (error) {
-      console.error('Error uploading profile picture:', error);
-      alert('Error updating profile picture.');
-    }
-  };
+    // Reset modal state
+    setIsEditModalOpen(false);
+    setSelectedImage(null);
+    setSelectedFile(null);
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    alert('Error updating profile picture.');
+  }
+};
+
+
 
 const ProfileSection = ({ title, description, icon: Icon, action, onClick }) => (
   <div className={`p-6 rounded-2xl transition-colors ${
