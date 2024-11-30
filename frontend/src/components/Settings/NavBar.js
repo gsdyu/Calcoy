@@ -24,13 +24,16 @@ const NavBar = ({ currentSection, setCurrentSection }) => {
   };
 
   return (
-    <nav className="w-full px-1">
+    <nav className="w-full px-3">
       <Button
         variant="ghost"
         className={`
-          w-full flex items-center justify-start p-2 my-1 text-sm font-medium
-          transition-colors duration-200
-          ${darkMode ? "text-gray-300 hover:bg-gray-700" : "text-gray-700 hover:bg-gray-200"}
+          w-full flex items-center justify-start p-3 my-1 text-sm font-medium
+          rounded-xl transition-all duration-200
+          ${darkMode 
+            ? "text-gray-300 hover:bg-gray-700" 
+            : "text-gray-700 hover:bg-gray-200"
+          }
         `}
         onClick={() => router.push('/calendar')}
       >
@@ -42,11 +45,11 @@ const NavBar = ({ currentSection, setCurrentSection }) => {
           key={item.name}
           variant="ghost"
           className={`
-            w-full flex items-center justify-start p-2 my-1 text-sm font-medium
-            transition-colors duration-200
+            w-full flex items-center justify-start p-3 my-1 text-sm font-medium
+            rounded-xl transition-all duration-200
             ${currentSection === item.name
               ? darkMode
-                ? "bg-blue-600 text-white hover:bg-blue-700"
+                ? "bg-blue-500 text-white hover:bg-blue-600"
                 : "bg-blue-100 text-blue-600 hover:bg-blue-200"
               : darkMode
                 ? "text-gray-300 hover:bg-gray-700"

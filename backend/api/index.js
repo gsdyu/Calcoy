@@ -61,14 +61,19 @@ pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE,
+    privacy VARCHAR(20) DEFAULT 'public',
+
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,
     profile_image VARCHAR(255),
+    profile_image_x VARCHAR(255),
+    profile_image_y VARCHAR(255),
+    profile_image_scale FLOAT DEFAULT 1.0,
     access_token TEXT,
     sync_token VARCHAR(255),
     refresh_token TEXT,
     dark_mode BOOLEAN DEFAULT false,
-    preferences JSONB DEFAULT '{}',
+    preferences JSONB DEFAULT '{"colors": {"server_default": "bg-blue-500", "other_default": "bg-green-500"}, "dark_mode": "true"}',
     two_factor_code VARCHAR(6),
     two_factor_expires TIMESTAMPTZ
   );
@@ -101,6 +106,12 @@ pool.query(`
     channel_expire TIMESTAMPTZ,
     PRIMARY KEY (user_id, watched_calendar_id)
   );
+  CREATE TABLE IF NOT EXISTS friend_requests (
+    id SERIAL PRIMARY KEY,
+    sender_id INT REFERENCES users(id) ON DELETE CASCADE,
+    receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
+    status VARCHAR(20) DEFAULT 'pending'
+  );
 
 `).then(() => {
   console.log("Users and Servers table is ready");
@@ -110,6 +121,8 @@ pool.query(`
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
+      privacy VARCHAR(20) DEFAULT 'public',
+
       start_time TIMESTAMPTZ NOT NULL,
       end_time TIMESTAMPTZ NOT NULL,
       location VARCHAR(255),
@@ -117,9 +130,11 @@ pool.query(`
       calendar VARCHAR(50),
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
-
+      ai BOOLEAN,
       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
+      imported_from VARCHAR(50),
+      imported_username VARCHAR(50),
       CONSTRAINT end_after_or_is_start CHECK (end_time >= start_time)
     );
   `

@@ -79,9 +79,27 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekStart.getDate() + 6);
 
-    const checkDate = new Date(miniCalendarDate.getFullYear(), miniCalendarDate.getMonth() + (isCurrentMonth ? 0 : day > 20 ? -1 : 1), day);
+    const checkDate = new Date(
+      miniCalendarDate.getFullYear(), 
+      miniCalendarDate.getMonth() + (isCurrentMonth ? 0 : day > 20 ? -1 : 1), 
+      day
+    );
+    
+    // Normalize the time portion to avoid any time-of-day issues
+    weekStart.setHours(0, 0, 0, 0);
+    weekEnd.setHours(23, 59, 59, 999);
+    checkDate.setHours(12, 0, 0, 0);
     
     return checkDate >= weekStart && checkDate <= weekEnd;
+  };
+
+  // Helper function to determine if a day is at the start or end of its week
+  const getWeekPosition = (index) => {
+    const position = index % 7;
+    return {
+      isStart: position === 0,
+      isEnd: position === 6
+    };
   };
 
   return (
@@ -119,8 +137,8 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
         </div>
       </div>
       <div className="grid grid-cols-7 gap-0">
-        {days.map(day => (
-          <div key={day} className="text-center text-xs font-medium">{day}</div>
+        {days.map((day, index) => (
+          <div key={`${day}:${index}`} className="text-center text-xs font-medium">{day}</div>
         ))}
         {renderCalendarDays().map(({ day, isCurrentMonth }, index) => {
           const isSelected = mainCalendarDate && 
@@ -133,6 +151,7 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
                           new Date().getFullYear() === miniCalendarDate.getFullYear() &&
                           isCurrentMonth;
           const isInWeek = isInSelectedWeek(day, isCurrentMonth);
+          const { isStart, isEnd } = getWeekPosition(index);
           
           return (
             <div 
@@ -140,7 +159,10 @@ const MiniCalendar = ({ onDateSelect, currentView, onViewChange, selectedDate, m
               onClick={() => handleDateClick(day, isCurrentMonth)}
               className={`relative text-center p-1 text-xs cursor-pointer
                 ${isCurrentMonth ? '' : 'text-gray-500'}
-                ${isInWeek ? (darkMode ? 'bg-gray-700' : 'bg-gray-200') : ''}
+                ${isInWeek ? `${darkMode ? 'bg-gray-700' : 'bg-gray-200'}
+                  ${isStart ? 'rounded-l-2xl' : ''}
+                  ${isEnd ? 'rounded-r-2xl' : ''}
+                ` : ''}
               `}
             >
               <div className={`

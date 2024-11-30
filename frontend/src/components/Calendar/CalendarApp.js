@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 import CalendarHeader from '@/components/Calendar/CalendarHeader';
@@ -20,11 +20,11 @@ import { useTheme } from '@/contexts/ThemeContext';
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
-
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
+  const [otherCalendars, setOtherCalendars] = useState([])
+  const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState(null);
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -40,7 +40,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
-    
     const fetchPreferences = async () => {
       try {
         const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
@@ -51,6 +50,9 @@ import { useTheme } from '@/contexts/ThemeContext';
           setPreferencesLoading(false);
           return;
         }
+        const checkJson = await check.json();
+        //localStorage.setItem('userId', Number(checkJson.userId));
+        currentUser.current=checkJson.userId;
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           headers: {
@@ -89,7 +91,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     setSelectedDate(today);
 
     fetchEvents();
-  }, [displayName, activeCalendar]); 
+  }, [displayName, activeCalendar, visibleItems]); 
   
   
     
@@ -122,12 +124,71 @@ import { useTheme } from '@/contexts/ThemeContext';
         // If save fails, revert the change
         setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
         throw new Error('Failed to save color preference');
+
+  const getVisibility = (event, calendarType, activeCalendar) => {
+    const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
+    const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
+    const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
+    const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
+    const visibleAny = (visibleType || visibleUser || visibleServer || visibleImport)
+
+    return {visibleType, visibleUser, visibleServer, visibleImport, visibleAny}
+  }
+
+  const getEventColor = (event) => {
+    const calendarType = event.calendar || 'default';
+  
+    //stores all the possible colors for an event first. 
+
+    //otherColor is a dictionary; any color here can be chosen as an eventColor by calling the key
+    //default eventColor: the first color added to otherColor
+    const otherColor = {};
+    let tempColor;
+
+
+    //the bottom logic is the order of the calendar shown on the sidebar
+    //if statement are for which sidebar is being shown
+    const {visibleType, visibleUser, visibleServer, visibleImport, visibleAny} = getVisibility(event, calendarType, activeCalendar);
+    //do not need to return all attribute since if there is no eventColor, that mean the event should not be displayed.
+    //color attributes related are irrelevant then
+    if (visibleAny === false) return {eventColor: null, otherColorList: null} 
+    tempColor = (itemColors?.[calendarType]) 
+    ? itemColors[calendarType]
+    : (() => {
+        if (!visibleType) return
+        switch (calendarType) {
+          case 'Task':
+            return itemColors?.tasks || 'bg-red-500';  
+          case 'Personal':
+            return itemColors?.email || 'bg-blue-500'; 
+          case 'Family':
+            return itemColors?.familyBirthday || 'bg-orange-500'; 
+          case 'Work':
+            return 'bg-purple-500'; 
+          default:
+            return; 
+        }
+      })();
+    otherColor.my=tempColor;
+    if (visibleUser) {
+      tempColor = itemColors?.[`server${event.server_id}:user${event.user_id}`] ? itemColors?.[`server${event.server_id}:user${event.user_id}`] : itemColors?.[`server_default`]
+      otherColor.user=tempColor
+  } else {
+      if (visibleServer) {
+        otherColor.server= itemColors?.[`server${event.server_id}`] ? itemColors?.[`server${event.server_id}`] : itemColors?.[`server_default`]
       }
-    } catch (error) {
-      console.error('Error saving color preference:', error);
-      showNotification('Failed to save color preference');
+      if (visibleImport) {
+        otherColor.otherCalendar = itemColors?.[`${event.imported_from}:${event.imported_username}`] ? itemColors?.[`${event.imported_from}:${event.imported_username}`] : itemColors?.[`other_default`]
+      }
     }
-  };
+
+    const otherColorBGList=Object.values(otherColor).filter(color=>color!=null);
+    const origColorBGList = Array.from(otherColorBGList);
+    const eventColor = otherColorBGList.shift();
+    const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
+
+    return {eventColor, otherColorList, otherColorBGList, origColorBGList}
+  }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
@@ -150,16 +211,34 @@ import { useTheme } from '@/contexts/ThemeContext';
         const formattedEvents = data.map(event => {
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
-          return {
+          const calendarType = event.calendar || 'default';
+          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+          return (visibleAny) ? {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isTask: event.calendar === 'Task',
             completed: event.completed || false,
-            server_id: event.server_id
-          };
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
+          } : {};
         });
+
+        const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
+        if (tempOtherCalendars)
+        { 
+          const updatedCalendar = ([...otherCalendars,
+                                    ...tempOtherCalendars.filter(temp=>{
+                                      return Object.keys(temp).length>0 && !(otherCalendars.some(current=>{
+                                        return (current.imported_from === temp.imported_from && current.imported_username === temp.imported_username)
+                                      }))
+                                  })])
+          if (!(updatedCalendar.length===0)) {
+            setOtherCalendars(updatedCalendar)
+          }
+        }
   
         setEvents(formattedEvents);
       } else {
@@ -513,6 +592,11 @@ import { useTheme } from '@/contexts/ThemeContext';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              servers={servers}
+              serverUsers={serverUsers}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
             />
           )}
           {view === 'Week' && (
@@ -526,6 +610,10 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
           {view === 'Day' && (
@@ -537,12 +625,16 @@ import { useTheme } from '@/contexts/ThemeContext';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
         </div>
       </div>
       <div className="flex">
-        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+        <div className={`transition-all duration-0 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
           {isSidebarOpen && !preferencesLoading && (
             <Sidebar 
               onDateSelect={handleMiniCalendarDateSelect}
@@ -555,8 +647,14 @@ import { useTheme } from '@/contexts/ThemeContext';
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
-              setServers={setServers}
               onColorChange={handleColorChange}
+              setServers={setServers}
+              serverUsers={serverUsers}
+              servers={servers}
+              setServerUsers={setServerUsers}
+              otherCalendars={otherCalendars}
+              visibleItems={visibleItems}
+              setVisibleItems={setVisibleItems}
             />
           )}
         </div>
@@ -584,6 +682,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           onTaskComplete={handleTaskComplete}
           triggerRect={eventModalTriggerRect}  
           view={view}
+          getEventColor={getEventColor}
         />
       )}
       {isAddingEvent && (

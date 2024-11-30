@@ -8,7 +8,7 @@ import { useCalendarDragDrop } from '@/hooks/useCalendarDragDrop';
 import holidayService from '@/utils/holidayUtils';  
 import Image from 'next/image';
 
-const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors }) => {
+const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onViewChange, onEventUpdate, itemColors, activeCalendar, servers, serverUsers, getEventColor, visibleItems}) => {
   const { darkMode } = useTheme();
   const [openPopover, setOpenPopover] = useState(null);
   const containerRef = useRef(null);
@@ -106,6 +106,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
 
   const renderEventCompact = (event) => {
     if (event.isHoliday) {
+      if (!visibleItems['holidays']) return
       return (
         <div
           key={event.id}
@@ -136,26 +137,19 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       );
     }
 
-    const calendarType = event.calendar || 'default';
-  
-    // Use optional chaining and provide fallback color
-    const eventColor = itemColors?.[calendarType] 
-    ? itemColors[calendarType]
-    : (() => {
-        switch (calendarType) {
-          case 'Task':
-            return itemColors?.tasks || 'bg-red-500';  
-          case 'Personal':
-            return itemColors?.email || 'bg-blue-500'; 
-          case 'Family':
-            return itemColors?.familyBirthday || 'bg-orange-500'; 
-          case 'Work':
-            return 'bg-purple-500'; 
-          default:
-            return 'bg-gray-400'; 
-        }
-      })();
     
+
+    const {eventColor, otherColorList} = getEventColor(event)
+    if (eventColor == null) {
+      return
+    }
+
+
+    //temp solution to showing other color. shows other color through a gradient bg
+    const bgGradientOther = otherColorList.length > 0 
+      ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+
     const isAllDay = isAllDayEvent(event);
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
@@ -169,6 +163,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       isTask,
       isCompleted,
       eventTime,
+      bgGradientOther,
       onDragStart: (e) => {
         // Create a custom drag image
         const dragElement = e.target.cloneNode(true);
@@ -203,8 +198,9 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
           ${darkMode && !isAllDay ? `border-${eventColor.replace('bg-', '')}-400 text-${eventColor.replace('bg-', '')}-300` : ''}
           hover:bg-opacity-30 transition-colors duration-200
           ${isTask && isCompleted ? 'line-through' : ''}
+          ${isAllDay? '':bgGradientOther}
         `}
-        onClick={(e) => {
+      onClick={(e) => {
           e.stopPropagation();
           onEventClick(event, e);
         }}
@@ -335,7 +331,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
                   ${dropPreview.isCompleted ? 'opacity-50' : ''}
                   ${dropPreview.isAllDay 
                     ? `${dropPreview.eventColor} text-white` 
-                    : `border border-${dropPreview.eventColor.replace('bg-', '')} bg-opacity-20 text-${dropPreview.eventColor.replace('bg-', '')}`
+                    : `border border-${dropPreview.eventColor.replace('bg-', '')} ${dropPreview.bgGradientOther} text-${dropPreview.eventColor.replace('bg-', '')}`
                   }
                   ${darkMode && !dropPreview.isAllDay 
                     ? `border-${dropPreview.eventColor.replace('bg-', '')}-400 text-${dropPreview.eventColor.replace('bg-', '')}-300` 

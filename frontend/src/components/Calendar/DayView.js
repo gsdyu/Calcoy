@@ -9,15 +9,17 @@ import { handleTimeSlotDoubleClick } from '@/utils/timeSlotUtils';
 import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
 
-const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
+const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, activeCalendar, getEventColor, visibleItems, getVisibility }) => {
   const { darkMode } = useTheme();
   const hours = Array.from({ length: 24 }, (_, i) => i);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
   const [eventPositions, setEventPositions] = useState(new Map());
   const [holidays, setHolidays] = useState([]);
+  const [filteredEvents, setFilteredEvents] = useState([]);
+  const [allDayEvents, setAllDayEvents] = useState([]);
+  const [timedEvents, setTimedEvents] = useState([]);
 
-  // Initialize drag and drop hook
   const { 
     draggedEvent,
     dropPreview,
@@ -33,35 +35,31 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   // Holiday fetching effect
   useEffect(() => {
-    const monthHolidays = holidayService.getMonthHolidays(currentDate);
-    setHolidays(monthHolidays);
+    const fetchAndFormatHolidays = async () => {
+      const monthHolidays = holidayService.getMonthHolidays(currentDate);
+      const formattedHolidays = monthHolidays.map(holiday => {
+        const holidayDate = new Date(holiday.date || holiday.start_time);
+        const startDate = new Date(holidayDate);
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(holidayDate);
+        endDate.setHours(23, 59, 59, 999);
+        
+        return {
+          ...holiday,
+          id: `holiday-${holidayDate.toISOString()}`,
+          title: holiday.title || holiday.name,
+          start_time: startDate.toISOString(),
+          end_time: endDate.toISOString(),
+          date: holidayDate.toISOString(),
+          isHoliday: true,
+          calendar: 'holiday',
+          type: holiday.type || 'Public Holiday'
+        };
+      });
+      setHolidays(formattedHolidays);
+    };
+    fetchAndFormatHolidays();
   }, [currentDate]);
-
-  // Helper function for getting event colors
-  const getEventColor = (event) => {
-    if (event.isHoliday) {
-      return itemColors?.holidays || 'bg-yellow-500';
-    }
-
-    const calendarType = event.calendar || 'default';
-    
-    return itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500';
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500';
-            case 'Work':
-              return 'bg-purple-500';
-            case 'Task':
-              return itemColors?.tasks || 'bg-red-500';
-            default:
-              return 'bg-blue-500';
-          }
-        })();
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -69,6 +67,15 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     }, 60000);
     return () => clearInterval(timer);
   }, []);
+
+  const isSameDay = (date1, date2) => {
+    if (!date1 || !date2) return false;
+    const d1 = new Date(date1);
+    const d2 = new Date(date2);
+    return d1.getDate() === d2.getDate() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getFullYear() === d2.getFullYear();
+  };
 
   const isEventCrossingMidnight = (event) => {
     const startDate = new Date(event.start_time);
@@ -81,7 +88,14 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return endDate.getTime() > nextDay.getTime();
   };
 
+
   const shouldShowEventOnDay = (event, day) => {
+    if (event.isHoliday) {
+      const holidayDate = new Date(event.date);
+      const checkDate = new Date(day);
+      return isSameDay(holidayDate, checkDate);
+    }
+
     const eventStart = new Date(event.start_time);
     const eventEnd = new Date(event.end_time);
     const dayStart = new Date(day);
@@ -89,31 +103,59 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const dayEnd = new Date(day);
     dayEnd.setHours(23, 59, 59, 999);
 
-    const nextDayStart = new Date(dayStart);
-    nextDayStart.setDate(nextDayStart.getDate() + 1);
-
-    // If this is an event ending at midnight exactly
     if (eventEnd.getHours() === 0 && eventEnd.getMinutes() === 0) {
-      return eventStart <= dayEnd && eventEnd.getTime() !== dayStart.getTime();
+      const eventEndDay = new Date(eventEnd);
+      eventEndDay.setHours(0, 0, 0, 0);
+      return eventStart <= dayEnd && eventEndDay.getTime() > dayStart.getTime();
     }
 
-    // For regular events
     return eventStart <= dayEnd && eventEnd > dayStart;
   };
 
   const isAllDayEvent = (event) => {
+    if (event.isHoliday) return true;
+    
     const startDate = new Date(event.start_time);
     const endDate = new Date(event.end_time);
     
-    // Check if event starts at midnight (00:00)
     const startsAtMidnight = startDate.getHours() === 0 && startDate.getMinutes() === 0;
     
-    // Check if event ends at midnight of the next day
     const nextDay = new Date(startDate);
     nextDay.setDate(nextDay.getDate() + 1);
+    nextDay.setHours(0, 0, 0, 0);
     
     return startsAtMidnight && endDate.getTime() === nextDay.getTime();
   };
+
+  // Event filtering effect
+  useEffect(() => {
+    const validEvents = events.filter(event => {
+      const calendarType = event.calendar || 'default';
+      const { visibleAny } = getVisibility(event, calendarType, activeCalendar);
+      return (event.start_time && event.end_time && visibleAny)
+    });
+    const validHolidays = holidays.filter(holiday => {
+      if (!visibleItems[`holidays`]) return
+      return (holiday.date && holiday.start_time && holiday.end_time)
+    });
+    
+    const newFilteredEvents = [...validEvents, ...validHolidays].filter(event => 
+      shouldShowEventOnDay(event, currentDate)
+    );
+    
+    setFilteredEvents(newFilteredEvents);
+    setAllDayEvents(newFilteredEvents.filter(event => 
+      event.isHoliday || isAllDayEvent(event)
+    ));
+    setTimedEvents(newFilteredEvents.filter(event => 
+      !event.isHoliday && !isAllDayEvent(event)
+    ));
+
+    const positions = calculateEventColumns(
+      newFilteredEvents.filter(event => !event.isHoliday && !isAllDayEvent(event))
+    );
+    setEventPositions(positions);
+  }, [events, holidays, currentDate, visibleItems, activeCalendar]);
 
   const getEventStyle = (event, isNextDay = false) => {
     const startDate = new Date(event.start_time);
@@ -124,7 +166,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     let endHour = endDate.getHours();
     let endMinute = endDate.getMinutes();
   
-    if (endHour === 0 && endMinute === 0) {
+    if (endHour === 0 && endMinute === 0 && !isNextDay) {
       endHour = 24;
       endMinute = 0;
     }
@@ -137,7 +179,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       height = minHeight;
     }
   
-    // Get positioning from eventPositions
     const position = eventPositions.get(event.id) || {
       left: '0%',
       width: '100%',
@@ -159,15 +200,6 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     return (hours + minutes / 60) * 60;
   };
 
-  const filteredEvents = [...events, ...holidays].filter(event => shouldShowEventOnDay(event, currentDate));
-  const allDayEvents = filteredEvents.filter(event => isAllDayEvent(event));
-  const timedEvents = filteredEvents.filter(event => !isAllDayEvent(event));
-
-  useEffect(() => {
-    const positions = calculateEventColumns(timedEvents);
-    setEventPositions(positions);
-  }, [timedEvents]);
-
   const handleEventClick = (event, e) => {
     e.stopPropagation();
     onEventClick(event, e);
@@ -178,6 +210,29 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     onDateDoubleClick(date, isAllDay);
   };
 
+  const getEventStyleClass = (event) => {
+    if (event.isHoliday) {
+      return {
+        regularClass: 'bg-yellow-500 bg-opacity-20 border-yellow-500 text-yellow-500',
+        darkClass: 'text-yellow-300',
+        lightClass: 'text-yellow-700',
+        color: 'yellow'
+      };
+    }
+    
+    const { eventColor, otherColorList } = getEventColor(event);
+    if (eventColor == null) return;
+    const color = eventColor.replace('bg-', '');
+    const bgGradientOther = otherColorList.length > 0 
+      ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+    return {
+      regularClass: `${bgGradientOther} border-${color} text-${color}`,
+      darkClass: `text-${color}-300`,
+      lightClass: `text-${color}-700`,
+      color
+    };
+  };
   const scrollbarStyles = darkMode ? `
     .dark-scrollbar::-webkit-scrollbar {
       width: 12px;
@@ -214,7 +269,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             e.stopPropagation();
             onEventClick({
               ...event,
-              description: `${event.type} Holiday in United States`,
+              description: `${event.type} Holiday`,
               date: event.date,
               time: '-',
               isReadOnly: true
@@ -229,7 +284,8 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       );
     }
 
-    const eventColor = getEventColor(event).replace('bg-', '');
+    const styles = getEventStyleClass(event);
+    if (styles == null) return;
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
 
@@ -243,7 +299,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            bg-${eventColor} text-white
+            bg-${styles.color} text-white
             hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
@@ -273,7 +329,7 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
           flex justify-between items-center
           text-xs mb-1 truncate cursor-pointer
           rounded-full py-1 px-2
-          bg-${eventColor} text-white
+          bg-${styles.color} text-white
           hover:bg-opacity-80 transition-colors duration-200 z-40
           mr-5
         `}
@@ -295,6 +351,9 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
     const sortedEvents = [...allDayEvents].sort((a, b) => {
       if (a.isHoliday && !b.isHoliday) return -1;
       if (!a.isHoliday && b.isHoliday) return 1;
+      if (a.isHoliday && b.isHoliday) {
+        return new Date(a.date) - new Date(b.date);
+      }
       if (a.calendar === 'Task' && b.calendar === 'Task') {
         if (a.completed !== b.completed) return a.completed ? 1 : -1;
       }
@@ -321,6 +380,151 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
 
   const toggleAllDayExpansion = () => {
     setIsAllDayExpanded(!isAllDayExpanded);
+  };
+
+  const renderTimeSlotEvent = (event) => {
+    if (event.calendar === 'Task') {
+      const styles = getEventStyleClass(event);
+      const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+      return (
+        <div
+          key={event.id}
+          {...getDragHandleProps(event)}
+          className={`
+            absolute text-xs overflow-hidden cursor-pointer
+            rounded py-1 px-2
+            ${event.completed ? 'opacity-50' : ''}
+            border ${styles.regularClass}
+            hover:bg-opacity-30 transition-colors duration-200
+            ${event.completed ? 'line-through' : ''}
+          `}
+          style={getEventStyle(event)}
+          onClick={(e) => handleEventClick(event, e)}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center overflow-hidden">
+              <Check 
+                className={`w-4 h-4 mr-1 flex-shrink-0
+                  ${event.completed ? 'opacity-50' : ''} 
+                  ${darkMode 
+                    ? `text-${styles.color}-400` 
+                    : `text-${styles.color}-500`
+                  }`} 
+              />
+              <span className="truncate">{event.title}</span>
+            </div>
+            <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${event.completed ? 'opacity-50' : ''}`}>
+              {startTime}
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    if (event.isHoliday) {
+      const styles = getEventStyleClass(event);
+      return (
+        <div
+          key={event.id}
+          className={`
+            absolute text-xs overflow-hidden cursor-pointer
+            rounded py-1 px-2
+            border ${styles.regularClass}
+            opacity-75 hover:opacity-100 transition-opacity
+          `}
+          style={getEventStyle(event)}
+          onClick={(e) => handleEventClick({
+            ...event,
+            description: `${event.type} Holiday`,
+            time: '-',
+            isReadOnly: true
+          }, e)}
+        >
+          <div className="flex items-center justify-between w-full">
+            <div className="truncate">{event.title}</div>
+            <span className="ml-2 opacity-75">{event.type}</span>
+          </div>
+        </div>
+      );
+    }
+
+    const start = new Date(event.start_time);
+    const end = new Date(event.end_time);
+    const isCrossingMidnight = isEventCrossingMidnight(event);
+    const isNextDay = start.getDate() !== currentDate.getDate();
+    const styles = getEventStyleClass(event);
+    if (styles == null) return;
+
+    return (
+      <div
+        key={event.id}
+        {...getDragHandleProps(event)}
+        className={`absolute ${styles.regularClass} text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border
+         ${darkMode ? styles.darkClass : styles.lightClass}`}
+        style={getEventStyle(event, isNextDay)}
+        onClick={(e) => handleEventClick(event, e)}
+      >
+        <div className="w-full h-full p-1.5 flex flex-col pointer-events-auto">
+          <div className="flex items-center justify-between">
+            <div className="font-bold truncate">{event.title}</div>
+            {isNextDay ? (
+              <span className={`text-[10px] ml-1 px-1 rounded
+                ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
+              `}>
+                Cont'd
+              </span>
+            ) : isCrossingMidnight ? (
+              <span className={`text-[10px] ml-1 px-1 rounded
+                ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
+              `}>
+                Next day
+              </span>
+            ) : null}
+          </div>
+          <div className="text-xs">
+            {isNextDay ? (
+              `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            ) : isCrossingMidnight ? (
+              `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM`
+            ) : (
+              `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
+                end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderDropPreview = () => {
+    if (!dropPreview) return null;
+    
+    const styles = getEventStyleClass(dropPreview);
+    if (styles == null) return
+    return (
+      <div
+        className={`absolute pointer-events-none opacity-50 
+          ${styles.regularClass}
+          text-xs overflow-hidden rounded
+          ${darkMode ? styles.darkClass : styles.lightClass}
+        `}
+        style={getEventStyle({
+          ...dropPreview,
+          start_time: dropPreview.start_time,
+          end_time: dropPreview.end_time
+        })}
+      >
+        <div className="w-full h-full p-1.5 flex flex-col">
+          <div className="font-bold truncate">{dropPreview.title}</div>
+          <div className="text-xs">
+            {new Date(dropPreview.start_time).toLocaleTimeString([], { 
+              hour: '2-digit', 
+              minute: '2-digit' 
+            })}
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -399,158 +603,17 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
                 onDoubleClick={(e) => handleTimeSlotDoubleClick(e, currentDate, hour, onDateDoubleClick)}
               ></div>
             ))}
-            {timedEvents.map(event => {
-              if (event.calendar === 'Task') {
-                const eventColor = getEventColor(event).replace('bg-', '');
-                const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-                return (
-                  <div
-                    key={event.id}
-                    {...getDragHandleProps(event)}
-                    className={`
-                      absolute text-xs overflow-hidden cursor-pointer
-                      rounded py-1 px-2
-                      ${event.completed ? 'opacity-50' : ''}
-                      border border-${eventColor} bg-${eventColor} bg-opacity-20 text-${eventColor}
-                      ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
-                      hover:bg-opacity-30 transition-colors duration-200
-                      ${event.completed ? 'line-through' : ''}
-                    `}
-                    style={getEventStyle(event)}
-                    onClick={(e) => handleEventClick(event, e)}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="flex items-center overflow-hidden">
-                        <Check 
-                          className={`w-4 h-4 mr-1 flex-shrink-0
-                            ${event.completed ? 'opacity-50' : ''} 
-                            ${darkMode 
-                              ? `text-${eventColor}-400` 
-                              : `text-${eventColor}-500`
-                            }`} 
-                        />
-                        <span className="truncate">{event.title}</span>
-                      </div>
-                      <span className={`ml-1 text-[10px] ${darkMode ? 'text-gray-400' : 'text-gray-500'} ${event.completed ? 'opacity-50' : ''}`}>
-                        {startTime}
-                      </span>
-                    </div>
-                  </div>
-                );
-              }
 
-              if (event.isHoliday) {
-                const eventColor = getEventColor(event).replace('bg-', '');
-                return (
-                  <div
-                    key={event.id}
-                    className={`
-                      absolute text-xs overflow-hidden cursor-pointer
-                      rounded py-1 px-2
-                      border border-${eventColor} bg-${eventColor} bg-opacity-20
-                      ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
-                      opacity-75 hover:opacity-100 transition-opacity
-                    `}
-                    style={getEventStyle(event)}
-                    onClick={(e) => handleEventClick({
-                      ...event,
-                      description: `${event.type} Holiday in United States`,
-                      time: '-',
-                      isReadOnly: true
-                    }, e)}
-                  >
-                    <div className="flex items-center justify-between w-full">
-                      <div className="truncate">{event.title}</div>
-                      <span className="ml-2 opacity-75">{event.type}</span>
-                    </div>
-                  </div>
-                );
-              }
-
-              const start = new Date(event.start_time);
-              const end = new Date(event.end_time);
-              const isCrossingMidnight = isEventCrossingMidnight(event);
-              const isNextDay = start.getDate() !== currentDate.getDate();
-              const eventColor = getEventColor(event).replace('bg-', '');
-
-              return (
-                <div
-                  key={event.id}
-                  {...getDragHandleProps(event)}
-                  className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor}
-                   ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}`}
-                  style={getEventStyle(event, isNextDay)}
-                  onClick={(e) => handleEventClick(event, e)}
-                >
-                  <div className="w-full h-full p-1.5 flex flex-col pointer-events-auto">
-                    <div className="flex items-center justify-between">
-                      <div className="font-bold truncate">{event.title}</div>
-                      {isNextDay ? (
-                        <span className={`text-[10px] ml-1 px-1 rounded
-                          ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
-                        `}>
-                          Cont'd
-                        </span>
-                      ) : isCrossingMidnight ? (
-                        <span className={`text-[10px] ml-1 px-1 rounded
-                          ${darkMode ? 'bg-gray-700 text-gray-300' : 'bg-gray-200 text-gray-700'}
-                        `}>
-                          Next day
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="text-xs">
-                      {isNextDay ? (
-                        // Next day portion
-                        `12:00 AM - ${end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                      ) : isEventCrossingMidnight(event) ? (
-                        // First day portion
-                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - 12:00 AM`
-                      ) : (
-                        // Regular event
-                        `${start.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${
-                          end.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+            {/* Render timed events */}
+            {timedEvents.map(event => renderTimeSlotEvent(event))}
 
             {/* Drop Preview */}
-            {dropPreview && (
-              <div
-                className={`absolute pointer-events-none opacity-50 ${(() => {
-                  const eventColor = getEventColor(dropPreview).replace('bg-', '');
-                  return `
-                    bg-${eventColor} bg-opacity-20 
-                    text-xs overflow-hidden rounded
-                    border border-${eventColor}
-                    ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
-                  `;
-                })()}`}
-                style={getEventStyle({
-                  ...dropPreview,
-                  start_time: dropPreview.start_time,
-                  end_time: dropPreview.end_time
-                })}
-              >
-                <div className="w-full h-full p-1.5 flex flex-col">
-                  <div className="font-bold truncate">{dropPreview.title}</div>
-                  <div className="text-xs">
-                    {new Date(dropPreview.start_time).toLocaleTimeString([], { 
-                      hour: '2-digit', 
-                      minute: '2-digit' 
-                    })}
-                  </div>
-                </div>
-              </div>
-            )}
+            {renderDropPreview()}
 
             {/* Current time indicator */}
             {isToday(currentDate) && (
               <div
-                className="absolute left-0 right-0 z-20"
+              className="absolute left-0 right-0 z-20"
                 style={{ top: `${getCurrentTimePosition()}px` }}
               >
                 <div className="relative w-full">

@@ -7,7 +7,7 @@ import Profile from './Profile';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddEvent }) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -58,24 +58,43 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
     }
   }, [pathname, setActiveItem]);
 
+  // Get the current theme's gradient or fall back to the default background
+  const backgroundClasses = selectedTheme 
+    ? presetThemes[selectedTheme]?.gradient
+    : darkMode 
+      ? "bg-gray-800" 
+      : "bg-white";
+
   return (
-    <div className={`fixed top-0 left-0 h-screen shadow-lg transition-all duration-300 ease-in-out flex flex-col ${isCollapsed ? "w-14" : "w-60"} ${darkMode ? "bg-gray-800 text-white" : "bg-white text-black"}`}>
+    <div 
+      className={`
+        fixed top-0 left-0 h-screen shadow-lg 
+        transition-all duration-300 ease-in-out flex flex-col 
+        ${isCollapsed ? "w-14" : "w-60"} 
+        ${selectedTheme ? "" : darkMode ? "text-white" : "text-black"}
+        ${backgroundClasses}
+      `}
+    >
       <div className={`flex items-center ${isCollapsed ? "justify-center" : "justify-between"} p-3`}>
         {!isCollapsed && (
-          <h1 className="text-xl font-bold font-serif ml-2">TimeWise</h1>
+          <h1 className={`text-xl font-bold font-serif ml-2 ${colors.text}`}>TimeWise</h1>
         )}
         <Button 
           variant="ghost" 
           size="sm" 
-          className={`rounded-xl p-3 transition-colors duration-200 ${darkMode ? "hover:bg-gray-700" : "hover:bg-gray-200"}`}
+          className={`rounded-xl p-3 transition-colors duration-200 ${
+            darkMode ? "hover:bg-gray-700/50" : "hover:bg-gray-200/50"
+          }`}
           onClick={toggleCollapse}
         >
-          <Menu size={24} className={iconColor} />
+          <Menu size={24} className={colors.text} />
         </Button>
       </div>
       <Button
         variant="primary"
-        className={`mx-auto my-2 bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center transition-colors duration-200 rounded-full ${isCollapsed ? "w-10 h-10" : "w-[90%] h-10"}`}
+        className={`mx-auto my-2 bg-blue-500 text-white hover:bg-blue-600 flex items-center justify-center transition-colors duration-200 rounded-full ${
+          isCollapsed ? "w-10 h-10" : "w-[90%] h-10"
+        }`}
         onClick={onAddEvent}
       >
         <Plus className="h-5 w-5 min-w-[20px]" />
@@ -89,6 +108,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => handleNavigation('Dashboard')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          colors={colors}
         />
         <MenuItem 
           icon={Calendar} 
@@ -97,6 +117,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => handleNavigation('Calendar')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          colors={colors}
         />
         <MenuItem 
           icon={Brain} 
@@ -105,6 +126,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => handleNavigation('AI')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          colors={colors}
         />
         <MenuItem 
           icon={Users}
@@ -113,6 +135,7 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => handleNavigation('Friends')}
           collapsed={isCollapsed}
           darkMode={darkMode}
+          colors={colors}
         />
       </nav>
       <div className="mt-auto">
@@ -123,8 +146,9 @@ const Navbar = ({ isCollapsed, setIsCollapsed, activeItem, setActiveItem, onAddE
           onClick={() => handleNavigation('Settings')} 
           collapsed={isCollapsed}
           darkMode={darkMode}
+          colors={colors}
         />
-        <Profile isCollapsed={isCollapsed} darkMode={darkMode} />
+        <Profile isCollapsed={isCollapsed} darkMode={darkMode} colors={colors} />
       </div>
     </div>
   );
