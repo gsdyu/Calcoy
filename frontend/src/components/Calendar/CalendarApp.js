@@ -214,15 +214,11 @@ import { useTheme } from '@/contexts/ThemeContext';
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     try {
       const url = activeCalendar !== null 
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events?server_id=${activeCalendar.id}` 
-        : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
       
       const response = await fetch(url, {
         credentials: 'include',
@@ -326,10 +322,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   // handle task completion
   const handleTaskComplete = async (taskId, completed) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     try {
       const eventToUpdate = events.find(event => event.id === taskId);
@@ -368,11 +360,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     }
   };
   const handleSaveEvent = async (event) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
-  
     const isTask = event.calendar === 'Task';
     showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
   
@@ -431,10 +418,6 @@ import { useTheme } from '@/contexts/ThemeContext';
  
 
   const handleDeleteEvent = async (eventId) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     const eventToDelete = events.find(e => e.id === eventId);
     const isTask = eventToDelete?.calendar === 'Task';
@@ -461,10 +444,6 @@ import { useTheme } from '@/contexts/ThemeContext';
   
 
   const handleEventUpdate = async (eventId, newDate, newTime) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     const eventToUpdate = events.find(event => event.id === eventId);
     if (!eventToUpdate) return;
@@ -538,10 +517,6 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {
-      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-        credentials: 'include',
-      });
-      if (!check.ok) return;
 
       const isTask = lastUpdatedEvent.calendar === 'Task';
 
