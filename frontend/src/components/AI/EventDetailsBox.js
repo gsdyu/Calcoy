@@ -214,21 +214,7 @@ const EventDetailsBox = ({
                 <button onClick={handleEdit} className={`${styles.editButton} flex-shrink-0 mt-1`}>
                   <Edit2 className="w-4 h-4" /> Edit
                 </button>
-              ) : (
-                <div className={`${styles.statusIcon} ${styles[status]} flex-shrink-0`}>
-                  {status === 'confirmed' ? (
-                    <>
-                      <Check size={18} />
-                      Confirmed
-                    </>
-                  ) : (
-                    <>
-                      <X size={18} />
-                      Discarded
-                    </>
-                  )}
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
           <p>{startDateTime.date}</p>

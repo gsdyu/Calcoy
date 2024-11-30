@@ -95,14 +95,20 @@ class SharedAgentsManager {
   // Save message to database
   async saveMessage(conversationId, sender, content) {
     try {
-
-      if (typeof content === 'string' && (content.includes('"type":"createEvent"') || content.includes('"type":"context"'))) {
+      if (
+        typeof content === 'string' &&
+        (
+          content.trim() === '{"type":"createEvent"}' ||
+          content.includes('"type":"context"')
+        )
+      ) {
+        // Do not save messages that are exactly {"type":"createEvent"} or include "type":"context"
         return;
       }
 
       await this.pool.query(
         `INSERT INTO messages (conversation_id, sender, content)
-         VALUES ($1, $2, $3)`,
+        VALUES ($1, $2, $3)`,
         [conversationId, sender, content]
       );
     } catch (error) {
@@ -266,7 +272,7 @@ module.exports = (app, pool) => {
         let sendString = eventDetailsString[0]
         console.log(sendString)
 
-        await agentManager.saveMessage(conversationId, 'model', eventDetailsString);
+        await agentManager.saveMessage(conversationId, 'model', sendString);
         
         agentManager.chatAgent.setHistory(agentManager.createAgent.getHistory());
 
@@ -378,4 +384,21 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error.' });
     }
   });
+
+  app.post('/messages', authenticateToken, async (req, res) => {
+    const { conversationId, sender, text } = req.body;
+  
+    if (!conversationId || !sender || !text) {
+      return res.status(400).json({ error: 'conversationId, sender, and text are required.' });
+    }
+  
+    try {
+      await agentManager.saveMessage(conversationId, sender, text);
+      res.status(200).json({ message: 'Message saved successfully.' });
+    } catch (error) {
+      console.error('Error saving message:', error);
+      res.status(500).json({ error: 'Failed to save message.' });
+    }
+  });
 }
+

@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars }) => {
+const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, setVisibleItems }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -41,7 +41,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     return true;
   });
   const [popupVisible, setPopupVisible] = useState({});
-  const [visibleItems, setVisibleItems] = useState({});
   const [showImportPopup, setShowImportPopup] = useState(false);
   const [showUsers, setShowUsers] = useState(true);
 
@@ -59,7 +58,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
 
   // Fetch profile information
   useEffect(() => {
-    console.log(itemColors)
     const fetchProfile = async () => {
       const check = await fetch('http://localhost:5000/auth/check', {
         credentials: 'include',
@@ -84,7 +82,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         const data = await response.json();
         setEmail(data.email);
         setUsername(data.username || 'My Calendar');
-        setVisibleItems(data.preferences.visibility || {});
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');
@@ -94,8 +91,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
   
     fetchProfile();
-  }, []);
-
+  }, [itemColors]);
   const scrollbarStyles = darkMode ? `
   .dark-scrollbar::-webkit-scrollbar {
     width: 12px;
@@ -129,9 +125,9 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       }
     };
     fetchServers();
-  }, []);
+  }, [setServers]);
 
-  const renderServerItem = (server, color, showEyeIcon = true) => (
+  const renderServerItem = (server, color , showEyeIcon = true) => (
     <div
       key={`server${server.id}`}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
@@ -253,7 +249,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
 
     fetchServerUsers();
-  }, [activeServer, serverUsers, setServerUsers]);
+  }, [activeServer, setServerUsers]);
 
   const toggleVisibility = (item, e) => {
     if (e) {
@@ -401,10 +397,10 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         
         {showMyCalendars && (
           <div className="space-y-1 pl-2">
-            {renderCalendarItem('email', 'Personal', itemColors?.email || 'bg-blue-500')}
-            {renderCalendarItem('tasks', 'Tasks', itemColors?.tasks || 'bg-red-500')}
-            {renderCalendarItem('birthdays', 'Birthdays', 'bg-green-500')}
-            {renderCalendarItem('family', 'Family', 'bg-gray-400')}
+            {renderCalendarItem('Personal', 'Personal', itemColors?.Personal || 'bg-blue-500')}
+            {renderCalendarItem('Task', 'Tasks', itemColors?.Task || 'bg-red-500')}
+            {renderCalendarItem('Birthday', 'Birthdays', 'bg-green-500')}
+            {renderCalendarItem('Family', 'Family', 'bg-gray-400')}
           </div>
         )}
       </div>

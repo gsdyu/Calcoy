@@ -383,10 +383,7 @@ const AiPage = () => {
 
       const result = await response.json();
       showNotification('Event saved successfully.');
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
-      ]);
+      addBotMessage(`Your new event has been created: ${result.event.title}`);
       setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
       console.error('Error saving event:', error);
@@ -397,7 +394,7 @@ const AiPage = () => {
 
   const handleDeny = (eventId) => {
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
-    setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
+    addBotMessage(`Your event creation is canceled`);
     showNotification('Event creation canceled.');
   };
 
@@ -426,6 +423,39 @@ const AiPage = () => {
     setTimeout(() => setNotification((prev) => ({ ...prev, isVisible: false })), 3000);
   };
 
+  const addBotMessage = async (text) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { sender: 'bot', text },
+    ]);
+  
+    if (currentChatId) {
+      try {
+        const response = await fetch('http://localhost:5000/messages', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            conversationId: currentChatId,
+            sender: 'bot',
+            text,
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Failed to save message: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error saving message:', error);
+        showNotification('Failed to save message.');
+      }
+    } else {
+      console.warn('No active conversation to save the message.');
+    }
+  };
+  
   const containerClasses = `flex h-screen ${
     selectedTheme 
       ? presetThemes[selectedTheme]?.gradient
