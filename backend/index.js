@@ -112,6 +112,14 @@ pool.query(`
     receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(20) DEFAULT 'pending'
   );
+CREATE TABLE server_privacy (
+    user_id INT NOT NULL,
+    server_id INT NOT NULL,
+    privacy VARCHAR(10) NOT NULL DEFAULT 'public',
+    PRIMARY KEY (user_id, server_id),
+    FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
+    FOREIGN KEY (server_id) REFERENCES servers (id) ON DELETE CASCADE
+);
 
 `).then(() => {
   console.log("Users and Servers table is ready");
@@ -173,6 +181,7 @@ pool.query(`
   .then(() => {
     console.log('Messages table is ready');
   })
+  
   .catch((err) => {
     console.error('Error creating tables: ', err);
   });
