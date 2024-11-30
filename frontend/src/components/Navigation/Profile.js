@@ -4,7 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LogOut } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-const Profile = ({ isCollapsed, darkMode }) => {
+const Profile = ({ isCollapsed, darkMode, colors }) => {
   const [userName, setUserName] = useState('');
   const [profileImage, setProfileImage] = useState('');
   const [error, setError] = useState('');
@@ -77,7 +77,7 @@ const Profile = ({ isCollapsed, darkMode }) => {
 
   return (
     <div className={`p-3 transition-all duration-300 ease-in-out ${
-      darkMode ? 'bg-gray-700 text-white' : 'bg-gray-50 text-black'
+      darkMode ? `${colors.background} bg-opacity-50` : 'bg-gray-50/50'
     }`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center">
@@ -88,14 +88,14 @@ const Profile = ({ isCollapsed, darkMode }) => {
   alt={userName}
 />
             ) : (
-              <AvatarFallback className={darkMode ? 'text-white bg-gray-600' : ''}>
+              <AvatarFallback className={`${colors.buttonBg} ${colors.text}`}>
                 {getInitials(userName)}
               </AvatarFallback>
             )}
           </Avatar>
           {!isCollapsed && (
             <div className="ml-3">
-              <div className={`text-sm font-medium ${darkMode ? 'text-white' : 'text-black'}`}>
+              <div className={`text-sm font-medium ${colors.text}`}>
                 {userName || 'User'}
               </div>
             </div>
@@ -105,16 +105,14 @@ const Profile = ({ isCollapsed, darkMode }) => {
           <Button
             variant="ghost"
             size="sm"
-            className={`rounded-full p-1 ${
-              darkMode ? 'hover:bg-gray-600' : 'hover:bg-gray-200'
-            }`}
+            className={`rounded-full p-1 ${colors.buttonBg}`}
             onClick={toggleLogout}
           >
-            <LogOut className={`h-4 w-4 ${darkMode ? 'text-white' : 'text-gray-500'}`} />
+            <LogOut className={`h-4 w-4 ${colors.textSecondary}`} />
           </Button>
         )}
       </div>
-      {error && <div className="text-red-500">{error}</div>}
+      {error && <div className="text-red-500 text-sm mt-1">{error}</div>}
     </div>
   );
 };

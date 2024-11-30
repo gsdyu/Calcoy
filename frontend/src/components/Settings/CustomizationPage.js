@@ -1,37 +1,85 @@
 import React from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
-import { Moon, Sun } from 'lucide-react';
-import Toggle from '@/components/common/Toggle';
+import { Sun, Moon, Monitor } from 'lucide-react';
 
 const CustomizationPage = () => {
-  const { darkMode, toggleDarkMode } = useTheme();
+  const { 
+    darkMode,
+    selectedTheme,
+    currentMode,
+    colors,
+    presetThemes,
+    handleThemeChange,
+    handleColorModeChange
+  } = useTheme();
+  
+  const [selectedOption, setSelectedOption] = React.useState(currentMode);
+
+  React.useEffect(() => {
+    setSelectedOption(selectedTheme || currentMode);
+  }, [darkMode, selectedTheme, currentMode]);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <div className="container mx-auto px-4 py-8">
-        <h1 className="text-3xl font-bold mb-8">Appearance</h1>
-        
-        <div className={`rounded-lg p-6 mb-8 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <h2 className="text-xl font-semibold mb-4">Theme</h2>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <div className={`w-12 h-12 rounded-full flex items-center justify-center ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-                {darkMode ? <Moon size={24} /> : <Sun size={24} />}
-              </div>
-              <span className="text-lg">{darkMode ? 'Dark' : 'Light'} Mode</span>
-            </div>
-            <Toggle isOn={darkMode} onToggle={toggleDarkMode} />
-          </div>
-        </div>
+    <div className={`p-8 ${selectedTheme ? presetThemes[selectedTheme]?.gradient : ''}`}>
+      <div className="max-w-3xl mx-auto">
+        <h1 className={`text-2xl font-semibold mb-8 ${colors.text}`}>
+          Themes
+        </h1>
 
-        <div className={`rounded-lg p-6 ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-          <h2 className="text-xl font-semibold mb-4">Preview</h2>
-          <div className={`rounded-lg p-4 ${darkMode ? 'bg-gray-700' : 'bg-gray-200'}`}>
-            <p className="text-lg mb-2">This is how your app will look.</p>
-            <div className="flex space-x-2">
-              <div className={`w-8 h-8 rounded-full ${darkMode ? 'bg-blue-500' : 'bg-blue-600'}`}></div>
-              <div className={`w-8 h-8 rounded-full ${darkMode ? 'bg-green-500' : 'bg-green-600'}`}></div>
-              <div className={`w-8 h-8 rounded-full ${darkMode ? 'bg-red-500' : 'bg-red-600'}`}></div>
+        <div className="space-y-8">
+          <div>
+            <h2 className={`text-sm font-medium mb-4 ${colors.textSecondary}`}>
+              COLOR MODE
+            </h2>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { id: 'light', icon: Sun, label: 'Light mode' },
+                { id: 'dark', icon: Moon, label: 'Dark mode' },
+                { id: 'system', icon: Monitor, label: 'System' }
+              ].map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    handleColorModeChange(id);
+                    setSelectedOption(id);
+                  }}
+                  className={`flex items-center p-4 rounded-2xl border transition-colors ${
+                    selectedOption === id ? colors.selectedBg + ' ' + colors.selectedBorder : colors.buttonBg + ' ' + colors.buttonBorder
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 mr-3 ${colors.textSecondary}`} />
+                  <span className={colors.text}>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <h2 className={`text-sm font-medium mb-4 ${colors.textSecondary}`}>
+              PRESET THEMES
+            </h2>
+            <div className="space-y-2">
+              {Object.entries(presetThemes).map(([id, theme]) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    handleThemeChange(id);
+                    setSelectedOption(id);
+                  }}
+                  className={`w-full p-4 rounded-2xl border transition-colors ${
+                    selectedOption === id ? colors.selectedBg + ' ' + colors.selectedBorder : colors.buttonBg + ' ' + colors.buttonBorder
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
+                      <div className={`w-full h-full ${theme.gradient}`}></div>
+                    </div>
+                    <span className={colors.text}>
+                      {theme.name}
+                    </span>
+                  </div>
+                </button>
+              ))}
             </div>
           </div>
         </div>

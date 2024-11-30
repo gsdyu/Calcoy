@@ -12,7 +12,7 @@ import ChatSidebar from './ChatSidebar';
 import DeleteChatModal from './DeleteChatModal';
 
 const AiPage = () => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, colors, presetThemes } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -34,7 +34,7 @@ const AiPage = () => {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const response = await fetch('http://localhost:5000/conversations', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -60,7 +60,7 @@ const AiPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatId}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -125,7 +125,7 @@ const AiPage = () => {
 
   const handleRenameChat = async (chatId, newTitle) => {
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ const AiPage = () => {
   
   const handleConfirmDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatToDelete}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatToDelete}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -263,14 +263,14 @@ const AiPage = () => {
     setInput('');
     handleRemoveImage();
 
-
     const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       method: 'GET',
       credentials: 'include',
-    })
+    });
     if (!check.ok) {
-      console.error('not login')
+      console.error('not login');
       setIsLoading(false);
+      return;
     }
 
     setIsLoading(true);
@@ -323,38 +323,6 @@ const AiPage = () => {
       if (eventDetailsMatch && eventDetailsMatch[1]) {
         try {
           let newEventDetails = JSON.parse(eventDetailsMatch[1]);
-          // Checks that all values in the json are strings. else retry response again
-          let retries = 0;
-          console.log('dog')
-          for (let i = 0; i < 5; i++){
-            let iKey = 0;
-            let validJson = false;
-            while(iKey < Object.keys(newEventDetails).length && Object.keys(newEventDetails).length == 9) {
-              try {
-                JSON.parse(newEventDetails[Object.keys(newEventDetails)[iKey]])
-              } catch {
-                if (iKey === Object.keys(newEventDetails).length-1){ 
-                  console.log(`Correct event json with ${i} retries`);
-                  validJson = true;
-                }
-                iKey += 1;
-              }
-            }
-            if (validJson) break;
-            let response = await fetch('http://localhost:5000/ai', {
-              method: 'POST',
-              credentials: 'include',
-              body: payload,
-            });
-            if (!response.ok) {
-              throw new Error(`Network response was not ok. status: ${response.status}`);
-            }
-            data = await response.json();
-            eventDetailsMatch = data.message.match(/Details:\s*(.*)$/); 
-            newEventDetails = JSON.parse(eventDetailsMatch[1])
-            retries+=1;
-          }
-          if (retries == 5) console.error("Bot unable to format json event")
           const newEventId = Date.now();
 
           setEventDetails((prev) => [...prev, { ...newEventDetails, id: newEventId }]);
@@ -415,10 +383,7 @@ const AiPage = () => {
 
       const result = await response.json();
       showNotification('Event saved successfully.');
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        { sender: 'bot', text: `Your new event has been created: ${result.event.title}` },
-      ]);
+      addBotMessage(`Your new event has been created: ${result.event.title}`);
       setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
     } catch (error) {
       console.error('Error saving event:', error);
@@ -429,7 +394,7 @@ const AiPage = () => {
 
   const handleDeny = (eventId) => {
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
-    setMessages((prevMessages) => [...prevMessages, { sender: 'bot', text: 'Event creation canceled.' }]);
+    addBotMessage(`Your event creation is canceled`);
     showNotification('Event creation canceled.');
   };
 
@@ -458,11 +423,60 @@ const AiPage = () => {
     setTimeout(() => setNotification((prev) => ({ ...prev, isVisible: false })), 3000);
   };
 
+  const addBotMessage = async (text) => {
+    setMessages((prevMessages) => [
+      ...prevMessages,
+      { sender: 'bot', text },
+    ]);
+  
+    if (currentChatId) {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/messages`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            conversationId: currentChatId,
+            sender: 'bot',
+            text,
+          }),
+        });
+  
+        if (!response.ok) {
+          throw new Error(`Failed to save message: ${response.statusText}`);
+        }
+      } catch (error) {
+        console.error('Error saving message:', error);
+        showNotification('Failed to save message.');
+      }
+    } else {
+      console.warn('No active conversation to save the message.');
+    }
+  };
+  
+  const containerClasses = `flex h-screen ${
+    selectedTheme 
+      ? presetThemes[selectedTheme]?.gradient
+      : darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gray-100'
+  }`;
+
+  const mainContentClasses = `${styles.container} flex-1 ${
+    selectedTheme 
+      ? 'bg-transparent' 
+      : darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gray-100'
+  }`;
+
   return (
-    <div className="flex h-screen">
-      <div className={`${styles.container} flex-1`}>
+    <div className={containerClasses}>
+      <div className={mainContentClasses}>
         <h1 className={styles.aiheader}>
-          Timewise AI<Sparkles className={styles.ailogo} />
+          Calcoy AI<Sparkles className={styles.ailogo} />
         </h1>
 
         <AiPromptExamples onExampleClick={handleExampleClick} visible={showPrompts && messages.length === 0} />
@@ -544,8 +558,10 @@ const AiPage = () => {
             value={input}
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
-            placeholder="Ask Timewise AI..."
-            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`}
+            placeholder="Ask Calcoy AI..."
+            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''} ${
+              selectedTheme ? 'bg-white/80 dark:bg-gray-900/80' : ''
+            }`}
             rows={1}
           />
           {selectedFile && (
@@ -572,10 +588,12 @@ const AiPage = () => {
           )}
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() && !selectedFile}
             className={`${styles.button} ${
               input.trim() || selectedFile ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
-            } ${darkMode ? styles.buttonDark : styles.buttonLight}`}
+            } ${darkMode ? styles.buttonDark : styles.buttonLight} ${
+              selectedTheme ? 'bg-white/80 dark:bg-gray-900/80 hover:bg-white/90 dark:hover:bg-gray-900/90' : ''
+            }`}
           >
             <ArrowUp strokeWidth={2.5} className={styles.sendicon} />
           </button>
@@ -609,6 +627,8 @@ const AiPage = () => {
         onDelete={handleDeleteChat}
         chats={chats}
         darkMode={darkMode}
+        selectedTheme={selectedTheme}
+        colors={colors}
       />
     </div>
   );

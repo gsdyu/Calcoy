@@ -12,9 +12,9 @@ const pusher = new Pusher({
 });
 
 module.exports = (app, pool) => {
-  // Create event route
- app.post('/events', authenticateToken, async (req, res) => {
-  const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
+// Create event route
+app.post('/events', authenticateToken, async (req, res) => {
+  const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, privacy } = req.body;
   const userId = req.user.userId;
 
   const serverId = server_id !== undefined && server_id !== null ? parseInt(server_id) : null;
@@ -28,11 +28,11 @@ module.exports = (app, pool) => {
   }
 
   try {
-    const result = await pool.query(
-      `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal) 
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+     const result = await pool.query(
+      `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal, privacy) 
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
        RETURNING *`,
-      [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal]
+      [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal, privacy || 'public']
     );
 
     const newEvent = result.rows[0];
@@ -65,7 +65,7 @@ app.get('/events', authenticateToken, async (req, res) => {
   try {
     // Check which servers the user has access to
     const userServers = await pool.query(
-      'SELECT server_id FROM user_servers WHERE user_id = $1',
+      'SELECT server_id FROM "userServers" WHERE user_id = $1',
       [userId]
     );
     const accessibleServerIds = userServers.rows.map(row => row.server_id);

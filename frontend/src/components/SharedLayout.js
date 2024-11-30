@@ -1,15 +1,40 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navigation/Navbar';
-import AddEventModal from './Modals/AddEditEventModal';
+import AddEditEventModal from './Modals/AddEditEventModal';
+import NotificationSnackbar from './Modals/NotificationSnackbar';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const SharedLayout = ({ children }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('navbarCollapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
   const [activeItem, setActiveItem] = useState('Dashboard');
   const [isAddingEvent, setIsAddingEvent] = useState(false);
+  const [notification, setNotification] = useState({
+    message: '',
+    type: 'success',
+    action: '',
+    isVisible: false
+  });
   const { darkMode } = useTheme();
+
+  // Save collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
+
+  const showNotification = (message, type = 'success', action = '') => {
+    setNotification({ message, type, action, isVisible: true });
+    setTimeout(() => {
+      setNotification(prev => ({ ...prev, isVisible: false }));
+    }, 4000);
+  };
 
   const handleAddEvent = () => {
     setIsAddingEvent(true);
@@ -19,9 +44,49 @@ const SharedLayout = ({ children }) => {
     setIsAddingEvent(false);
   };
 
-  const handleSaveEvent = (event) => {
-    console.log('Saving event:', event);
-    setIsAddingEvent(false);
+  const handleSaveEvent = async (event) => {
+    try {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
+        credentials: 'include',
+      });
+      if (!check.ok) {
+        showNotification('Authentication required', 'error');
+        return;
+      }
+
+      const isTask = event.calendar === 'Task';
+      showNotification(`Saving ${isTask ? 'task' : 'event'}...`, 'info');
+      
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...event,
+          include_in_personal: event.include_in_personal ?? true,
+        }),
+      });
+
+      if (response.ok) {
+        const savedEvent = await response.json();
+        setIsAddingEvent(false);
+        showNotification(
+          `${isTask ? 'Task' : 'Event'} saved successfully`, 
+          'success',
+          'Undo'
+        );
+      } else {
+        throw new Error(`Failed to save ${isTask ? 'task' : 'event'}`);
+      }
+    } catch (error) {
+      console.error('Error saving event:', error);
+      showNotification(
+        `Failed to save ${event?.calendar === 'Task' ? 'task' : 'event'}`, 
+        'error'
+      );
+    }
   };
 
   return (
@@ -39,11 +104,20 @@ const SharedLayout = ({ children }) => {
         </div>
       </main>
       {isAddingEvent && (
-        <AddEventModal 
+        <AddEditEventModal 
           onClose={handleCloseModal}
           onSave={handleSaveEvent}
+          initialDate={new Date()}
+          event={null}
         />
       )}
+      <NotificationSnackbar
+        message={notification.message}
+        type={notification.type}
+        action={notification.action}
+        isVisible={notification.isVisible}
+        position="bottom"
+      />
     </div>
   );
 };

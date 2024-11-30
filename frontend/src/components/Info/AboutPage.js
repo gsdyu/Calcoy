@@ -49,7 +49,7 @@ const AboutPage = () => {
         <div className="container mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <Link href="/" className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-            Calcoy
+              Calcoy
             </Link>
             
             <div className="hidden md:flex items-center space-x-8">
@@ -271,7 +271,7 @@ const AboutPage = () => {
           >
             <h2 className="text-4xl font-bold text-white mb-6">Ready to Transform Your Scheduling?</h2>
             <p className="text-white/90 text-xl mb-8">
-              Experience the perfect balance of simplicity and power with Timewise.
+              Experience the perfect balance of simplicity and power with Calcoy.
             </p>
             <Link 
               href="/auth/signup" 

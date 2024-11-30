@@ -1,6 +1,7 @@
 'use client';
+import { io } from 'socket.io-client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
 import CalendarHeader from '@/components/Calendar/CalendarHeader';
@@ -21,11 +22,11 @@ import Pusher from 'pusher-js';
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
   const { darkMode } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
-
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
+  const [otherCalendars, setOtherCalendars] = useState([])
+  const [serverUsers, setServerUsers] = useState([]);
   const [isAddingEvent, setIsAddingEvent] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [activeCalendar, setActiveCalendar] = useState(null);
   const [selectedWeekStart, setSelectedWeekStart] = useState(null);
   const [selectedDate, setSelectedDate] = useState(null);
@@ -38,10 +39,55 @@ import Pusher from 'pusher-js';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
+  const [socketConnect, setSocketConnect] = useState(false);
+  const currentUser = useRef(null);
+
+  // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('groupCalendarCollapsed');
+      return saved ? !JSON.parse(saved) : false;  
+    }
+    return false;
+  });
   
+  useEffect(() => {
+    localStorage.setItem('groupCalendarCollapsed', JSON.stringify(!isSidebarOpen));
+  }, [isSidebarOpen]);
+
+  const handleColorChange = async (item, color) => {
+    // Update UI immediately
+    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
+    
+    // Save to server in background
+    try {
+      const response = await fetch('http://localhost:5000/profile/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          preferences: {
+            visibility: visibleItems,
+            colors: { ...itemColors, [item]: color },
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        // If save fails, revert the change
+        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
+        throw new Error('Failed to save color preference');
+      }
+    } catch (error) {
+      console.error('Error saving color preference:', error);
+      showNotification('Failed to save color preference');
+    }
+  };
+
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
-    
     const fetchPreferences = async () => {
       try {
         const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
@@ -52,6 +98,9 @@ import Pusher from 'pusher-js';
           setPreferencesLoading(false);
           return;
         }
+        const checkJson = await check.json();
+        //localStorage.setItem('userId', Number(checkJson.userId));
+        currentUser.current=checkJson.userId;
 
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           headers: {
@@ -90,7 +139,7 @@ import Pusher from 'pusher-js';
     setSelectedDate(today);
 
     fetchEvents();
-  }, [displayName, activeCalendar]); 
+  }, [displayName, activeCalendar, visibleItems]); 
   
   useEffect(() => {
     // Initialize Pusher
@@ -127,43 +176,73 @@ import Pusher from 'pusher-js';
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
 
-  const handleColorChange = async (item, color) => {
-    // Update UI immediately
-    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
-    
-    // Save to server in background
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          preferences: {
-            visibility: visibleItems,
-            colors: { ...itemColors, [item]: color }
-          }
-        }),
-      });
-      
-      if (!response.ok) {
-        // If save fails, revert the change
-        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
-        throw new Error('Failed to save color preference');
+  const getVisibility = (event, calendarType, activeCalendar) => {
+    const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
+    const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
+    const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
+    const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
+    const visibleAny = (visibleType || visibleUser || visibleServer || visibleImport)
+
+    return {visibleType, visibleUser, visibleServer, visibleImport, visibleAny}
+  }
+
+  const getEventColor = (event) => {
+    const calendarType = event.calendar || 'default';
+  
+    //stores all the possible colors for an event first. 
+
+    //otherColor is a dictionary; any color here can be chosen as an eventColor by calling the key
+    //default eventColor: the first color added to otherColor
+    const otherColor = {};
+    let tempColor;
+
+
+    //the bottom logic is the order of the calendar shown on the sidebar
+    //if statement are for which sidebar is being shown
+    const {visibleType, visibleUser, visibleServer, visibleImport, visibleAny} = getVisibility(event, calendarType, activeCalendar);
+    //do not need to return all attribute since if there is no eventColor, that mean the event should not be displayed.
+    //color attributes related are irrelevant then
+    if (visibleAny === false) return {eventColor: null, otherColorList: null} 
+    tempColor = (itemColors?.[calendarType]) 
+    ? itemColors[calendarType]
+    : (() => {
+        if (!visibleType) return
+        switch (calendarType) {
+          case 'Task':
+            return itemColors?.tasks || 'bg-red-500';  
+          case 'Personal':
+            return itemColors?.email || 'bg-blue-500'; 
+          case 'Family':
+            return itemColors?.familyBirthday || 'bg-orange-500'; 
+          case 'Work':
+            return 'bg-purple-500'; 
+          default:
+            return; 
+        }
+      })();
+    otherColor.my=tempColor;
+    if (visibleUser) {
+      tempColor = itemColors?.[`server${event.server_id}:user${event.user_id}`] ? itemColors?.[`server${event.server_id}:user${event.user_id}`] : itemColors?.[`server_default`]
+      otherColor.user=tempColor
+  } else {
+      if (visibleServer) {
+        otherColor.server= itemColors?.[`server${event.server_id}`] ? itemColors?.[`server${event.server_id}`] : itemColors?.[`server_default`]
       }
-    } catch (error) {
-      console.error('Error saving color preference:', error);
-      showNotification('Failed to save color preference');
+      if (visibleImport) {
+        otherColor.otherCalendar = itemColors?.[`${event.imported_from}:${event.imported_username}`] ? itemColors?.[`${event.imported_from}:${event.imported_username}`] : itemColors?.[`other_default`]
+      }
     }
-  };
+
+    const otherColorBGList=Object.values(otherColor).filter(color=>color!=null);
+    const origColorBGList = Array.from(otherColorBGList);
+    const eventColor = otherColorBGList.shift();
+    const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
+
+    return {eventColor, otherColorList, otherColorBGList, origColorBGList}
+  }
   const fetchEvents = async () => {
     console.log('Current active calendar:', activeCalendar);
   
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     try {
       const url = activeCalendar !== null 
@@ -179,16 +258,34 @@ import Pusher from 'pusher-js';
         const formattedEvents = data.map(event => {
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
-          return {
+          const calendarType = event.calendar || 'default';
+          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+          return (visibleAny) ? {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             isTask: event.calendar === 'Task',
             completed: event.completed || false,
-            server_id: event.server_id
-          };
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
+          } : {};
         });
+
+        const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
+        if (tempOtherCalendars)
+        { 
+          const updatedCalendar = ([...otherCalendars,
+                                    ...tempOtherCalendars.filter(temp=>{
+                                      return Object.keys(temp).length>0 && !(otherCalendars.some(current=>{
+                                        return (current.imported_from === temp.imported_from && current.imported_username === temp.imported_username)
+                                      }))
+                                  })])
+          if (!(updatedCalendar.length===0)) {
+            setOtherCalendars(updatedCalendar)
+          }
+        }
   
         setEvents(formattedEvents);
       } else {
@@ -254,10 +351,6 @@ import Pusher from 'pusher-js';
 
   // handle task completion
   const handleTaskComplete = async (taskId, completed) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     try {
       const eventToUpdate = events.find(event => event.id === taskId);
@@ -285,6 +378,8 @@ import Pusher from 'pusher-js';
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         handleCloseEventDetails();
   
+        // not implemented yet
+        //socket.emit('taskCompleted', { taskId, completed });
       } else {
         throw new Error('Failed to update task');
       }
@@ -294,11 +389,6 @@ import Pusher from 'pusher-js';
     }
   };
   const handleSaveEvent = async (event) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
-  
     const isTask = event.calendar === 'Task';
     showNotification(`Saving ${isTask ? 'task' : 'event'}...`);
   
@@ -353,10 +443,6 @@ import Pusher from 'pusher-js';
  
 
   const handleDeleteEvent = async (eventId) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     const eventToDelete = events.find(e => e.id === eventId);
     const isTask = eventToDelete?.calendar === 'Task';
@@ -383,10 +469,6 @@ import Pusher from 'pusher-js';
   
 
   const handleEventUpdate = async (eventId, newDate, newTime) => {
-    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-      credentials: 'include',
-    });
-    if (!check.ok) return;
   
     const eventToUpdate = events.find(event => event.id === eventId);
     if (!eventToUpdate) return;
@@ -460,10 +542,6 @@ import Pusher from 'pusher-js';
 
   const handleUndoAction = async () => {
     if (lastUpdatedEvent) {
-      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
-        credentials: 'include',
-      });
-      if (!check.ok) return;
 
       const isTask = lastUpdatedEvent.calendar === 'Task';
 
@@ -540,6 +618,11 @@ import Pusher from 'pusher-js';
               onViewChange={handleViewChange}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              servers={servers}
+              serverUsers={serverUsers}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
             />
           )}
           {view === 'Week' && (
@@ -553,6 +636,10 @@ import Pusher from 'pusher-js';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
           {view === 'Day' && (
@@ -564,12 +651,16 @@ import Pusher from 'pusher-js';
               shiftDirection={shiftDirection}
               onEventUpdate={handleEventUpdate}
               itemColors={itemColors}
+              activeCalendar={activeCalendar}
+              getEventColor={getEventColor}
+              visibleItems={visibleItems}
+              getVisibility={getVisibility}
             />
           )}
         </div>
       </div>
       <div className="flex">
-        <div className={`transition-all duration-300 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
+        <div className={`transition-all duration-0 ${isSidebarOpen ? 'w-60' : 'w-0'} overflow-hidden`}>
           {isSidebarOpen && !preferencesLoading && (
             <Sidebar 
               onDateSelect={handleMiniCalendarDateSelect}
@@ -582,8 +673,14 @@ import Pusher from 'pusher-js';
               activeCalendar={activeCalendar}
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
-              setServers={setServers}
               onColorChange={handleColorChange}
+              setServers={setServers}
+              serverUsers={serverUsers}
+              servers={servers}
+              setServerUsers={setServerUsers}
+              otherCalendars={otherCalendars}
+              visibleItems={visibleItems}
+              setVisibleItems={setVisibleItems}
             />
           )}
         </div>
@@ -611,6 +708,7 @@ import Pusher from 'pusher-js';
           onTaskComplete={handleTaskComplete}
           triggerRect={eventModalTriggerRect}  
           view={view}
+          getEventColor={getEventColor}
         />
       )}
       {isAddingEvent && (

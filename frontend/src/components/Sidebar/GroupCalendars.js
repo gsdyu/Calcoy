@@ -7,7 +7,7 @@ import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents, servers, setServers }) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
@@ -31,9 +31,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
       }
     };
     fetchServers();
-  }, [setServers]) ;
+  }, [setServers]);
 
-  // Fetch servers from the backend
   const handleOpenCalendar = () => {
     setIsCreateCalendarOpen(true);
   };
@@ -71,8 +70,15 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     }
   };
 
+  // Get the background classes based on theme
+  const backgroundClasses = selectedTheme 
+    ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
+    : darkMode 
+      ? 'bg-gray-800' 
+      : 'bg-white';
+
   return (
-    <div className={`w-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} flex flex-col items-center py-4 h-screen relative z-40`}>
+    <div className={`w-16 ${backgroundClasses} flex flex-col items-center py-4 h-screen relative z-40 shadow-lg`}>
       <button 
         onClick={toggleSidebar}
         className="absolute -left-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition-all duration-300"
@@ -84,7 +90,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         {/* Main Calendar Button */}
         <button 
           className="w-12 h-12 rounded-full bg-blue-600 flex items-center justify-center" 
-          onClick={() => handleCalendarChange(null)} // Pass null for default calendar
+          onClick={() => handleCalendarChange(null)}
         >
           <Calendar size={24} className="text-white" />
         </button>
@@ -115,35 +121,37 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
 
               {/* Right Border Effect */}
               <div
-              className={`absolute -right-1 top-1/2 transform -translate-y-1/2 transition-all duration-300 ${
-                activeCalendar?.id === server.id
-                  ? 'h-10 bg-white w-1 rounded-l-full' 
-                  : hoveredServer === server.id
-                  ? 'h-5 bg-white w-1 rounded-l-full'  
-                  : 'h-0 w-0'                          
-              }`}
-            />
+                className={`absolute -right-1 top-1/2 transform -translate-y-1/2 transition-all duration-300 ${
+                  activeCalendar?.id === server.id
+                    ? 'h-10 bg-white w-1 rounded-l-full' 
+                    : hoveredServer === server.id
+                    ? 'h-5 bg-white w-1 rounded-l-full'  
+                    : 'h-0 w-0'                          
+                }`}
+              />
             </button>
 
             {/* Tooltip on Hover */}
             {hoveredServer === server.id && (
               <div className="absolute -left-full top-1/2 transform -translate-x-full -translate-y-1/2 z-50">
-                <div className="relative bg-[#18191c] px-3 py-2 rounded-[3px] shadow-[0_8px_16px_rgba(0,0,0,0.24)]">
+                <div className={`relative ${darkMode ? 'bg-[#18191c]' : 'bg-white'} px-3 py-2 rounded-[3px] shadow-[0_8px_16px_rgba(0,0,0,0.24)]`}>
                   <div className="flex flex-col gap-1">
-                    <div className="text-[15px] font-medium text-white/90">{server.name}</div>
-                    <div className="flex items-center gap-2 text-xs text-white/50">
+                    <div className={`text-[15px] font-medium ${darkMode ? 'text-white/90' : 'text-gray-900'}`}>
+                      {server.name}
+                    </div>
+                    <div className={`flex items-center gap-2 text-xs ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
                       <div className="flex items-center gap-1">
-                        <Users size={12} />  {/* Connect users in server here later*/}
+                        <Users size={12} /> {/* Connect users in server here later*/}
                       </div>
-                      <div className="w-0.5 h-0.5 rounded-full bg-white/30" />
+                      <div className={`w-0.5 h-0.5 rounded-full ${darkMode ? 'bg-white/30' : 'bg-gray-400'}`} />
                       <div className="flex items-center gap-1">
-                        <CalendarIcon size={12} />  {/* Connect events here later like events gonna be hosted or shared together for everyone*/}
+                        <CalendarIcon size={12} /> {/* Connect events here later like events gonna be hosted or shared together for everyone*/}
                       </div> 
                     </div>
                   </div>
                   {/* Discord-style Tooltip Pointer */}
                   <div className="absolute top-1/2 -right-[4px] -translate-y-1/2">
-                    <div className="w-[8px] h-[8px] rotate-45 bg-[#18191c]" />
+                    <div className={`w-[8px] h-[8px] rotate-45 ${darkMode ? 'bg-[#18191c]' : 'bg-white'}`} />
                   </div>
                 </div>
               </div>

@@ -8,7 +8,7 @@ import { FiCalendar } from 'react-icons/fi';
 import Googleapi from '@/components/API/Googleapi';
 import ICAL from 'ical.js';
 
-const CalendarPopup = ({ onClose }) => {
+const CalendarPopup = ({ onClose, onColorChange }) => {
   const { darkMode } = useTheme();
   const [isVisible, setIsVisible] = useState(false);
   const [showCanvasInput, setShowCanvasInput] = useState(false);
@@ -37,7 +37,7 @@ const CalendarPopup = ({ onClose }) => {
     setErrorMessage(''); // Reset error message
     if (canvasUrl) {
       try {
-        const response = await fetch('http://localhost:5000/auth/proxy-fetch', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/proxy-fetch`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -53,6 +53,7 @@ const CalendarPopup = ({ onClose }) => {
 
         const { message } = await response.json();
         console.log("Import successful:", message);
+        onColorChange('csulb:csulb', 'bg-green-500')
         window.location.href = '/calendar';
 
       } catch (error) {

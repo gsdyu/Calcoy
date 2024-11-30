@@ -10,7 +10,7 @@ import { calculateEventColumns } from '@/utils/calendarPositioningUtils';
 import holidayService from '@/utils/holidayUtils';
 
 
-const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors }) => {
+const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubleClick, onEventClick, shiftDirection, onEventUpdate, itemColors, activeCalendar, getEventColor, visibleItems, getVisibility }) => {
   const { darkMode } = useTheme();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isAllDayExpanded, setIsAllDayExpanded] = useState(false);
@@ -47,32 +47,6 @@ const WeekView = ({ currentDate, selectedDate, events, onDateClick, onDateDouble
       setHolidays(monthHolidays);
     }
   }, [currentDate]);
-
-  // Helper function for getting event colors
-  const getEventColor = (event) => {
-    if (event.isHoliday) {
-      return itemColors?.holidays || 'bg-yellow-500';
-    }
-
-    const calendarType = event.calendar || 'default';
-    
-    return itemColors?.[calendarType] 
-      ? itemColors[calendarType]
-      : (() => {
-          switch (calendarType) {
-            case 'Personal':
-              return itemColors?.email || 'bg-blue-500';
-            case 'Family':
-              return itemColors?.familyBirthday || 'bg-orange-500';
-            case 'Work':
-              return 'bg-purple-500';
-            case 'Task':
-              return itemColors?.tasks || 'bg-red-500';
-            default:
-              return 'bg-blue-500';
-          }
-        })();
-  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -290,11 +264,19 @@ const getEventStyle = (event, isNextDayPortion = false) => {
       );
     }
 
-    const eventColor = getEventColor(event).replace('bg-', '');
+    const calendarType = event.calendar || 'default';
+    let {eventColor, otherColorList} = getEventColor(event, calendarType, activeCalendar);
+    if (eventColor == null) return;
+    const bgGradientOther = otherColorList.length > 0 
+      ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+    eventColor = eventColor.replace('bg-','');
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
     const augmentedEvent = {
       ...event,
+      eventColor,
+      bgGradientOther,
       isAllDay: true
     };
 
@@ -308,7 +290,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
             text-xs mb-1 truncate cursor-pointer
             rounded-full py-1 px-2
             ${isCompleted ? 'opacity-50' : ''}
-            bg-${eventColor} text-white
+            ${bgGradientOther} text-${eventColor}
             hover:bg-opacity-80 transition-colors duration-200 z-40
             mr-5
             ${isCompleted ? 'line-through' : ''}
@@ -475,7 +457,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
               }}
             >
               {isSelected && (
-                <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
+                <div className={`absolute inset-0 ${darkMode ? 'bg-blue-500 opacity-20' : 'bg-blue-50'} z-0 pointer-events-none`}></div>
               )}
               {renderAllDayEvents(allDayEvents)}
               {/* Drop Preview for All-day events */}
@@ -529,7 +511,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     onDoubleClick={(e) => handleTimeSlotDoubleClick(e, day, hour, onDateDoubleClick)}
                   >
                     {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
+                      <div className={`absolute inset-0 ${darkMode ? 'bg-blue-500 opacity-20' : 'bg-blue-50'} z-0 pointer-events-none`}></div>
                     )}
                   </div>
                 );
@@ -585,15 +567,26 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                   
                   const isNextDay = currentDate.getTime() > eventStartDate.getTime();
                   const isCrossingMidnight = isEventCrossingMidnight(event);
+                  
+                  const calendarType = event.calendar || 'default';
+                  let {eventColor, otherColorList} = getEventColor(event, calendarType, activeCalendar);
+                  if (eventColor == null) return;
+                  const bgGradientOther = otherColorList.length > 0 
+                    ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+                    : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
+                  eventColor = eventColor.replace('bg-', '');
+
                   const augmentedEvent = {
                     ...event,
+                    eventColor,
                     isAllDay: false,
                     isNextDay,
+                    bgGradientOther,
                     isCrossingMidnight
                   };
 
                   if (event.calendar === 'Task') {
-                    const eventColor = getEventColor(event).replace('bg-', '');
+                    eventColor = eventColor.replace('bg-','')
                     const startTime = new Date(event.start_time).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
                     return (
                       <div
@@ -603,7 +596,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                           absolute text-xs overflow-hidden cursor-pointer pointer-events-auto
                           rounded
                           ${event.completed ? 'opacity-50' : ''}
-                          border border-${eventColor} bg-${eventColor} bg-opacity-20 text-${eventColor}
+                          border border-${eventColor} ${bgGradientOther} bg-opacity-20 text-${eventColor}
                           ${darkMode ? `border-${eventColor}-400 text-${eventColor}-300` : ''}
                           hover:bg-opacity-30 transition-colors duration-200
                           ${event.completed ? 'line-through' : ''}
@@ -645,15 +638,14 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     (end.getMinutes() - start.getMinutes()) :
                     ((endHours - start.getHours()) * 60) + 
                     (end.getMinutes() - start.getMinutes());
-                  
-                  const eventColor = getEventColor(event).replace('bg-', '');
+                     
                   return (
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
                       {...(event.isHoliday ? {} : getDragHandleProps(augmentedEvent))}
-                      className={`absolute bg-${eventColor} bg-opacity-20 text-xs overflow-hidden rounded cursor-pointer 
+                      className={`absolute ${bgGradientOther} text-xs overflow-hidden rounded cursor-pointer 
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
-                        ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}
+                        ${darkMode ? `text-${eventColor.replace('-500','')}-300` : `text-${eventColor.replace('-500','')}-700`}
                         ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
                       style={getEventStyle(event, isNextDay)}
                       onClick={(e) => handleEventClick(event, e)}
@@ -691,9 +683,15 @@ const getEventStyle = (event, isNextDayPortion = false) => {
               <div
                 className={`absolute 
                   ${(() => {
-                    const eventColor = getEventColor(dropPreview).replace('bg-', '');
+                    const calendarType = dropPreview.calendar || 'default';
+                    let {eventColor, otherColorList} = getEventColor(dropPreview, calendarType, activeCalendar)
+                    if (eventColor == null) return eventColor
+                    eventColor = eventColor.replace('bg-', '');
+                    const bgGradientOther = otherColorList.length > 0 
+                      ? `bg-gradient-to-b from-${otherColorList[0]}/25 ${otherColorList.slice(1, otherColorList.length-1).map(color => `via-${color}/25`).join(' ')} to-${otherColorList[otherColorList.length - 1]}/25`
+                      : `bg-gradient-to-b from-${eventColor.replace('bg-', '')}/25 to-${eventColor.replace('bg-', '')}/25`;
                     return `
-                      bg-${eventColor} bg-opacity-20 
+                      ${dropPreview.bgGradientOther} bg-opacity-20 
                       text-xs overflow-hidden rounded cursor-pointer
                       border border-${eventColor} pointer-events-none opacity-50
                       ${darkMode ? `text-${eventColor}-300` : `text-${eventColor}-700`}

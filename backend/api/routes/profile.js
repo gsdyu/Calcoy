@@ -8,7 +8,7 @@ module.exports = (app, pool) => {
 
     try {
       const result = await pool.query(
-        'SELECT username, email, profile_image, dark_mode, preferences FROM users WHERE id = $1',
+        'SELECT username, email, profile_image, profile_image_x, profile_image_y, profile_image_scale, dark_mode, preferences FROM users WHERE id = $1', 
         [userId]
       );
       if (result.rows.length === 0) {
@@ -16,15 +16,17 @@ module.exports = (app, pool) => {
       }
 
       const user = result.rows[0];
-      // Provide default preferences if they don't exist
       const preferences = user.preferences || { visibility: {}, colors: {} };
 
       res.json({
         username: user.username,
         email: user.email,
         profile_image: user.profile_image,
+        profile_image_x: user.profile_image_x || 0,
+        profile_image_y: user.profile_image_y || 0,
+        profile_image_scale: user.profile_image_scale || 1,
         dark_mode: user.dark_mode,
-        preferences, // Return default preferences if undefined
+        preferences,
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -126,20 +128,6 @@ module.exports = (app, pool) => {
     }
   });
 
-  // Route to update dark mode preference
-  app.put('/profile/dark-mode', authenticateToken, async (req, res) => {
-    const userId = req.user.userId;
-    const { darkMode } = req.body;
-
-    try {
-      await pool.query('UPDATE users SET dark_mode = $1 WHERE id = $2', [darkMode, userId]);
-      res.json({ message: 'Dark mode preference updated successfully' });
-    } catch (error) {
-      console.error('Error updating dark mode preference:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  });
-
   app.get('/api/users/search', async (req, res) => {
     const { query } = req.query;
     try {
@@ -153,7 +141,7 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to search users' });
     }
   });
-  
+
   // Route to update dark mode preference
   app.put('/profile/dark-mode', authenticateToken, async (req, res) => {
     const userId = req.user.userId;
@@ -167,6 +155,7 @@ module.exports = (app, pool) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
   app.post('/api/friend-request', authenticateToken, async (req, res) => {
     const { receiverUsername } = req.body;
     const senderId = req.user.userId; // Extract userId from the token
@@ -237,7 +226,6 @@ module.exports = (app, pool) => {
     }
   });
   
-
   app.post('/api/friend-request/decline', authenticateToken, async (req, res) => {
     const { requestId } = req.body;
   
@@ -272,12 +260,12 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to fetch friends' });
     }
   });
+
   app.delete('/api/friends/:friendId', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
     const friendId = parseInt(req.params.friendId, 10);  
   
     try {
-    
       await pool.query(
         `DELETE FROM friend_requests 
          WHERE (sender_id = $1 AND receiver_id = $2) 
@@ -296,7 +284,7 @@ module.exports = (app, pool) => {
     const userId = req.user.userId;
   
     try {
-      // Check if the users are friends
+      // Verify friendship
       const friendCheck = await pool.query(
         `SELECT * FROM friend_requests 
          WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)) 
@@ -305,59 +293,116 @@ module.exports = (app, pool) => {
       );
   
       if (friendCheck.rows.length === 0) {
-        console.error('Access denied: Not friends');
         return res.status(403).json({ message: 'Access denied: Not friends' });
       }
   
-       const events = await pool.query(
-        `SELECT * FROM events 
-         WHERE user_id = $1 AND server_id IS NULL
-         ORDER BY start_time`,
-        [friendId]
-      );
+      // Fetch the friend's privacy setting
+      const privacyResult = await pool.query('SELECT privacy, username FROM users WHERE id = $1', [friendId]);
+      const { privacy, username } = privacyResult.rows[0] || { privacy: 'public', username: 'Unknown User' };
   
-      res.json(events.rows);
+      let events = [];
+      if (privacy === 'public') {
+        const eventsQuery = `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+        const eventsResult = await pool.query(eventsQuery, [friendId]);
+        events = eventsResult.rows;
+      } else if (privacy === 'limited') {
+        const eventsQuery = `SELECT start_time, end_time FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+        const eventsResult = await pool.query(eventsQuery, [friendId]);
+        events = eventsResult.rows.map(event => ({
+          username,
+          start_time: event.start_time,
+          end_time: event.end_time,
+        }));
+      } else {
+        return res.status(200).json([]); // Private: No events visible
+      }
+      res.json(events);
     } catch (error) {
       console.error('Error fetching friend events:', error);
       res.status(500).json({ message: 'Failed to fetch friend events' });
     }
   });
-
-app.get('/api/user/theme', authenticateToken, async (req, res) => {
-  const userId = req.user.userId;
-
-  try {
-    const result = await pool.query(
-      `SELECT dark_mode FROM users WHERE id = $1`,
-      [userId]
-    );
-    if (result.rows.length === 0) {
-      return res.status(404).json({ message: 'User not found' });
-    }
-    res.json({ dark_mode: result.rows[0].dark_mode });
-  } catch (error) {
-    console.error('Error fetching theme preference:', error);
-    res.status(500).json({ message: 'Failed to fetch theme preference' });
-  }
-});
-
- app.put('/api/user/theme', authenticateToken, async (req, res) => {
-  const userId = req.user.userId;
-  const { dark_mode } = req.body;
-
-  try {
-    await pool.query(
-      `UPDATE users SET dark_mode = $1 WHERE id = $2`,
-      [dark_mode, userId]
-    );
-    res.json({ message: 'Theme preference updated successfully' });
-  } catch (error) {
-    console.error('Error updating theme preference:', error);
-    res.status(500).json({ message: 'Failed to update theme preference' });
-  }
-});
-
-
+  app.get('/api/user/privacy-settings', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
   
+    try {
+      const userResult = await pool.query('SELECT privacy FROM users WHERE id = $1', [userId]);
+      const serverResult = await pool.query('SELECT server_id, privacy FROM server_privacy WHERE user_id = $1', [userId]);
+      const serversResult = await pool.query('SELECT id, name FROM servers WHERE id IN (SELECT server_id FROM "userServers" WHERE user_id = $1)', [userId]);
+  
+      const serverPrivacy = serverResult.rows.reduce((acc, row) => {
+        acc[row.server_id] = row.privacy;
+        return acc;
+      }, {});
+  
+      res.json({
+        userId,
+        defaultPrivacy: userResult.rows[0]?.privacy || 'public',
+        serverPrivacy,
+        servers: serversResult.rows,
+      });
+    } catch (error) {
+      console.error('Error fetching privacy settings:', error);
+      res.status(500).json({ error: 'Failed to fetch privacy settings' });
+    }
+  });
+  app.put('/api/user/privacy-settings', authenticateToken, async (req, res) => {
+    const { userId, privacy, serverId } = req.body;
+  
+    if (!['public', 'limited', 'private'].includes(privacy)) {
+      return res.status(400).json({ error: 'Invalid privacy option' });
+    }
+  
+    try {
+      if (serverId) {
+        await pool.query(
+          `INSERT INTO server_privacy (user_id, server_id, privacy) VALUES ($1, $2, $3)
+           ON CONFLICT (user_id, server_id) DO UPDATE SET privacy = $3`,
+          [userId, serverId, privacy]
+        );
+      } else {
+        await pool.query('UPDATE users SET privacy = $1 WHERE id = $2', [privacy, userId]);
+      }
+      res.json({ message: 'Privacy setting updated successfully' });
+    } catch (error) {
+      console.error('Error updating privacy settings:', error);
+      res.status(500).json({ error: 'Failed to update privacy settings' });
+    }
+  });
+  
+
+  app.get('/api/user/theme', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+
+    try {
+      const result = await pool.query(
+        `SELECT dark_mode FROM users WHERE id = $1`,
+        [userId]
+      );
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      res.json({ dark_mode: result.rows[0].dark_mode });
+    } catch (error) {
+      console.error('Error fetching theme preference:', error);
+      res.status(500).json({ message: 'Failed to fetch theme preference' });
+    }
+  });
+
+  app.put('/api/user/theme', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
+    const { dark_mode } = req.body;
+
+    try {
+      await pool.query(
+        `UPDATE users SET dark_mode = $1 WHERE id = $2`,
+        [dark_mode, userId]
+      );
+      res.json({ message: 'Theme preference updated successfully' });
+    } catch (error) {
+      console.error('Error updating theme preference:', error);
+      res.status(500).json({ message: 'Failed to update theme preference' });
+    }
+  });
 };
 

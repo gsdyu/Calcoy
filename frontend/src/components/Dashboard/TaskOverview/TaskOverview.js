@@ -13,7 +13,7 @@ import YearlyOverviewComponent from './YearlyOverview';
 import { transformTaskData, getWeekNumber } from './dateutils';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
-const TaskOverviewComponent = ({ events }) => {
+const TaskOverviewComponent = ({ events, onUpdateTask }) => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({ week: 0, year: 0 });
@@ -32,7 +32,6 @@ const TaskOverviewComponent = ({ events }) => {
   }, [selectedDate]);
 
   useEffect(() => {
-    // Transform data based on timeframe
     setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
     setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
     setYearlyData(transformTaskData(tasks, 'year', selectedDate));
@@ -51,12 +50,46 @@ const TaskOverviewComponent = ({ events }) => {
     }
   }, [timeFrame, weeklyData, monthlyData, yearlyData]);
 
-  const handleWeeklyDataUpdate = (newData) => {
+  const handleWeeklyDataUpdate = async (newData, fromTask, updates) => {
     setWeeklyData(newData);
+    
+    if (fromTask && onUpdateTask) {
+      try {
+        const success = await onUpdateTask(fromTask.id, {
+          completed: updates.completed,
+          missed: updates.status === 'missed',
+          status: updates.status
+        });
+        
+        if (!success) {
+          setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
+        }
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        setWeeklyData(transformTaskData(tasks, 'week', selectedDate));
+      }
+    }
   };
 
-  const handleMonthlyDataUpdate = (newData) => {
+  const handleMonthlyDataUpdate = async (newData, fromTask, toCategory) => {
     setMonthlyData(newData);
+    
+    if (fromTask && onUpdateTask) {
+      try {
+        const success = await onUpdateTask(fromTask.id, {
+          completed: toCategory === 'completed',
+          missed: toCategory === 'missed',
+          category: toCategory
+        });
+        
+        if (!success) {
+          setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
+        }
+      } catch (error) {
+        console.error('Failed to update task:', error);
+        setMonthlyData(transformTaskData(tasks, 'month', selectedDate));
+      }
+    }
   };
 
   const handleYearlyDataUpdate = (newData) => {
@@ -113,18 +146,18 @@ const TaskOverviewComponent = ({ events }) => {
           </CardTitle>
           <div className="flex items-center gap-3">
             <Select value={timeFrame} onValueChange={setTimeFrame}>
-              <SelectTrigger className={`w-[100px] ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} 
+              <SelectTrigger className={`w-[180px] h-[45px] ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} 
                 rounded-xl transition-colors duration-200`}>
                 <SelectValue placeholder="Time Frame" />
               </SelectTrigger>
-              <SelectContent className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} rounded-xl`}>
-                <SelectItem value="week">Weekly</SelectItem>
-                <SelectItem value="month">Monthly</SelectItem>
-                <SelectItem value="year">Yearly</SelectItem>
+              <SelectContent className={`${darkMode ? 'bg-gray-900 border-gray-700 text-gray-200' : 'bg-white border-gray-200'} rounded-xl`}>
+                <SelectItem value="week" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Weekly</SelectItem>
+                <SelectItem value="month" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Monthly</SelectItem>
+                <SelectItem value="year" className={`${darkMode ? 'text-gray-200' : ''} hover:bg-blue-500/20 hover:text-blue-500`}>Yearly</SelectItem>
               </SelectContent>
             </Select>
             
-            <div className={`flex items-center gap-2 px-4 py-2 rounded-xl 
+            <div className={`flex items-center justify-between gap-2 px-4 py-2 h-[45px] w-[180px] rounded-xl 
               ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border`}>
               <Button 
                 variant="ghost" 
@@ -134,7 +167,7 @@ const TaskOverviewComponent = ({ events }) => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'}`}>
+              <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} flex-grow text-center`}>
                 {timeFrame === 'week' && `Week ${currentWeek.week}, ${currentWeek.year}`}
                 {timeFrame === 'month' && selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 {timeFrame === 'year' && selectedDate.getFullYear()}
@@ -154,13 +187,15 @@ const TaskOverviewComponent = ({ events }) => {
                 <Button 
                   variant="outline" 
                   size="icon"
-                  className={`rounded-xl ${darkMode ? 'bg-gray-900 border-gray-700 hover:bg-gray-800' : 
+                  className={`h-[45px] w-[45px] rounded-xl ${darkMode ? 'bg-gray-900 border-gray-700 hover:bg-gray-800' : 
                     'bg-gray-50 border-gray-200 hover:bg-gray-100'}`}
                 >
                   <Calendar className="h-4 w-4" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0">
+              <PopoverContent 
+                className={`w-auto p-0 ${darkMode ? 'bg-gray-900 border-gray-700 text-gray-200' : 'bg-white border-gray-200'}`}
+              >
                 <CalendarComponent
                   mode="single"
                   selected={selectedDate}
@@ -168,6 +203,13 @@ const TaskOverviewComponent = ({ events }) => {
                   initialFocus
                   className={`${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-white border-gray-200'} 
                     rounded-xl shadow-lg p-3`}
+                  classNames={{
+                    day_selected: "bg-blue-500 text-white hover:bg-blue-500",
+                    day: darkMode ? "text-gray-200 hover:bg-gray-800" : "text-gray-800 hover:bg-gray-100",
+                    day_today: "bg-blue-500/20 text-blue-500",
+                    day_outside: darkMode ? "text-gray-500" : "text-gray-400",
+                    head_cell: darkMode ? "text-gray-400" : "text-gray-500",
+                  }}
                 />
               </PopoverContent>
             </Popover>
@@ -177,9 +219,31 @@ const TaskOverviewComponent = ({ events }) => {
       <CardContent className="pt-6">
         <div className={`p-4 rounded-xl ${darkMode ? 'bg-gray-900/50' : 'bg-gray-50'} 
           border ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
-          {timeFrame === 'week' && <WeeklyOverviewComponent data={weeklyData} onUpdateData={handleWeeklyDataUpdate} darkMode={darkMode} />}
-          {timeFrame === 'month' && <MonthlyCalendarView data={monthlyData} year={selectedDate.getFullYear()} month={selectedDate.getMonth()} onUpdateData={handleMonthlyDataUpdate} darkMode={darkMode} />}
-          {timeFrame === 'year' && <YearlyOverviewComponent data={yearlyData} onUpdateData={handleYearlyDataUpdate} darkMode={darkMode} />}
+          {timeFrame === 'week' && (
+            <WeeklyOverviewComponent 
+              data={weeklyData} 
+              tasks={tasks}
+              onUpdateData={handleWeeklyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
+          {timeFrame === 'month' && (
+            <MonthlyCalendarView 
+              data={monthlyData} 
+              tasks={tasks}
+              year={selectedDate.getFullYear()} 
+              month={selectedDate.getMonth()} 
+              onUpdateData={handleMonthlyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
+          {timeFrame === 'year' && (
+            <YearlyOverviewComponent 
+              data={yearlyData} 
+              onUpdateData={handleYearlyDataUpdate} 
+              darkMode={darkMode} 
+            />
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-4 mt-6">

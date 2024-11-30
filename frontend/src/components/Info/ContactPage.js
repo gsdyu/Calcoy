@@ -37,7 +37,7 @@ const ContactPage = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/contact`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/contact`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -216,7 +216,7 @@ const ContactPage = () => {
                   <ContactInfo icon={<Phone className="w-6 h-6" />} text="+placeholderphonenumber" />
                 </div>
                 <p className="mt-12 text-lg text-white/90">
-                  We strive to respond to all inquiries within 24 hours. Your feedback helps us improve Timewise for everyone!
+                  We strive to respond to all inquiries within 24 hours. Your feedback helps us improve Calcoy for everyone!
                 </p>
               </div>
             </motion.div>

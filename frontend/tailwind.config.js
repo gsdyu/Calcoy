@@ -74,4 +74,18 @@ module.exports = {
     },
   },
   plugins: [require("tailwindcss-animate")],
+  safelist: [
+    {
+      pattern: /(yellow|blue|red|green|purple|orange|gray)-\d+/, 
+    },
+    {
+      pattern: /border-(yellow|blue|red|green|purple|orange)-\d+/,
+    },
+    {
+      pattern: /from-(yellow|blue|red|green|purple|orange|gray)-\d+\/25/,
+    },
+    {
+      pattern: /to-(yellow|blue|red|green|purple|orange|gray)-\d+\/25/,
+    },
+  ]
 }

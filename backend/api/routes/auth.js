@@ -61,6 +61,7 @@ module.exports = (app, pool) => {
 app.use(passport.initialize());
 app.use(passport.session());
 
+
 // Google Auth Route
 app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
  
@@ -180,6 +181,9 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 
   try {
     // Fetch the calendar data from the provided URL
+    
+    const parsedUrl = new URL(url);
+    if (parsedUrl.hostname !== "csulb.instructure.com") return res.status(400).json({error: 'Only accepting csulb calendar canvas'})
     const response = await fetch(url);
     if (!response.ok) {
       throw new Error('Failed to fetch data from the provided URL');
@@ -192,22 +196,24 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
 
     const events = vevents.map(event => {
       const vEvent = new ICAL.Event(event);
+      console.log(vEvent)
       return {
         title: vEvent.summary || 'No Title',
         description: vEvent.description || '',
         start_time: vEvent.startDate.toJSDate(),
-        end_time: vEvent.endDate.toJSDate(),
+        end_time: vEvent.startDate.toJSDate(),
         location: vEvent.location || '',
-        calendar: 'canvas',
+        calendar: 'Task',
         time_zone: vEvent.startDate.zone.tzid || 'UTC',
+        imported_from: 'csulb'
       };
     });
 
     // Insert events into the database
     const insertPromises = events.map(event =>
       pool.query(
-        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, calendar, time_zone, imported_from)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          ON CONFLICT DO NOTHING`,
         [
           userId, // Directly use userId from the token
@@ -218,6 +224,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.location,
           event.calendar,
           event.time_zone,
+          event.imported_from
         ]
       )
     );
@@ -550,7 +557,8 @@ app.post('/auth/set-username', async (req, res) => {
             return res.status(500).json({ error: 'Internal server error' });
         }
     });
-    app.post('/api/contact', async (req, res) => {
+
+    app.post('/auth/contact', async (req, res) => {
       const { name, email, subject, message } = req.body;
     
       if (!name || !email || !subject || !message) {
@@ -589,6 +597,7 @@ app.post('/auth/set-username', async (req, res) => {
    });
   
   app.get('/auth/check', authenticateToken, (req, res) => {
-    return res.status(200).json({isLoggedIn: "True"});
+    
+    return res.status(200).json({isLoggedIn: "True", userId: req.user.userId});
   });
 };

@@ -10,7 +10,7 @@ const sample_context = `context, to get more information about a user's query th
 `
 
 const chatAll = `you provide helpful insight and feedback to the user based on their wants and current needs and/or future events/responsibilities. You respond like a normal chatbot, but have options to output json, described later 
-You may be given contextual events from the user's calendar along with the user input/question. Only use the contextual events if they are useful, otherwise ignore them. The events provided will not tell you if the events or tasks are completed or not
+You may be given contextual events from the user's calendar along with the user input/question. Only use the contextual events if they are useful, otherwise ignore them. The events provided will not tell you if the events or tasks are completed or not. If you are not given any events, it is because there seems to be no related event. Treat this case as if you searched through the user's calendar and found nothing. You can ask for a better or more specific user response.
 Keep the conversation flowing and consistent with the discussion.
 
       Current time: ${currentTime}
@@ -33,6 +33,7 @@ ______
 	{"type": "createEvent"}
       \`\`\`
 
+      --max token of 100. do not go above
       --Do not write in markdown/add comment notes lines like \`\`\`json or \`\`\`
       --Users can create events in the past
       --Do not ask for more information about the event being created         if the user insist on not specifying just output the json
@@ -243,7 +244,9 @@ const chat_createEvent = `createevent:
    * calendar: which calendar event is for, default is Personal unless given
 
 
+   - max token is 100, do not go above
    - todays date is ${new Date()}. make events relative to this date
+   - when ask to create a random event, actually make a random event, like go karting, watching a movie, shopping; do not just say that this is a random event. best situation is a random event that fits with the time period. for example, random event in 1600 is heading to the ball.
    - users can create events before todays date.
 	 - if the user asks to create, schedule, or add an event, respond only with a valid json object with no additional text
 	 - always start with { and end with }

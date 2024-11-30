@@ -5,7 +5,7 @@ const Googleapi = () => {
   // Redirect to initiate Google OAuth flow for Calendar access s
   const handleGoogleCalendarAuth = async () => {
     try {
-      window.location.href = 'http://localhost:5000/auth/google/calendar';
+      window.location.href = `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google/calendar`;
     } catch (error) {
       console.error('Error redirecting to Google Calendar OAuth:', error);
     }
