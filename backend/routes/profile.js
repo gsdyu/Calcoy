@@ -323,50 +323,53 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to fetch friend events' });
     }
   });
-  
-  app.get('/api/user/privacy-setting', authenticateToken, async (req, res) => {
-    const userId = req.user.userId; // Extract user ID from the authentication middleware
+  app.get('/api/user/privacy-settings', authenticateToken, async (req, res) => {
+    const userId = req.user.userId;
   
     try {
-      const result = await pool.query('SELECT id, privacy FROM users WHERE id = $1', [userId]);
-      if (result.rows.length === 0) {
-        return res.status(404).json({ message: 'User not found' });
-      }
+      const userResult = await pool.query('SELECT privacy FROM users WHERE id = $1', [userId]);
+      const serverResult = await pool.query('SELECT server_id, privacy FROM server_privacy WHERE user_id = $1', [userId]);
+      const serversResult = await pool.query('SELECT id, name FROM servers WHERE id IN (SELECT server_id FROM "userServers" WHERE user_id = $1)', [userId]);
+  
+      const serverPrivacy = serverResult.rows.reduce((acc, row) => {
+        acc[row.server_id] = row.privacy;
+        return acc;
+      }, {});
   
       res.json({
-        userId: result.rows[0].id,
-        privacy: result.rows[0].privacy,
+        userId,
+        defaultPrivacy: userResult.rows[0]?.privacy || 'public',
+        serverPrivacy,
+        servers: serversResult.rows,
       });
     } catch (error) {
-      console.error('Error fetching privacy setting:', error);
-      res.status(500).json({ message: 'Failed to fetch privacy setting' });
+      console.error('Error fetching privacy settings:', error);
+      res.status(500).json({ error: 'Failed to fetch privacy settings' });
     }
   });
-  app.put('/api/user/privacy-setting', authenticateToken, async (req, res) => {
-    const { userId, privacy } = req.body;
+  app.put('/api/user/privacy-settings', authenticateToken, async (req, res) => {
+    const { userId, privacy, serverId } = req.body;
   
     if (!['public', 'limited', 'private'].includes(privacy)) {
-      return res.status(400).json({ message: 'Invalid privacy setting' });
+      return res.status(400).json({ error: 'Invalid privacy option' });
     }
   
     try {
-      const result = await pool.query('UPDATE users SET privacy = $1 WHERE id = $2 RETURNING id, privacy', [privacy, userId]);
-      if (result.rowCount === 0) {
-        return res.status(404).json({ message: 'User not found' });
+      if (serverId) {
+        await pool.query(
+          `INSERT INTO server_privacy (user_id, server_id, privacy) VALUES ($1, $2, $3)
+           ON CONFLICT (user_id, server_id) DO UPDATE SET privacy = $3`,
+          [userId, serverId, privacy]
+        );
+      } else {
+        await pool.query('UPDATE users SET privacy = $1 WHERE id = $2', [privacy, userId]);
       }
-  
-      res.json({
-        userId: result.rows[0].id,
-        privacy: result.rows[0].privacy,
-        message: 'Privacy setting updated successfully',
-      });
+      res.json({ message: 'Privacy setting updated successfully' });
     } catch (error) {
-      console.error('Error updating privacy setting:', error);
-      res.status(500).json({ message: 'Failed to update privacy setting' });
+      console.error('Error updating privacy settings:', error);
+      res.status(500).json({ error: 'Failed to update privacy settings' });
     }
   });
-  
-  
   
 
   app.get('/api/user/theme', authenticateToken, async (req, res) => {
