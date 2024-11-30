@@ -14,11 +14,13 @@ const app = express();
 
 app.use(express.json())
 app.use(cors({
-    origin: process.env.CLIENT_URL,
+    origin: 'https://www.calcoy.com',
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
 app.use(cookieParser());
+app.use(express.json({ limit: '1000000mb' })); // For JSON payloads
+app.use(express.urlencoded({ limit: '1000000mb', extended: true })); 
 
 // Initialize PostgreSQL connection pool
 const pool = new Pool({
@@ -81,7 +83,7 @@ pool.query(`
   CREATE TABLE IF NOT EXISTS servers (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
-    image_url VARCHAR(255),
+    image_url VARCHAR(2083),
     created_by INT REFERENCES users(id) ON DELETE CASCADE,
     invite_link VARCHAR(255) UNIQUE
   );
@@ -106,13 +108,12 @@ pool.query(`
     channel_expire TIMESTAMPTZ,
     PRIMARY KEY (user_id, watched_calendar_id)
   );
-  CREATE TABLE IF NOT EXISTS friend_requests (
+  CREATE TABLE IF NOT EXISTS "friend_requests" (
     id SERIAL PRIMARY KEY,
     sender_id INT REFERENCES users(id) ON DELETE CASCADE,
     receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(20) DEFAULT 'pending'
   );
-
 `).then(() => {
   console.log("Users and Servers table is ready");
   pool.query(`

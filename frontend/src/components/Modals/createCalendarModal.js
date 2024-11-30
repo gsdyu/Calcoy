@@ -4,6 +4,7 @@ import { X, Plus, Users, CalendarPlus } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import React, { useState, useEffect } from 'react';
 import EventOptionsPopup from '@/components/Modals/EventOptionsPopup';
+import imageCompression from 'browser-image-compression';
 
 const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) => {
   const { darkMode } = useTheme();
@@ -42,56 +43,105 @@ const CreateCalendarModal = ({ onClose, setServers, setIcon, setIconPreview}) =>
     fetchUserId();
   }, []);
 
-  const handleIconChange = (e) => {
-    const file = e.target.files[0];
-    setServerInfo(prev => ({
-      ...prev,
-      icon: file,
-      iconPreview: file ? URL.createObjectURL(file) : null  
-    }));
-    setIcon(file);  
-    setIconPreview(file ? URL.createObjectURL(file) : null);
-  };
 
+  const handleIconChange = async (e) => {
+    const file = e.target.files[0];
+  
+    if (file) {
+      try {
+        // Compress the image before conversion
+        const options = {
+          maxSizeMB: .3,  
+          maxWidthOrHeight: 300, // Resize to 500px max dimension
+          useWebWorker: true,
+        };
+        const compressedFile = await imageCompression(file, options);
+  
+        // Convert the compressed file to Base64
+        const toBase64 = (file) =>
+          new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result.split(",")[1]); // Extract Base64 part only
+            reader.onerror = (error) => reject(error);
+            reader.readAsDataURL(file);
+          });
+  
+        const base64 = await toBase64(compressedFile);
+  
+        setServerInfo((prev) => ({
+          ...prev,
+          icon: file,
+          iconPreview: URL.createObjectURL(compressedFile),
+          imageBase64: base64, // Store Base64 string
+        }));
+      } catch (error) {
+        console.error("Failed to compress and convert image to Base64:", error);
+        alert('Picture is too large');
+
+      }
+    } else {
+      setServerInfo((prev) => ({
+        ...prev,
+        icon: null,
+        iconPreview: null,
+        imageBase64: null,
+      }));
+    }
+  };
+  
   const handleServerChange = (e) => {
     const { name, value } = e.target;
     setServerInfo(prev => ({ ...prev, [name]: value }));
   };
-
   const handleSubmitServerInfo = async (e) => {
     e.preventDefault();
-  
+
     if (!serverInfo.serverName || !userId) {
-      console.error('Missing serverName or userId');
-      return;
-    }
-  
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ serverName: serverInfo.serverName, userId }),
-        
-      });
-  
-      if (!response.ok) {
-        const text = await response.text();
-        console.error('Error response from server:', text);
+        console.error('Missing serverName or userId');
         return;
-      }
-  
-      const data = await response.json();
-      setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
-      setServers((prevServers) => [...prevServers, data.server]);
-      setShowEventPopup(true);
-    } catch (error) {
-      console.error('Error submitting server info:', error);
     }
-  };
-  
+
+    try {
+        const base64SizeMB = serverInfo.imageBase64
+            ? (serverInfo.imageBase64.length * 3) / 4 / (1024 * 1024) // Convert Base64 size to MB
+            : 0;
+
+        if (base64SizeMB > 4) {
+            alert('Warning: The selected image is too large. Please upload an image smaller than 4MB.');
+            return;
+        }
+
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/create`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            credentials: 'include',
+            body: JSON.stringify({
+                serverName: serverInfo.serverName,
+                userId,
+                imageBase64: serverInfo.imageBase64 || null, // Include Base64 only if available
+            }),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            console.error('Error response from server:', text);
+            alert('Picture is too large');
+
+            return;
+        }
+
+        const data = await response.json();
+        setServerInfo((prevInfo) => ({ ...prevInfo, serverId: data.server.id }));
+        setServers((prevServers) => [...prevServers, data.server]);
+        setShowEventPopup(true);
+    } catch (error) {
+        console.error('Error submitting server info:', error);
+        alert('Picture is too large');
+
+    }
+};
 
   
  

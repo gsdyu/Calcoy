@@ -43,37 +43,37 @@ const Profile = ({ isCollapsed, darkMode, colors }) => {
         method: 'GET',
         credentials: 'include',
       });
-
+  
       if (!check.ok) {
         setError('No token found. Please login.');
         return;
       }
-
+  
       try {
         const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           method: 'GET',
           headers: {
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
           },
           credentials: 'include',
         });
-
+  
         if (!response.ok) {
           throw new Error('Failed to fetch profile');
         }
-
+  
         const data = await response.json();
         setUserName(data.username);
-        setProfileImage(data.profile_image);
-
+        setProfileImage(data.profile_image); // Ensure this holds the full image URL
       } catch (error) {
         setError('Error fetching profile.');
         console.error('Error:', error);
       }
     };
-
+  
     fetchProfile();
   }, []); // Fetch profile on component mount
+  
 
   return (
     <div className={`p-3 transition-all duration-300 ease-in-out ${
@@ -83,7 +83,10 @@ const Profile = ({ isCollapsed, darkMode, colors }) => {
         <div className="flex items-center">
           <Avatar className="h-8 w-8">
             {profileImage ? (
-              <AvatarImage src={`${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`} alt={userName} />
+              <AvatarImage
+  src={profileImage.startsWith('http') ? profileImage : `${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`}
+  alt={userName}
+/>
             ) : (
               <AvatarFallback className={`${colors.buttonBg} ${colors.text}`}>
                 {getInitials(userName)}

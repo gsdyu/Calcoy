@@ -233,7 +233,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         return;
       }
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/servers/${activeServer.id}/users`, {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${activeServer.id}/users`, {
           credentials: 'include',
         });
         if (!response.ok) {

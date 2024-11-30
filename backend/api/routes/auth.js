@@ -590,6 +590,7 @@ app.post('/auth/set-username', async (req, res) => {
         res.status(500).json({ error: 'Failed to send the message. Please try again later.' });
       }
     });
+
    app.post('/auth/logout', (req, res) => {
      res.clearCookie("auth_token", {path: '/'});
      return res.status(200).json({message: "Log out successful"});

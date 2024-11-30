@@ -142,16 +142,19 @@ const Profile = () => {
       alert(err_msg);
     }
   };
-
   const handleImageChange = (event) => {
     const file = event.target.files[0];
+
     if (file) {
       setSelectedFile(file);
       const imageUrl = URL.createObjectURL(file);
       setSelectedImage(imageUrl);
       setIsEditModalOpen(true);
     }
-  };
+};
+
+ 
+  
 
   const handleSaveEdit = async ({ file, x, y, scale }) => {
     if (!file) return;

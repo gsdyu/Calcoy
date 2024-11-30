@@ -85,13 +85,13 @@ const AboutPage = () => {
             variants={fadeIn}
             className="text-5xl md:text-6xl font-bold mb-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent"
           >
-            About Timewise
+            About Calcoy
           </motion.h1>
           <motion.p 
             variants={fadeIn}
             className="text-xl text-gray-600 mb-12 max-w-3xl mx-auto leading-relaxed"
           >
-            We created Timewise because we've experienced the frustration of using calendar apps that were either too simple or had a steep learning curve. Our mission is to provide a perfect balance of simplicity and powerful features.
+            We created Calcoy because we've experienced the frustration of using calendar apps that were either too simple or had a steep learning curve. Our mission is to provide a perfect balance of simplicity and powerful features.
           </motion.p>
         </motion.div>
       </section>
@@ -137,13 +137,13 @@ const AboutPage = () => {
             <StoryCard 
               icon={<Zap className="w-8 h-8" />}
               title="The Solution"
-              description="We built Timewise to be intuitive yet powerful, striking the perfect balance for users of all levels."
+              description="We built Calcoy to be intuitive yet powerful, striking the perfect balance for users of all levels."
               gradient="from-purple-500 to-pink-500"
             />
             <StoryCard 
               icon={<Users className="w-8 h-8" />}
               title="Our Promise"
-              description="We're committed to continuous improvement, always listening to our users to make Timewise even better."
+              description="We're committed to continuous improvement, always listening to our users to make Calcoy even better."
               gradient="from-orange-500 to-red-500"
             />
           </motion.div>
@@ -206,7 +206,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Nam Ton"
-              role="Full-Stack | UI designer | Project Lead"
+              role=" CEO | Full-Stack | UI designer | Project Lead"
               description="Creative visionary with a passion for user experience and interface design. Minimal design advocate."
               image="/nam.png"
               imagePosition="object-center"
@@ -218,8 +218,8 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Mina"
-              role="Backend Devleoper"
-              description="Backend developer. Immortal Valorant player. Roblox enthusiast."
+              role=" CIO | Backend Developer | Software Deployment"
+              description="Expertise in backend systems and authentication solutions. Dedicated to creating efficient and secure solutions."
               image="/mina.png"
               imagePosition="object-center"
               socials={{
@@ -231,7 +231,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Toan"
-              role="Full-Stack & AI Developer | UI Designer"
+              role=" CIO Full-Stack & AI Developer | UI Designer"
               description="loves his gf"
               image="/toan.png"
               imagePosition="object-[50%_40%]"
@@ -244,7 +244,7 @@ const AboutPage = () => {
             />
               <TeamMemberCard 
               name="Justin"
-              role="Backend & AI Developer | DevOps"
+              role=" CTO Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
               image="/Justin.png"
               imagePosition="object-[50%_40%]"

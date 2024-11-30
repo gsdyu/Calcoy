@@ -164,7 +164,7 @@ const FeaturesPage = () => {
             transition={{ duration: 1 }}
             className="max-w-4xl mx-auto bg-gradient-to-r from-indigo-600 to-purple-600 rounded-3xl p-12 text-center shadow-xl"
           >
-            <h2 className="text-4xl font-bold text-white mb-6">Ready to Experience Timewise?</h2>
+            <h2 className="text-4xl font-bold text-white mb-6">Ready to Experience Calcoy?</h2>
             <p className="text-white/90 text-xl mb-8">
               Join thousands of users who have transformed their scheduling experience.
             </p>

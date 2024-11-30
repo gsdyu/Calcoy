@@ -228,7 +228,7 @@ const LandingPage = () => {
           >
             <h2 className="text-4xl font-bold text-white mb-6">Ready to Transform Your Time?</h2>
             <p className="text-white/90 text-xl mb-8">
-              Join thousands of professionals already mastering their schedule with Timewise.
+              Join thousands of professionals already mastering their schedule with Calcoy.
             </p>
             <Link 
               href="/auth/signup" 
