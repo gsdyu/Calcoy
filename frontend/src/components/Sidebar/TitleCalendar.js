@@ -102,7 +102,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
         className={baseStyles.header} 
         onClick={handleHeaderClick}
       >
-        <h1 className="text-lg font-medium text-center flex-grow">
+        <h1 className="text-xl font-medium text-center flex-grow">
           {activeCalendar?.name || 'Main Calendar'}
         </h1>
         {isOpen ? (
