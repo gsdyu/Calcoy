@@ -52,7 +52,7 @@ const PrivacyControl = () => {
   // Fetch current privacy setting from the server
   const fetchPrivacySetting = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/user/privacy-setting', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-setting`, {
         method: 'GET',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
@@ -74,7 +74,7 @@ const PrivacyControl = () => {
   // Save updated privacy setting to the server
   const savePrivacySetting = async (newPrivacy) => {
     try {
-      const response = await fetch('http://localhost:5000/api/user/privacy-setting', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-setting`, {
         method: 'PUT',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },

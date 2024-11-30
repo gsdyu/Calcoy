@@ -34,7 +34,7 @@ const AiPage = () => {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const response = await fetch('http://localhost:5000/conversations', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations`, {
           method: 'GET',
           credentials: 'include',
         });
@@ -60,7 +60,7 @@ const AiPage = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatId}`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -125,7 +125,7 @@ const AiPage = () => {
 
   const handleRenameChat = async (chatId, newTitle) => {
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -157,7 +157,7 @@ const AiPage = () => {
   
   const handleConfirmDelete = async () => {
     try {
-      const response = await fetch(`http://localhost:5000/conversations/${chatToDelete}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/conversations/${chatToDelete}`, {
         method: 'DELETE',
         credentials: 'include',
       });
@@ -431,7 +431,7 @@ const AiPage = () => {
   
     if (currentChatId) {
       try {
-        const response = await fetch('http://localhost:5000/messages', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/messages`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

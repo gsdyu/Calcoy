@@ -73,7 +73,7 @@ const FriendPage = ({ userId }) => {
   }, [searchTerm, friends]);
 
   const fetchPendingRequests = () => {
-    fetch('http://localhost:5000/api/friend-income', {
+    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friend-income`, {
       method: 'GET',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -107,7 +107,7 @@ const FriendPage = ({ userId }) => {
 
   const handleAcceptRequest = async (requestId) => {
     try {
-      const response = await fetch('http://localhost:5000/api/friend-request/accept', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friend-request/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -134,7 +134,7 @@ const FriendPage = ({ userId }) => {
 
   const fetchFriendsList = async () => {
     try {
-      const response = await fetch('http://localhost:5000/api/friends', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friends`, {
         method: 'GET',
         credentials: 'include',
       });
@@ -152,7 +152,7 @@ const FriendPage = ({ userId }) => {
 
   const handleDeclineRequest = async (requestId) => {
     try {
-      const response = await fetch('http://localhost:5000/api/friend-request/decline', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friend-request/decline`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -180,11 +180,10 @@ const FriendPage = ({ userId }) => {
     setNotification({ message, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
-
   const handleAddFriend = async () => {
     if (newFriend.trim()) {
       try {
-        const response = await fetch('http://localhost:5000/api/friend-request', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friend-request`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -227,7 +226,7 @@ const FriendPage = ({ userId }) => {
     try {
       showNotification('Removing friend...');
 
-      const response = await fetch(`http://localhost:5000/api/friends/${friendId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friends/${friendId}`, {
         method: 'DELETE',
         credentials: 'include',
       });

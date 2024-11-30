@@ -29,7 +29,7 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
   };
 
   const generateICS = async () => {
-    const response = await fetch('http://localhost:5000/auth/calendar/export', {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/calendar/export`, {
       credentials: 'include',
     });
     const blob = await response.blob();

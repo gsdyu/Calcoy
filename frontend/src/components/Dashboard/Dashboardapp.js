@@ -32,12 +32,12 @@ const Dashboard = () => {
 
   const fetchEvents = async () => {
     try {
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) return;
 
-      const response = await fetch('http://localhost:5000/events', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events`, {
         credentials: 'include',
       });
 
@@ -64,7 +64,7 @@ const Dashboard = () => {
 
   const handleTaskComplete = async (taskId, completed) => {
     try {
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) return;
@@ -77,7 +77,7 @@ const Dashboard = () => {
         completed
       };
 
-      const response = await fetch(`http://localhost:5000/events/${taskId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${taskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ const Dashboard = () => {
 
   const handleDragDropUpdate = async (taskId, updates) => {
     try {
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) return false;
@@ -123,7 +123,7 @@ const Dashboard = () => {
         location: eventToUpdate.location,
       };
 
-      const response = await fetch(`http://localhost:5000/events/${taskId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events/${taskId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

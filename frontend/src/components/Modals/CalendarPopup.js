@@ -37,7 +37,7 @@ const CalendarPopup = ({ onClose, onColorChange }) => {
     setErrorMessage(''); // Reset error message
     if (canvasUrl) {
       try {
-        const response = await fetch('http://localhost:5000/auth/proxy-fetch', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/proxy-fetch`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

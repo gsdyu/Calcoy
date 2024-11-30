@@ -25,7 +25,7 @@ const ProfileImage = ({
       <div className="w-full h-full">
         {profileImage ? (
           <img 
-            src={`http://localhost:5000/${profileImage}`} 
+            src={`${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`} 
             alt="Profile" 
             className="w-full h-full object-cover"
           />
@@ -156,7 +156,7 @@ const Profile = () => {
   const handleSaveEdit = async ({ file, x, y, scale }) => {
     if (!file) return;
 
-    const check = await fetch('http://localhost:5000/auth/check', {
+    const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
       credentials: 'include',
     });
     if (!check.ok) {
@@ -171,7 +171,7 @@ const Profile = () => {
       formData.append('y_offset', y);
       formData.append('scale', scale);
 
-      const response = await fetch('http://localhost:5000/profile/picture', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/picture`, {
         method: 'PUT',
         credentials: 'include',
         body: formData,

@@ -53,7 +53,7 @@ const AiPromptExamples = ({ onExampleClick, visible }) => {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const response = await fetch('http://localhost:5000/profile', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json'

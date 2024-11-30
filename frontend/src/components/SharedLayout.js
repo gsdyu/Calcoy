@@ -46,7 +46,7 @@ const SharedLayout = ({ children }) => {
 
   const handleSaveEvent = async (event) => {
     try {
-      const check = await fetch('http://localhost:5000/auth/check', {
+      const check = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/auth/check`, {
         credentials: 'include',
       });
       if (!check.ok) {
@@ -57,7 +57,7 @@ const SharedLayout = ({ children }) => {
       const isTask = event.calendar === 'Task';
       showNotification(`Saving ${isTask ? 'task' : 'event'}...`, 'info');
       
-      const response = await fetch('http://localhost:5000/events', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/events`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

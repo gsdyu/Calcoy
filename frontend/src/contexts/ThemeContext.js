@@ -77,7 +77,7 @@ export const ThemeProvider = ({ children }) => {
         }
 
         // Try to get user preferences from backend
-        const response = await fetch('http://localhost:5000/profile', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile`, {
           credentials: 'include'
         });
         
@@ -119,7 +119,7 @@ export const ThemeProvider = ({ children }) => {
 
     // Sync with backend
     try {
-      await fetch('http://localhost:5000/profile/preferences', {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
@@ -151,7 +151,7 @@ export const ThemeProvider = ({ children }) => {
 
     // Sync with backend
     try {
-      await fetch('http://localhost:5000/profile/preferences', {
+      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
         method: 'PUT',
         credentials: 'include',
         headers: {
