@@ -60,7 +60,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     
     // Save to server in background
     try {
-      const response = await fetch('http://localhost:5000/profile/preferences', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
