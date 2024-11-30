@@ -12,6 +12,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
   const [hoveredServer, setHoveredServer] = useState(null);
+  const [isAddHovered, setIsAddHovered] = useState(false);
 
   // Fetch servers from the backend
   useEffect(() => {
@@ -160,12 +161,40 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         ))}
 
         {/* Add New Calendar Button */}
-        <button 
-          className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center mt-auto`} 
-          onClick={handleOpenCalendar}
-        >
-          <Plus size={24} />
-        </button>
+        <div className="relative" onMouseEnter={() => setIsAddHovered(true)} onMouseLeave={() => setIsAddHovered(false)}>
+          <button 
+            className={`w-12 h-12 rounded-full ${
+              darkMode ? 'bg-gray-700' : 'bg-gray-300'
+            } flex items-center justify-center mt-auto relative overflow-hidden transition-all duration-300 transform ${
+              isAddHovered ? 'scale-110 shadow-lg' : ''
+            }`}
+            onClick={handleOpenCalendar}
+          >
+            <Plus 
+              size={24} 
+              className={`transition-all duration-300 ${
+                isAddHovered ? 'rotate-90 text-blue-500' : ''
+              }`}
+            />
+            <div className={`absolute inset-0 bg-blue-500 opacity-0 transition-opacity duration-300 ${
+              isAddHovered ? 'opacity-10' : ''
+            }`} />
+          </button>
+
+          {/* Add Server Tooltip */}
+          {isAddHovered && (
+            <div className="absolute -left-full top-1/2 transform -translate-x-full -translate-y-1/2 z-50">
+              <div className={`relative ${darkMode ? 'bg-[#18191c]' : 'bg-white'} px-3 py-2 rounded-[3px] shadow-[0_8px_16px_rgba(0,0,0,0.24)]`}>
+                <div className={`text-[15px] font-medium ${darkMode ? 'text-white/90' : 'text-gray-900'}`}>
+                  Create a Calendar
+                </div>
+                <div className="absolute top-1/2 -right-[4px] -translate-y-1/2">
+                  <div className={`w-[8px] h-[8px] rotate-45 ${darkMode ? 'bg-[#18191c]' : 'bg-white'}`} />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {isCreateCalendarOpen && (
