@@ -1,7 +1,9 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Shield, Check } from 'lucide-react';
+import { Shield, Check, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from '@/contexts/ThemeContext';
 
 const PrivacyControl = () => {
   const [privacyOptions] = useState([
@@ -11,6 +13,41 @@ const PrivacyControl = () => {
   ]);
   const [selectedOption, setSelectedOption] = useState('public');
   const [userId, setUserId] = useState(null);
+
+  const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
+  const router = useRouter();
+
+  const backgroundClasses = selectedTheme
+    ? `${presetThemes[selectedTheme]?.gradient}`
+    : darkMode
+      ? 'bg-gray-900'
+      : 'bg-white';
+
+  const cardBackgroundClasses = selectedTheme
+    ? `${colors.buttonBg} border ${colors.buttonBorder}`
+    : darkMode
+      ? 'bg-gray-800 border-gray-700'
+      : 'bg-gray-50 border-gray-200';
+
+  const textClasses = selectedTheme
+    ? colors.text
+    : darkMode
+      ? 'text-gray-200'
+      : 'text-gray-900';
+
+  const secondaryTextClasses = selectedTheme
+    ? colors.textSecondary
+    : darkMode
+      ? 'text-gray-400'
+      : 'text-gray-600';
+
+  const selectedCardClasses = darkMode
+    ? 'bg-blue-700 text-white'
+    : 'bg-blue-100 text-blue-900';
+
+  const selectedTextClasses = darkMode
+    ? 'text-white'
+    : 'text-blue-900';
 
   // Fetch current privacy setting from the server
   const fetchPrivacySetting = async () => {
@@ -64,26 +101,47 @@ const PrivacyControl = () => {
     savePrivacySetting(option.id);
   };
 
+  const handleBack = () => {
+    router.push('/settings');  
+  };
+
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-semibold mb-8 text-gray-900">Privacy Settings</h1>
+    <div className={`min-h-screen ${backgroundClasses} p-8`}>
+      <div className="flex items-center mb-4">
+        <button
+          className={`
+            flex items-center gap-2 px-4 py-2 rounded-md transition-colors
+            ${darkMode ? 'bg-gray-800 text-gray-200 hover:bg-gray-700' : 'bg-gray-200 text-gray-800 hover:bg-gray-300'}
+          `}
+          onClick={handleBack}
+        >
+          <ArrowLeft size={16} />
+          <span>Back</span>
+        </button>
+      </div>
+
+      <h1 className={`text-2xl font-semibold mb-8 ${textClasses}`}>Privacy Settings</h1>
 
       {/* Privacy Options Section */}
-      <div className="p-6 rounded-2xl bg-white shadow-md border border-gray-200 hover:bg-gray-50 transition-all">
-        <h2 className="text-lg font-semibold mb-4 text-gray-900">Privacy Options</h2>
+      <div className={`p-6 rounded-2xl shadow-md hover:shadow-lg transition-all ${cardBackgroundClasses}`}>
+        <h2 className={`text-lg font-semibold mb-4 ${textClasses}`}>Privacy Options</h2>
         <div className="space-y-4">
           {privacyOptions.map((option) => (
             <div
               key={option.id}
               className={`p-4 border rounded-xl cursor-pointer transition-all ${
                 selectedOption === option.id
-                  ? 'bg-blue-100 border-blue-500'
+                  ? `${selectedCardClasses} border-blue-500`
+                  : darkMode
+                  ? 'bg-gray-800 border-gray-700 hover:bg-gray-700'
                   : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
               }`}
               onClick={() => handlePrivacyChange(option)}
             >
-              <h3 className="text-lg font-medium text-gray-900">{option.label}</h3>
-              <p className="text-sm text-gray-600">{option.description}</p>
+              <h3 className={`text-lg font-medium ${selectedOption === option.id ? selectedTextClasses : textClasses}`}>
+                {option.label}
+              </h3>
+              <p className={`text-sm ${secondaryTextClasses}`}>{option.description}</p>
               {selectedOption === option.id && (
                 <div className="mt-2 text-blue-500">
                   <Check size={20} />
