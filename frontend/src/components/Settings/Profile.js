@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { User, Lock, Bell, Shield, Edit2, Check } from 'lucide-react';
+import { User, Lock, Bell, Shield, Edit2, Check, Edit } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import ImageEditModal from '@/components/Modals/ImageEditModal';
 
@@ -9,13 +9,56 @@ const DefaultProfileIcon = () => (
   </svg>
 );
 
+const ProfileImage = ({ 
+  profileImage, 
+  onImageClick 
+}) => {
+  const fileInputRef = useRef(null);
+  const { darkMode } = useTheme();
+
+  return (
+    <div 
+      className={`relative w-24 h-24 rounded-full overflow-hidden cursor-pointer group
+        ${darkMode ? 'bg-gray-900/40' : 'bg-white'}`}
+      onClick={() => fileInputRef.current.click()}
+    >
+      <div className="w-full h-full">
+        {profileImage ? (
+          <img 
+            src={`http://localhost:5000/${profileImage}`} 
+            alt="Profile" 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <DefaultProfileIcon />
+        )}
+      </div>
+
+      {/* Edit Overlay */}
+      <div className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+        <Edit className="text-white" size={20} />
+      </div>
+
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={onImageClick} 
+        className="hidden" 
+        accept="image/*"
+      />
+    </div>
+  );
+};
+
 const Profile = () => {
   const { darkMode } = useTheme();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [isEditingName, setIsEditingName] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
-  const fileInputRef = useRef(null);
+  const [profileImageX, setProfileImageX] = useState(0);
+  const [profileImageY, setProfileImageY] = useState(0);
+  const [profileImageScale, setProfileImageScale] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -46,6 +89,9 @@ const Profile = () => {
         setDisplayName(data.username);
         setEmail(data.email);
         setProfileImage(data.profile_image);
+        setProfileImageX(data.profile_image_x || 0);
+        setProfileImageY(data.profile_image_y || 0);
+        setProfileImageScale(data.profile_image_scale || 1);
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Error fetching profile. Please try again later.');
@@ -73,8 +119,8 @@ const Profile = () => {
     }	
 
     try {
-      if (displayName.length>32) throw new Error('Username is too long. Between 1-32 characters please.');
-      if (displayName.length==0) throw new Error('Username cannot be empty');
+      if (displayName.length > 32) throw new Error('Username is too long. Between 1-32 characters please.');
+      if (displayName.length === 0) throw new Error('Username cannot be empty');
 
       const response = await fetch('http://localhost:5000/profile/name', {
         method: 'PUT',
@@ -86,7 +132,7 @@ const Profile = () => {
       });
 
       if (!response.ok) {
-        if (response.status == 409) throw new Error(`Username ${displayName} is already taken`);
+        if (response.status === 409) throw new Error(`Username ${displayName} is already taken`);
         throw new Error('An error occurred on the server. Try again later.');
       }
       alert('Username updated successfully!');
@@ -107,8 +153,8 @@ const Profile = () => {
     }
   };
 
-  const handleSaveEdit = async ({ x, y, scale }) => {
-    if (!selectedFile) return;
+  const handleSaveEdit = async ({ file, x, y, scale }) => {
+    if (!file) return;
 
     const check = await fetch('http://localhost:5000/auth/check', {
       credentials: 'include',
@@ -120,7 +166,7 @@ const Profile = () => {
 
     try {
       const formData = new FormData();
-      formData.append('profile_image', selectedFile);
+      formData.append('profile_image', file);
       formData.append('x_offset', x);
       formData.append('y_offset', y);
       formData.append('scale', scale);
@@ -132,6 +178,9 @@ const Profile = () => {
       });
       const data = await response.json();
       setProfileImage(data.profile_image);
+      setProfileImageX(data.profile_image_x);
+      setProfileImageY(data.profile_image_y);
+      setProfileImageScale(data.profile_image_scale);
       setIsEditModalOpen(false);
       setSelectedImage(null);
       setSelectedFile(null);
@@ -142,106 +191,136 @@ const Profile = () => {
     }
   };
 
-  const ProfileSection = ({ title, description, icon, action }) => (
-    <div className={`border-t ${darkMode ? 'border-gray-700' : 'border-gray-200'} pt-6 mt-6`}>
-      <div className="flex items-center mb-4">
-        {icon}
-        <h2 className="text-xl font-semibold ml-2">{title}</h2>
+  const ProfileSection = ({ title, description, icon: Icon, action }) => (
+    <div className={`p-6 rounded-2xl transition-colors ${
+      darkMode 
+        ? 'bg-gray-900/40 border border-gray-800 hover:bg-gray-800/40' 
+        : 'bg-white border border-gray-200 hover:bg-gray-50'
+    }`}>
+      <div className="flex items-center gap-4 mb-4">
+        <div className={`p-3 rounded-xl ${darkMode ? 'bg-[#2A2D34]' : 'bg-gray-100'}`}>
+          <Icon className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`} size={20} />
+        </div>
+        <div>
+          <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+            {title}
+          </h2>
+          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+            {description}
+          </p>
+        </div>
       </div>
-      <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'} mb-4`}>{description}</p>
-      <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+      <button className="w-full bg-blue-500 text-white py-2.5 px-4 rounded-xl font-medium 
+        hover:bg-blue-600 transition-all duration-200">
         {action}
       </button>
     </div>
   );
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500">{error}</div>;
+    return (
+      <div className={`max-w-md mx-auto mt-8 p-4 rounded-2xl ${
+        darkMode ? 'bg-red-900/20 text-red-200' : 'bg-red-50 text-red-500'
+      }`}>
+        {error}
+      </div>
+    );
   }
 
   return (
-    <div className={`flex-1 p-8 ${darkMode ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-      <h1 className="text-3xl font-bold mb-6">Profile</h1>
+    <div className="p-8">
+      <h1 className={`text-2xl font-semibold mb-8 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+        Profile Settings
+      </h1>
 
-      <div className="flex items-center mb-8">
-        <div className="relative w-24 h-24 rounded-full flex items-center justify-center mr-6"
-             style = {{zIndex: 1}}>
-          {profileImage ? (
-            <img src={`http://localhost:5000/${profileImage}`} alt="Profile" className="w-full h-full object-cover rounded-full" />
-          ) : (
-            <DefaultProfileIcon />
-          )}
-          <button 
-            onClick={() => fileInputRef.current.click()} 
-            className="absolute bottom-0 right-0 bg-blue-500 rounded-full p-2 text-white hover:bg-blue-600 transition-colors"
-            style = {{zIndex: 10}}
-          >
-            <Edit2 size={16} />
-          </button>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handleImageChange} 
-            className="hidden" 
-            accept="image/*"
+      {/* Profile Card */}
+      <div className={`mb-8 p-6 rounded-2xl transition-colors ${
+        darkMode 
+          ? 'bg-gray-900/40 border border-gray-800 hover:bg-gray-800/40' 
+          : 'bg-white border border-gray-200 hover:bg-gray-50'
+      }`}>
+        <div className="flex items-center gap-6">
+          <ProfileImage 
+            profileImage={profileImage}
+            onImageClick={handleImageChange}
           />
-        </div>
-        <div>
-          {isEditingName ? (
-            <div className="flex items-center">
-              <input 
-                type="text" 
-                value={displayName} 
-                onChange={(e) => setDisplayName(e.target.value)}
-                className={`text-2xl font-semibold bg-transparent border-b ${darkMode ? 'border-gray-600' : 'border-gray-300'} focus:outline-none focus:border-blue-500`}
-              />
-              <button onClick={handleNameSave} className="ml-2 text-blue-500 hover:text-blue-600">
-                <Check size={20} />
-              </button>
-            </div>
-          ) : (
-            <h2 className="text-2xl font-semibold flex items-center">
-              {displayName}
-              <button onClick={handleNameEdit} className="ml-2 text-blue-500 hover:text-blue-600">
-                <Edit2 size={16} />
-              </button>
-            </h2>
-          )}
-          <p className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{email}</p>
+          <div>
+            {isEditingName ? (
+              <div className="flex items-center gap-2">
+                <input 
+                  type="text" 
+                  value={displayName} 
+                  onChange={(e) => setDisplayName(e.target.value)}
+                  className={`text-xl font-semibold bg-transparent border-b-2 px-1 focus:outline-none
+                    ${darkMode 
+                      ? 'border-gray-700 text-white focus:border-blue-500' 
+                      : 'border-gray-200 text-gray-900 focus:border-blue-500'}`}
+                />
+                <button 
+                  onClick={handleNameSave}
+                  className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
+                >
+                  <Check size={20} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <h2 className={`text-xl font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  {displayName}
+                </h2>
+                <button 
+                  onClick={handleNameEdit}
+                  className="p-1.5 rounded-lg text-blue-500 hover:bg-blue-500/10 transition-colors"
+                >
+                  <Edit2 size={16} />
+                </button>
+              </div>
+            )}
+            <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>
+              {email}
+            </p>
+          </div>
         </div>
       </div>
 
-      <ProfileSection
-        title="Personal Information"
-        description="Manage your personal information and how it appears to others."
-        icon={<User size={24} className="text-blue-500" />}
-        action="Edit Information"
-      />
-
-      <ProfileSection
-        title="Account Settings"
-        description="Update your account settings and preferences."
-        icon={<Lock size={24} className="text-green-500" />}
-        action="Manage Account"
-      />
-
-      <ProfileSection
-        title="Privacy Controls"
-        description="Control your privacy settings and manage data sharing."
-        icon={<Shield size={24} className="text-purple-500" />}
-        action="Adjust Privacy"
-      />
-
-      <ProfileSection
-        title="Notification Preferences"
-        description="Customize how and when you receive notifications."
-        icon={<Bell size={24} className="text-yellow-500" />}
-        action="Set Preferences"
-      />
+      {/* Settings Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <ProfileSection
+          title="Personal Information"
+          description="Manage your personal information and how it appears to others"
+          icon={User}
+          action="Edit Information"
+        />
+        
+        <ProfileSection
+          title="Account Settings"
+          description="Update your account settings and preferences"
+          icon={Lock}
+          action="Manage Account"
+        />
+        
+        <ProfileSection
+          title="Privacy Controls"
+          description="Control your privacy settings and manage data sharing"
+          icon={Shield}
+          action="Adjust Privacy"
+        />
+        
+        <ProfileSection
+          title="Notification Preferences"
+          description="Customize how and when you receive notifications"
+          icon={Bell}
+          action="Set Preferences"
+        />
+      </div>
 
       <ImageEditModal 
         isOpen={isEditModalOpen}

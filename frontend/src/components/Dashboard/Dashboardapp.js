@@ -6,16 +6,25 @@ import AIInsightsComponent from './AI';
 import RecentCheckIns from './CheckIns';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
-const DashboardHeader = ({ darkMode }) => (
-  <div className="flex justify-between items-center mb-8">
-    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+const DashboardHeader = ({ colors, selectedTheme, presetThemes }) => (
+  <div className={`flex justify-between items-center mb-8 ${colors.text}`}>
+    <h1 className={`text-3xl font-bold ${
+      selectedTheme 
+        ? 'text-inherit' 
+        : 'bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent'
+    }`}>
       Dashboard
     </h1>
   </div>
 );
 
 const Dashboard = () => {
-  const { darkMode } = useTheme();
+  const { 
+    darkMode, 
+    selectedTheme, 
+    colors, 
+    presetThemes 
+  } = useTheme();
   const [events, setEvents] = useState([]);
 
   useEffect(() => {
@@ -79,7 +88,6 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
-        // Update local state immediately
         setEvents(prevEvents =>
           prevEvents.map(event =>
             event.id === taskId ? { ...event, completed } : event
@@ -104,12 +112,10 @@ const Dashboard = () => {
       const eventToUpdate = events.find(event => event.id === taskId);
       if (!eventToUpdate) return false;
 
-      // Create the updated event object
       const updatedEvent = {
         ...eventToUpdate,
         completed: updates.completed,
         status: updates.status,
-        // Ensure we keep all existing event properties
         calendar: eventToUpdate.calendar,
         start_time: eventToUpdate.start_time,
         end_time: eventToUpdate.end_time,
@@ -128,7 +134,6 @@ const Dashboard = () => {
       });
 
       if (response.ok) {
-        // Update local state immediately
         setEvents(prevEvents =>
           prevEvents.map(event =>
             event.id === taskId 
@@ -150,35 +155,50 @@ const Dashboard = () => {
   };
 
   const handleUpdateTask = async (taskId, updates) => {
-    // If it's a drag and drop update (which includes status changes)
     if (updates.status) {
       return handleDragDropUpdate(taskId, updates);
     }
-    // If it's a simple completion toggle
     else if (updates.hasOwnProperty('completed')) {
       return handleTaskComplete(taskId, updates.completed);
     }
     return false;
   };
 
+  const containerClasses = `min-h-screen p-8 ${
+    selectedTheme 
+      ? presetThemes[selectedTheme]?.gradient
+      : darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gray-100'
+  }`;
+
   return (
-    <div className={`min-h-screen p-8 ${darkMode ? 'bg-gray-900 text-gray-200' : 'bg-gray-100 text-gray-800'}`}>
+    <div className={containerClasses}>
       <div className="max-w-7xl mx-auto">
-        <DashboardHeader darkMode={darkMode} />
+        <DashboardHeader 
+          colors={colors} 
+          selectedTheme={selectedTheme}
+          presetThemes={presetThemes}
+        />
         <div className="grid grid-cols-1 gap-8">
           <TaskOverviewComponent 
             darkMode={darkMode} 
+            colors={colors}
             events={events}
             onTaskComplete={handleTaskComplete}
             onUpdateTask={handleUpdateTask} 
           />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
-              <AIInsightsComponent darkMode={darkMode} />
+              <AIInsightsComponent 
+                darkMode={darkMode}
+                colors={colors} 
+              />
             </div>
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
               <RecentCheckIns 
-                darkMode={darkMode} 
+                darkMode={darkMode}
+                colors={colors}
                 events={events}
                 onTaskComplete={handleTaskComplete}
               />

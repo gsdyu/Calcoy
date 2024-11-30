@@ -457,7 +457,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
               }}
             >
               {isSelected && (
-                <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
+                <div className={`absolute inset-0 ${darkMode ? 'bg-blue-500 opacity-20' : 'bg-blue-50'} z-0 pointer-events-none`}></div>
               )}
               {renderAllDayEvents(allDayEvents)}
               {/* Drop Preview for All-day events */}
@@ -511,7 +511,7 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     onDoubleClick={(e) => handleTimeSlotDoubleClick(e, day, hour, onDateDoubleClick)}
                   >
                     {isSelected && (
-                      <div className="absolute inset-0 bg-blue-500 opacity-20 z-10 pointer-events-none"></div>
+                      <div className={`absolute inset-0 ${darkMode ? 'bg-blue-500 opacity-20' : 'bg-blue-50'} z-0 pointer-events-none`}></div>
                     )}
                   </div>
                 );

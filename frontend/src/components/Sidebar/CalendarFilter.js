@@ -19,13 +19,43 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
   const [username, setUsername] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
-  const [showMyCalendars, setShowMyCalendars] = useState(true);
-  const [showOtherCalendars, setShowOtherCalendars] = useState(true);
+  const [showMyCalendars, setShowMyCalendars] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('calendarTypesExpanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+  const [showServers, setShowServers] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('serversExpanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
+  const [showOtherCalendars, setShowOtherCalendars] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('otherCalendarsExpanded');
+      return saved !== null ? JSON.parse(saved) : true;
+    }
+    return true;
+  });
   const [popupVisible, setPopupVisible] = useState({});
   const [showImportPopup, setShowImportPopup] = useState(false);
-  const [showUsers, setShowUsers] = useState(true); // New state for Users dropdown
-  const [showServers, setShowServers] = useState(true);  
-  
+  const [showUsers, setShowUsers] = useState(true);
+
+  useEffect(() => {
+    localStorage.setItem('calendarTypesExpanded', JSON.stringify(showMyCalendars));
+  }, [showMyCalendars]);
+
+  useEffect(() => {
+    localStorage.setItem('serversExpanded', JSON.stringify(showServers));
+  }, [showServers]);
+
+  useEffect(() => {
+    localStorage.setItem('otherCalendarsExpanded', JSON.stringify(showOtherCalendars));
+  }, [showOtherCalendars]);
+
   // Fetch profile information
   useEffect(() => {
     const fetchProfile = async () => {
@@ -96,7 +126,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     };
     fetchServers();
   }, [setServers]);
- 
+
   const renderServerItem = (server, color , showEyeIcon = true) => (
     <div
       key={`server${server.id}`}
@@ -107,7 +137,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         e.preventDefault();
         toggleVisibility(`server${server.id}`, e);
       }}
-      onContextMenu={(e) => togglePopup(`server${server.id}`, e)} // Open color picker on right-click
+      onContextMenu={(e) => togglePopup(`server${server.id}`, e)}
     >
       <div className="flex items-center">
         {/* Display server image or fallback initial */}
@@ -116,7 +146,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             src={`http://localhost:5000${server.image_url}`} 
             alt={`${server.name} icon`} 
             className="w-4 h-4 mr-2 rounded-full"
-            onError={(e) => { e.target.style.display = 'none'; }} // Fallback if image fails
+            onError={(e) => { e.target.style.display = 'none'; }}
           />
         ) : (
           <div className="w-4 h-4 mr-2 bg-gray-400 rounded-full flex items-center justify-center text-xs">
@@ -194,7 +224,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       )}
     </div>
   );
- 
+
   // Fetch users tied to the selected server
   useEffect(() => {
     const fetchServerUsers = async () => {
@@ -238,17 +268,13 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     setPopupVisible(prev => ({
       ...prev,
       [item]: !prev[item],
-     }));
+    }));
   };
 
   const changeColor = (item, color) => {
-     
-   
     if (onColorChange) {
       onColorChange(item, color);  
     }
-  
-    
     togglePopup(item);
   };
 
@@ -269,11 +295,11 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       console.error('Error saving preferences:', error);
     }
   };
-   
 
   if (loading) {
     return <p>Loading...</p>;
   }
+
   const renderCalendarItem = (key, label, color, showEyeIcon = true) => (
     <div
       key={key}
@@ -351,15 +377,19 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
       )}
     </div>
   );
-  
+
   return (
-      <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
+    <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
       <style>{scrollbarStyles}</style>
     
-      <div className="space-y-2">
+      <div>
         <div
           className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-          onClick={() => setShowMyCalendars(!showMyCalendars)}
+          onClick={() => {
+            const newState = !showMyCalendars;
+            setShowMyCalendars(newState);
+            localStorage.setItem('calendarTypesExpanded', JSON.stringify(newState));
+          }}
         >
           <h3 className="font-medium">Calendar Types</h3>
           {showMyCalendars ? <FiChevronUp /> : <FiChevronDown />}
@@ -374,14 +404,18 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
           </div>
         )}
       </div>
-      {/* Conditionally render My Calendars and Other Calendars if no active server */}
+
       {!activeServer ? (
         <>
-          <div className="space-y-2">
+          <div>
             {/* Servers Dropdown */}
             <div
               className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-              onClick={() => setShowServers(!showServers)}
+              onClick={() => {
+                const newState = !showServers;
+                setShowServers(newState);
+                localStorage.setItem('serversExpanded', JSON.stringify(newState));
+              }}
             >
               <h3 className="font-medium">Servers</h3>
               {showServers ? <FiChevronUp /> : <FiChevronDown />}
@@ -389,14 +423,19 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             {showServers && (
               <div className="space-y-1 pl-2">
                 {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || itemColors?.server_default))}
-                
               </div>
             )}
-            {/* Other Calendars Section */}
-          <div className="space-y-2">
+          </div>
+          {/* Other Calendars Section */}
+
+          <div>
             <div
               className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-              onClick={() => setShowOtherCalendars(!showOtherCalendars)}
+              onClick={() => {
+                const newState = !showOtherCalendars;
+                setShowOtherCalendars(newState);
+                localStorage.setItem('otherCalendarsExpanded', JSON.stringify(newState));
+              }}
             >
               <h3 className="font-medium">Other calendars</h3>
               <div className="flex items-center gap-2">
@@ -418,31 +457,39 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             {showOtherCalendars && (
               <div className="space-y-1 pl-2">
                 {renderCalendarItem('holidays', 'Holidays in United States', itemColors?.holidays || 'bg-yellow-500')}
-                {otherCalendars.map(otherCalendar => renderCalendarItem(`${otherCalendar.imported_from}:${otherCalendar.imported_username}`, 
-                  (otherCalendar.imported_from === otherCalendar.imported_username) ? otherCalendar.imported_from : `${otherCalendar.imported_from}: ${otherCalendar.imported_username}`, 
-                itemColors?.[`${otherCalendar.imported_from}:${otherCalendar.imported_username}`] || 'bg-green-500'))}
+                {otherCalendars.map(otherCalendar => renderCalendarItem(
+                  `${otherCalendar.imported_from}:${otherCalendar.imported_username}`, 
+                  (otherCalendar.imported_from === otherCalendar.imported_username) 
+                    ? otherCalendar.imported_from 
+                    : `${otherCalendar.imported_from}: ${otherCalendar.imported_username}`, 
+                  itemColors?.[`${otherCalendar.imported_from}:${otherCalendar.imported_username}`] || 'bg-green-500'
+                ))}
               </div>
             )}
           </div>
-          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)}
-            onColorChange={onColorChange}/>}
-        </div>
+          {showImportPopup && <CalendarPopup onClose={() => setShowImportPopup(false)} onColorChange={onColorChange}/>}
         </>
       ) : (
-      <div className="space-y-2">
-        <div
-          className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
-          onClick={() => setShowUsers(!showUsers)}
-        >
-          <h3 className="font-medium">Users</h3>
-          {showUsers ? <FiChevronUp /> : <FiChevronDown />}
-        </div>
-        {showUsers && (
-          <div className="space-y-1 pl-2">
-            {serverUsers.map(user => renderCalendarItem(`server${user.server_id}:user${user.id}`, user.username, itemColors?.[`server${user.server_id}:user${user.id}`] || itemColors?.[`server${user.server_id}`]||itemColors?.server_default))}
+        <div>
+          <div
+            className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-gray-500/10 transition-colors duration-200"
+            onClick={() => setShowUsers(!showUsers)}
+          >
+            <h3 className="font-medium">Users</h3>
+            {showUsers ? <FiChevronUp /> : <FiChevronDown />}
           </div>
-        )}
-      </div>
+          {showUsers && (
+            <div className="space-y-1 pl-2">
+              {serverUsers.map(user => renderCalendarItem(
+                `server${user.server_id}:user${user.id}`, 
+                user.username, 
+                itemColors?.[`server${user.server_id}:user${user.id}`] || 
+                itemColors?.[`server${user.server_id}`] || 
+                itemColors?.server_default
+              ))}
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

@@ -165,17 +165,19 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
             >
               <Edit size={20} className="text-gray-500 dark:text-gray-400" />
             </button>
-            <button 
-              onClick={() => {
-                if (window.confirm(`Are you sure you want to delete this ${isTask ? 'task' : 'event'}?`)) {
-                  handleDelete();
-                }
-              }}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              disabled={isDeleting}
-            >
-              <Trash size={20} className="text-gray-500 dark:text-gray-400" />
-            </button>
+            {!event.isHoliday && (
+              <button 
+                onClick={() => {
+                  if (window.confirm(`Are you sure you want to delete this ${isTask ? 'task' : 'event'}?`)) {
+                    handleDelete();
+                  }
+                }}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
+                disabled={isDeleting}
+              >
+                <Trash size={20} className="text-gray-500 dark:text-gray-400" />
+              </button>
+            )}
             <button 
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import TitleCalendar from '@/components/Sidebar/TitleCalendar';
 import CalendarFilter from '@/components/Sidebar/CalendarFilter';
@@ -8,11 +8,10 @@ import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
 const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, setVisibleItems }) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
 
-  // Define the onLeave function
   const onLeave = async (serverId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/servers/${serverId}/leave`, {
@@ -22,7 +21,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
 
       if (response.ok) {
         setServers((prev) => prev.filter((server) => server.id !== serverId));
-        handleChangeActiveCalendar(null); // Set to null or default calendar after leaving
+        handleChangeActiveCalendar(null);
       } else {
         console.error('Failed to leave server');
       }
@@ -53,13 +52,20 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
     }
   };
 
+  // Combine theme gradient with original color scheme
+  const backgroundClasses = `
+    ${darkMode ? 'bg-gray-700' : 'bg-gray-100'}
+    ${selectedTheme && presetThemes[selectedTheme]?.gradient}
+    ${selectedTheme ? 'bg-opacity-95' : ''}
+  `;
+
   return (
-    <div className={`w-60 ${darkMode ? 'bg-gray-700' : 'bg-gray-100'} flex flex-col relative transition-all duration-300 h-full`}>
+    <div className={`w-60 ${backgroundClasses} flex flex-col relative transition-all duration-300 h-full`}>
       <div className="flex-grow overflow-hidden">
         <TitleCalendar 
           activeCalendar={activeCalendar}
           handleChangeActiveCalendar={handleChangeActiveCalendar}
-          onLeave={onLeave} // Pass onLeave to TitleCalendar
+          onLeave={onLeave}
         />
         
         <MiniCalendar 
@@ -69,6 +75,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           selectedDate={selectedDate}
           mainCalendarDate={mainCalendarDate}
         />
+        
         <CalendarFilter 
           onColorChange={onColorChange}
           itemColors={itemColors}

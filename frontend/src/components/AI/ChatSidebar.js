@@ -23,7 +23,8 @@ const ChatItem = ({
   onRename,
   onDelete,
   isCollapsed,
-  darkMode
+  darkMode,
+  selectedTheme,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(chat.title || '');
@@ -58,13 +59,15 @@ const ChatItem = ({
       className={`
         relative group flex items-center gap-2 p-3 my-1 rounded-xl
         transition-colors duration-200
-        ${isActive
-          ? darkMode
-            ? 'bg-gray-700'
-            : 'bg-gray-100'
-          : darkMode
-          ? 'hover:bg-gray-700'
-          : 'hover:bg-gray-100'}
+        ${selectedTheme 
+          ? 'bg-white/10 hover:bg-white/20' 
+          : isActive
+            ? darkMode
+              ? 'bg-gray-700'
+              : 'bg-gray-100'
+            : darkMode
+              ? 'hover:bg-gray-700'
+              : 'hover:bg-gray-100'}
         ${darkMode ? 'text-gray-300' : 'text-gray-600'}
       `}
     >
@@ -87,9 +90,11 @@ const ChatItem = ({
                 }}
                 className={`
                   w-full px-2 py-1 rounded-lg text-left
-                  ${darkMode
-                    ? 'bg-gray-700 text-gray-100 border-gray-600'
-                    : 'bg-white text-gray-900 border-gray-200'}
+                  ${selectedTheme
+                    ? 'bg-white/80 dark:bg-gray-900/80'
+                    : darkMode
+                      ? 'bg-gray-700 text-gray-100 border-gray-600'
+                      : 'bg-white text-gray-900 border-gray-200'}
                   border focus:outline-none focus:ring-1
                   ${darkMode
                     ? 'focus:ring-blue-500'
@@ -127,9 +132,11 @@ const ChatItem = ({
             className={`
               p-1 rounded-xl opacity-0 group-hover:opacity-100 
               transition-opacity duration-200
-              ${darkMode
-                ? 'hover:bg-gray-600 text-gray-400 hover:text-gray-200'
-                : 'hover:bg-gray-200 text-gray-500 hover:text-gray-700'}
+              ${selectedTheme
+                ? 'hover:bg-white/20 text-white/70 hover:text-white'
+                : darkMode
+                  ? 'hover:bg-gray-600 text-gray-400 hover:text-gray-200'
+                  : 'hover:bg-gray-200 text-gray-500 hover:text-gray-700'}
             `}
           >
             <MoreVertical size={17} />
@@ -140,9 +147,11 @@ const ChatItem = ({
               className={`
                 absolute right-0 mt-1 w-36 p-2 rounded-xl shadow-lg z-50
                 border transition-colors duration-200
-                ${darkMode
-                  ? 'bg-gray-700 border-gray-600'
-                  : 'bg-white border-gray-200'}
+                ${selectedTheme
+                  ? 'bg-white/90 dark:bg-gray-900/90 border-white/20'
+                  : darkMode
+                    ? 'bg-gray-700 border-gray-600'
+                    : 'bg-white border-gray-200'}
               `}
             >
               <button
@@ -154,9 +163,11 @@ const ChatItem = ({
                 className={`
                   flex items-center gap-2 px-3 py-2 text-sm
                   transition-colors duration-200 rounded-xl w-full
-                  ${darkMode
-                    ? 'text-gray-200 hover:bg-gray-600'
-                    : 'text-gray-700 hover:bg-gray-100'}
+                  ${selectedTheme
+                    ? 'text-gray-800 dark:text-gray-200 hover:bg-white/20'
+                    : darkMode
+                      ? 'text-gray-200 hover:bg-gray-600'
+                      : 'text-gray-700 hover:bg-gray-100'}
                 `}
               >
                 <Pencil size={16} />
@@ -195,9 +206,13 @@ const ChatItem = ({
         <TooltipContent 
           side="left" 
           className={`
-            ${darkMode ? 'bg-gray-300 text-gray-600' : 'bg-gray-100 text-gray-800'}
+            ${selectedTheme
+              ? 'bg-white/90 text-gray-800 dark:bg-gray-900/90 dark:text-gray-200'
+              : darkMode 
+                ? 'bg-gray-300 text-gray-600' 
+                : 'bg-gray-100 text-gray-800'}
             border ${darkMode ? 'border-gray-600' : 'border-gray-200'}
-            shadow-lg  rounded-xl max-w-52
+            shadow-lg rounded-xl max-w-52
           `}
         >
           <p>{chat.title || 'New Chat'}</p>
@@ -214,17 +229,32 @@ const ChatSidebar = ({
   onRename,
   onDelete,
   chats = [],
-  darkMode
+  darkMode,
+  selectedTheme,
 }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('chatSidebarCollapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('chatSidebarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   return (
     <div
       className={`
         flex flex-col border-l 
         transition-all duration-300 ease-in-out
-        overflow-hidden
-        ${darkMode ? 'bg-gray-800 border-gray-800' : 'bg-white border-gray-200'}
+        overflow-hidden shadow-lg shadow-black/10
+        ${selectedTheme 
+          ? 'bg-transparent border-white/20' 
+          : darkMode 
+            ? 'bg-gray-800 border-gray-800' 
+            : 'bg-white border-gray-200'}
         ${isCollapsed ? 'w-16' : 'w-72'}
         h-full
       `}
@@ -235,9 +265,13 @@ const ChatSidebar = ({
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={`
             p-3 m-2 rounded-xl transition-colors duration-200
-            ${darkMode
-              ? 'hover:bg-gray-700 text-gray-300 hover:text-gray-100'
-              : 'hover:bg-gray-100 text-gray-600 hover:text-gray-900'}
+            ${selectedTheme
+              ? darkMode 
+                ? 'hover:bg-black/20 text-white/80'
+                : 'hover:bg-white/20 text-black/80'
+              : darkMode
+                ? 'hover:bg-gray-700 text-gray-300'
+                : 'hover:bg-gray-100 text-gray-600'}
           `}
         >
           <Menu size={24} />
@@ -284,6 +318,7 @@ const ChatSidebar = ({
                 onDelete={onDelete}
                 isCollapsed={isCollapsed}
                 darkMode={darkMode}
+                selectedTheme={selectedTheme}
               />
             </motion.div>
           ))}
