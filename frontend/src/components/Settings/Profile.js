@@ -191,31 +191,35 @@ const Profile = () => {
     }
   };
 
-  const ProfileSection = ({ title, description, icon: Icon, action }) => (
-    <div className={`p-6 rounded-2xl transition-colors ${
-      darkMode 
-        ? 'bg-gray-900/40 border border-gray-800 hover:bg-gray-800/40' 
-        : 'bg-white border border-gray-200 hover:bg-gray-50'
-    }`}>
-      <div className="flex items-center gap-4 mb-4">
-        <div className={`p-3 rounded-xl ${darkMode ? 'bg-[#2A2D34]' : 'bg-gray-100'}`}>
-          <Icon className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`} size={20} />
-        </div>
-        <div>
-          <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
-            {title}
-          </h2>
-          <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-            {description}
-          </p>
-        </div>
+const ProfileSection = ({ title, description, icon: Icon, action, onClick }) => (
+  <div className={`p-6 rounded-2xl transition-colors ${
+    darkMode 
+      ? 'bg-gray-900/40 border border-gray-800 hover:bg-gray-800/40' 
+      : 'bg-white border border-gray-200 hover:bg-gray-50'
+  }`}>
+    <div className="flex items-center gap-4 mb-4">
+      <div className={`p-3 rounded-xl ${darkMode ? 'bg-[#2A2D34]' : 'bg-gray-100'}`}>
+        <Icon className={`${darkMode ? 'text-gray-400' : 'text-gray-600'}`} size={20} />
       </div>
-      <button className="w-full bg-blue-500 text-white py-2.5 px-4 rounded-xl font-medium 
-        hover:bg-blue-600 transition-all duration-200">
-        {action}
-      </button>
+      <div>
+        <h2 className={`text-lg font-semibold ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+          {title}
+        </h2>
+        <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+          {description}
+        </p>
+      </div>
     </div>
-  );
+    <button 
+      onClick={onClick} 
+      className="w-full bg-blue-500 text-white py-2.5 px-4 rounded-xl font-medium 
+        hover:bg-blue-600 transition-all duration-200"
+    >
+      {action}
+    </button>
+  </div>
+);
+
 
   if (loading) {
     return (
@@ -312,7 +316,9 @@ const Profile = () => {
           description="Control your privacy settings and manage data sharing"
           icon={Shield}
           action="Adjust Privacy"
+          onClick={() => window.location.href = '/Privacy'}   
         />
+
         
         <ProfileSection
           title="Notification Preferences"

@@ -14,15 +14,24 @@ const FriendCalendar = ({ friend }) => {
     try {
       const response = await fetch(`http://localhost:5000/api/friends/${friend.id}/events`, {
         method: 'GET',
-        credentials: 'include', 
+        credentials: 'include',
       });
+  
       const data = await response.json();
-      setEvents(data);
+  
+      // Ensure `data` is an array
+      if (Array.isArray(data)) {
+        setEvents(data);
+      } else {
+        // Handle cases where "limited" or "private" privacy doesn't return events
+        setEvents([]);
+      }
     } catch (error) {
       console.error('Error fetching friend events:', error);
+      setEvents([]); // Fallback to an empty array
     }
   };
-
+  
   useEffect(() => {
     if (friend) {
       fetchFriendEvents();
@@ -40,7 +49,6 @@ const FriendCalendar = ({ friend }) => {
     const day = date.getDay();
     return day === 0 || day === 6;
   };
-
   const renderEventCompact = (event) => {
     const calendarType = event.calendar || 'default';
     const eventColor = (() => {
@@ -55,17 +63,17 @@ const FriendCalendar = ({ friend }) => {
           return 'bg-gray-400';
       }
     })();
-
+  
     const isTask = event.calendar === 'Task';
     const isCompleted = event.completed;
     const eventTime = new Date(event.start_time).toLocaleTimeString([], { 
       hour: 'numeric', 
       minute: '2-digit' 
     });
-
+  
     return (
       <div
-        key={event.id}
+        key={`${event.username || event.title}-${event.start_time}`}
         className={`
           flex justify-between items-center
           text-xs mb-1 truncate
@@ -83,7 +91,7 @@ const FriendCalendar = ({ friend }) => {
             <span className="inline-block w-2 h-2 rounded-full bg-white/50 mr-1 flex-shrink-0" />
           )}
           <span className={`truncate ${isTask && isCompleted ? 'line-through' : ''}`}>
-            {event.title}
+            {event.username || event.title}
           </span>
         </div>
         <span className={`ml-1 text-[10px] text-white/75 ${isCompleted ? 'opacity-50' : ''}`}>
@@ -92,6 +100,7 @@ const FriendCalendar = ({ friend }) => {
       </div>
     );
   };
+  
 
   const renderCalendar = () => {
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();

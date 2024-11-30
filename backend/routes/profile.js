@@ -279,13 +279,12 @@ module.exports = (app, pool) => {
       res.status(500).json({ message: 'Failed to remove friend' });
     }
   });
-
   app.get('/api/friends/:friendId/events', authenticateToken, async (req, res) => {
     const friendId = parseInt(req.params.friendId, 10);
     const userId = req.user.userId;
   
     try {
-      // Check if the users are friends
+      // Verify friendship
       const friendCheck = await pool.query(
         `SELECT * FROM friend_requests 
          WHERE ((sender_id = $1 AND receiver_id = $2) OR (sender_id = $2 AND receiver_id = $1)) 
@@ -294,23 +293,81 @@ module.exports = (app, pool) => {
       );
   
       if (friendCheck.rows.length === 0) {
-        console.error('Access denied: Not friends');
         return res.status(403).json({ message: 'Access denied: Not friends' });
       }
   
-      const events = await pool.query(
-        `SELECT * FROM events 
-         WHERE user_id = $1 AND server_id IS NULL
-         ORDER BY start_time`,
-        [friendId]
-      );
+      // Fetch the friend's privacy setting
+      const privacyResult = await pool.query('SELECT privacy, username FROM users WHERE id = $1', [friendId]);
+      const { privacy, username } = privacyResult.rows[0] || { privacy: 'public', username: 'Unknown User' };
   
-      res.json(events.rows);
+      let events = [];
+      if (privacy === 'public') {
+        const eventsQuery = `SELECT * FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+        const eventsResult = await pool.query(eventsQuery, [friendId]);
+        events = eventsResult.rows;
+      } else if (privacy === 'limited') {
+        const eventsQuery = `SELECT start_time, end_time FROM events WHERE user_id = $1 AND server_id IS NULL ORDER BY start_time`;
+        const eventsResult = await pool.query(eventsQuery, [friendId]);
+        events = eventsResult.rows.map(event => ({
+          username,
+          start_time: event.start_time,
+          end_time: event.end_time,
+        }));
+      } else {
+        return res.status(200).json([]); // Private: No events visible
+      }
+  
+      res.json(events);
     } catch (error) {
       console.error('Error fetching friend events:', error);
       res.status(500).json({ message: 'Failed to fetch friend events' });
     }
   });
+  
+  app.get('/api/user/privacy-setting', authenticateToken, async (req, res) => {
+    const userId = req.user.userId; // Extract user ID from the authentication middleware
+  
+    try {
+      const result = await pool.query('SELECT id, privacy FROM users WHERE id = $1', [userId]);
+      if (result.rows.length === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.json({
+        userId: result.rows[0].id,
+        privacy: result.rows[0].privacy,
+      });
+    } catch (error) {
+      console.error('Error fetching privacy setting:', error);
+      res.status(500).json({ message: 'Failed to fetch privacy setting' });
+    }
+  });
+  app.put('/api/user/privacy-setting', authenticateToken, async (req, res) => {
+    const { userId, privacy } = req.body;
+  
+    if (!['public', 'limited', 'private'].includes(privacy)) {
+      return res.status(400).json({ message: 'Invalid privacy setting' });
+    }
+  
+    try {
+      const result = await pool.query('UPDATE users SET privacy = $1 WHERE id = $2 RETURNING id, privacy', [privacy, userId]);
+      if (result.rowCount === 0) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+  
+      res.json({
+        userId: result.rows[0].id,
+        privacy: result.rows[0].privacy,
+        message: 'Privacy setting updated successfully',
+      });
+    } catch (error) {
+      console.error('Error updating privacy setting:', error);
+      res.status(500).json({ message: 'Failed to update privacy setting' });
+    }
+  });
+  
+  
+  
 
   app.get('/api/user/theme', authenticateToken, async (req, res) => {
     const userId = req.user.userId;

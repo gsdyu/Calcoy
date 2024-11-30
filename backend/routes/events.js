@@ -4,19 +4,19 @@ const { createEmbeddings } = require('../ai/embeddings');
 module.exports = (app, pool, io) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
-    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id } = req.body;
+    const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, privacy } = req.body;
     const userId = req.user.userId;
-
+  
     const serverId = server_id !== undefined && server_id !== null ? parseInt(server_id) : null;
     const includeInPersonal = serverId !== null;  
-
+  
     const startDate = new Date(start_time);
     const endDate = new Date(end_time);
-
+  
     if (endDate < startDate) {
       return res.status(400).json({ error: 'End time cannot be before start time' });
     }
-
+  
     try {
       let embed = '';
       try {
@@ -24,14 +24,14 @@ module.exports = (app, pool, io) => {
       } catch {
         console.error('Embed error: failed to create embedding for event');
       }
-
+  
       const result = await pool.query(
-        `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal) 
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+        `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal, privacy) 
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
          RETURNING *`,
-        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal]
+        [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal, privacy || 'public']
       );
-
+  
       if (embed) {
         await pool.query(`
           UPDATE events
@@ -39,23 +39,19 @@ module.exports = (app, pool, io) => {
           WHERE id = $2
         `, [JSON.stringify(embed[0]), result.rows[0].id]);
       }
-
-      // Debug log before emitting event
-      console.log("Emitting 'eventCreated' WebSocket event for event ID:", result.rows[0].id);
-
-      // Emit WebSocket event only if event creation is successful
+  
       io.emit('eventCreated', result.rows[0]);
-
+  
       res.status(201).json({
         message: 'Event created successfully',
         event: result.rows[0],
       });
     } catch (error) {
-      await pool.query('ROLLBACK');
       console.error('Create event error:', error);
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+  
 
    
   // Get events route

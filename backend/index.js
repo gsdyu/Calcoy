@@ -60,6 +60,8 @@ pool.query(`
   CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
     username VARCHAR(32) UNIQUE,
+    privacy VARCHAR(20) DEFAULT 'public',
+
     email VARCHAR(255) UNIQUE NOT NULL,
     password TEXT,
     profile_image VARCHAR(255),
@@ -118,6 +120,8 @@ pool.query(`
       user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       title VARCHAR(255) NOT NULL,
       description TEXT,
+      privacy VARCHAR(20) DEFAULT 'public',
+
       start_time TIMESTAMPTZ NOT NULL,
       end_time TIMESTAMPTZ NOT NULL,
       location VARCHAR(255),
