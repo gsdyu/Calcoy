@@ -3,92 +3,78 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Sun, Moon, Monitor } from 'lucide-react';
 
 const CustomizationPage = () => {
-  const { darkMode, toggleDarkMode, selectedTheme, setSelectedTheme } = useTheme();
+  const { 
+    darkMode,
+    selectedTheme,
+    currentMode,
+    colors,
+    presetThemes,
+    handleThemeChange,
+    handleColorModeChange
+  } = useTheme();
+  
+  const [selectedOption, setSelectedOption] = React.useState(currentMode);
 
-  const presetThemes = [
-    { id: 'default', name: 'Default', gradient: 'bg-gradient-to-b from-yellow-100 via-purple-100 to-blue-200' },
-    { id: 'sky-waves', name: 'Sky Waves', gradient: 'bg-gradient-to-b from-sky-400 via-blue-500 to-blue-600' },
-    { id: 'blue-purple', name: 'Blue Purple', gradient: 'bg-gradient-to-b from-blue-400 via-blue-500 to-purple-600' },
-    { id: 'northern-lights', name: 'Northern Lights', gradient: 'bg-gradient-to-b from-blue-400 via-purple-300 to-green-200' }
-  ];
+  React.useEffect(() => {
+    setSelectedOption(selectedTheme || currentMode);
+  }, [darkMode, selectedTheme, currentMode]);
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-[#0B0F17]' : 'bg-white'} p-8`}>
+    <div className={`p-8 ${selectedTheme ? presetThemes[selectedTheme]?.gradient : ''}`}>
       <div className="max-w-3xl mx-auto">
-        <h1 className={`text-2xl font-semibold mb-8 ${darkMode ? 'text-white' : 'text-black'}`}>
+        <h1 className={`text-2xl font-semibold mb-8 ${colors.text}`}>
           Themes
         </h1>
 
         <div className="space-y-8">
           <div>
-            <h2 className={`text-sm font-medium mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <h2 className={`text-sm font-medium mb-4 ${colors.textSecondary}`}>
               COLOR MODE
             </h2>
             <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={() => toggleDarkMode(false)}
-                className={`flex items-center p-4 rounded-2xl border transition-colors ${
-                  !darkMode
-                    ? 'bg-blue-50 border-blue-200'
-                    : 'bg-gray-900/40 border-gray-800 hover:bg-gray-800/40'
-                }`}
-              >
-                <Sun className={`w-5 h-5 mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-                <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Light mode</span>
-              </button>
-
-              <button
-                onClick={() => toggleDarkMode(true)}
-                className={`flex items-center p-4 rounded-2xl border transition-colors ${
-                  darkMode
-                    ? 'bg-blue-900/25 border-blue-800/50'
-                    : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <Moon className={`w-5 h-5 mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-                <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>Dark mode</span>
-              </button>
-
-              <button
-                onClick={() => toggleDarkMode(undefined)}
-                className={`flex items-center p-4 rounded-2xl border transition-colors ${
-                  darkMode === undefined
-                    ? 'bg-blue-900/25 border-blue-800/50'
-                    : darkMode 
-                      ? 'bg-gray-900/40 border-gray-800 hover:bg-gray-800/40'
-                      : 'bg-white border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <Monitor className={`w-5 h-5 mr-3 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`} />
-                <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>System</span>
-              </button>
+              {[
+                { id: 'light', icon: Sun, label: 'Light mode' },
+                { id: 'dark', icon: Moon, label: 'Dark mode' },
+                { id: 'system', icon: Monitor, label: 'System' }
+              ].map(({ id, icon: Icon, label }) => (
+                <button
+                  key={id}
+                  onClick={() => {
+                    handleColorModeChange(id);
+                    setSelectedOption(id);
+                  }}
+                  className={`flex items-center p-4 rounded-2xl border transition-colors ${
+                    selectedOption === id ? colors.selectedBg + ' ' + colors.selectedBorder : colors.buttonBg + ' ' + colors.buttonBorder
+                  }`}
+                >
+                  <Icon className={`w-5 h-5 mr-3 ${colors.textSecondary}`} />
+                  <span className={colors.text}>{label}</span>
+                </button>
+              ))}
             </div>
           </div>
 
           <div>
-            <h2 className={`text-sm font-medium mb-4 ${darkMode ? 'text-gray-400' : 'text-gray-500'}`}>
+            <h2 className={`text-sm font-medium mb-4 ${colors.textSecondary}`}>
               PRESET THEMES
             </h2>
             <div className="space-y-2">
-              {presetThemes.map((theme) => (
+              {Object.entries(presetThemes).map(([id, theme]) => (
                 <button
-                  key={theme.id}
-                  onClick={() => setSelectedTheme(theme.id)}
-                  className={`w-full p-4 rounded-2xl transition-colors flex items-center ${
-                    selectedTheme === theme.id
-                      ? darkMode 
-                        ? 'bg-blue-900/25 border border-blue-800/50'
-                        : 'bg-blue-50 border border-blue-200'
-                      : darkMode
-                        ? 'bg-gray-900/40 border border-gray-800 hover:bg-gray-800/40'
-                        : 'bg-white border border-gray-200 hover:bg-gray-50'
+                  key={id}
+                  onClick={() => {
+                    handleThemeChange(id);
+                    setSelectedOption(id);
+                  }}
+                  className={`w-full p-4 rounded-2xl border transition-colors ${
+                    selectedOption === id ? colors.selectedBg + ' ' + colors.selectedBorder : colors.buttonBg + ' ' + colors.buttonBorder
                   }`}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-2xl overflow-hidden">
+                    <div className="w-10 h-10 rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
                       <div className={`w-full h-full ${theme.gradient}`}></div>
                     </div>
-                    <span className={darkMode ? 'text-gray-300' : 'text-gray-700'}>
+                    <span className={colors.text}>
                       {theme.name}
                     </span>
                   </div>

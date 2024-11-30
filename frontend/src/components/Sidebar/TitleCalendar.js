@@ -6,21 +6,21 @@ import { useTheme } from '@/contexts/ThemeContext';
 
 const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
   const { darkMode } = useTheme();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [dropdownMainOpen, setDropdownMainOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   
   const dropdownRef = useRef(null);
-  const dropdownMainRef = useRef(null);
+  const headerRef = useRef(null);
   const confirmModalOverlayRef = useRef(null);
   const inviteModalOverlayRef = useRef(null);
   const exportModalOverlayRef = useRef(null);
 
-  const handleHeaderClick = () => setDropdownOpen(!dropdownOpen);
-  const handleMainHeaderClick = () => setDropdownMainOpen(!dropdownMainOpen);
+  const handleHeaderClick = () => {
+    setIsOpen(!isOpen);
+  };
 
   const handleCopyLink = async () => {
     navigator.clipboard.writeText(`https://timewise.com/invite/${activeCalendar.invite_link}`);
@@ -45,11 +45,12 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-      if (dropdownMainRef.current && !dropdownMainRef.current.contains(event.target)) {
-        setDropdownMainOpen(false);
+      if (
+        dropdownRef.current && 
+        !dropdownRef.current.contains(event.target) &&
+        !headerRef.current.contains(event.target)
+      ) {
+        setIsOpen(false);
       }
       if (confirmModalOverlayRef.current === event.target) {
         setShowConfirmModal(false);
@@ -94,71 +95,62 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
 
   return (
     <div className="relative p-4 flex flex-col items-center">
-      {activeCalendar && activeCalendar.name ? (
-        <div className={baseStyles.header} onClick={handleHeaderClick}>
-          <h1 className="text-lg font-medium text-center flex-grow">
-            {activeCalendar.name}
-          </h1>
-          {dropdownOpen ? (
-            <X size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
-          ) : (
-            <ChevronDown size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
-          )}
-        </div>
-      ) : (
-        <div className={baseStyles.header} onClick={handleMainHeaderClick}>
-          <h1 className="text-lg font-medium text-center flex-grow">
-            Main Calendar
-          </h1>
-          {dropdownMainOpen ? (
-            <X size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
-          ) : (
-            <ChevronDown size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
-          )}
-        </div>
-      )}
+      <div 
+        ref={headerRef}
+        className={baseStyles.header} 
+        onClick={handleHeaderClick}
+      >
+        <h1 className="text-lg font-medium text-center flex-grow">
+          {activeCalendar?.name || 'Main Calendar'}
+        </h1>
+        {isOpen ? (
+          <X size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
+        ) : (
+          <ChevronDown size={16} className={darkMode ? "text-gray-400" : "text-gray-500"} />
+        )}
+      </div>
 
-      {dropdownOpen && (
+      {isOpen && (
         <div ref={dropdownRef} className={baseStyles.dropdown}>
-          <button
-            onClick={() => {
-              setShowInviteModal(true);
-              setDropdownOpen(false);
-            }}
-            className={baseStyles.dropdownItem}
-          >
-            <UserPlus size={16} className="mr-2 text-blue-500" />
-            <span className="font-medium">Invite People</span>
-          </button>
+          {activeCalendar ? (
+            <>
+              <button
+                onClick={() => {
+                  setShowInviteModal(true);
+                  setIsOpen(false);
+                }}
+                className={baseStyles.dropdownItem}
+              >
+                <UserPlus size={16} className="mr-2 text-blue-500" />
+                <span className="font-medium">Invite People</span>
+              </button>
 
-          <div className={darkMode ? "border-t border-gray-800/10" : "border-t border-gray-200"}></div>
+              <div className={darkMode ? "border-t border-gray-800/10" : "border-t border-gray-200"}></div>
 
-          <button
-            onClick={() => {
-              setShowConfirmModal(true);
-              setDropdownOpen(false);
-            }}
-            className={`${baseStyles.dropdownItem} text-red-500`}
-          >
-            <LogOut size={16} className="mr-2" />
-            <span className="font-medium">Leave Server</span>
-          </button>
-        </div>
-      )}
-
-      {dropdownMainOpen && (
-        <div ref={dropdownMainRef} className={baseStyles.dropdown}>
-          <button
-            onClick={() => {
-              setShowExportModal(true);
-              setDropdownMainOpen(false);
-              generateICS();
-            }}
-            className={baseStyles.dropdownItem}
-          >
-            <UserPlus size={16} className="mr-2 text-blue-500" />
-            <span className="font-medium">Export Calendar</span>
-          </button>
+              <button
+                onClick={() => {
+                  setShowConfirmModal(true);
+                  setIsOpen(false);
+                }}
+                className={`${baseStyles.dropdownItem} text-red-500`}
+              >
+                <LogOut size={16} className="mr-2" />
+                <span className="font-medium">Leave Server</span>
+              </button>
+            </>
+          ) : (
+            <button
+              onClick={() => {
+                setShowExportModal(true);
+                setIsOpen(false);
+                generateICS();
+              }}
+              className={baseStyles.dropdownItem}
+            >
+              <UserPlus size={16} className="mr-2 text-blue-500" />
+              <span className="font-medium">Export Calendar</span>
+            </button>
+          )}
         </div>
       )}
 

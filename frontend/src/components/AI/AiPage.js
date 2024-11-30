@@ -12,7 +12,7 @@ import ChatSidebar from './ChatSidebar';
 import DeleteChatModal from './DeleteChatModal';
 
 const AiPage = () => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, colors, presetThemes } = useTheme();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -263,14 +263,14 @@ const AiPage = () => {
     setInput('');
     handleRemoveImage();
 
-
     const check = await fetch('http://localhost:5000/auth/check', {
       method: 'GET',
       credentials: 'include',
-    })
+    });
     if (!check.ok) {
-      console.error('not login')
+      console.error('not login');
       setIsLoading(false);
+      return;
     }
 
     setIsLoading(true);
@@ -456,10 +456,25 @@ const AiPage = () => {
     }
   };
   
+  const containerClasses = `flex h-screen ${
+    selectedTheme 
+      ? presetThemes[selectedTheme]?.gradient
+      : darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gray-100'
+  }`;
+
+  const mainContentClasses = `${styles.container} flex-1 ${
+    selectedTheme 
+      ? 'bg-transparent' 
+      : darkMode 
+        ? 'bg-gray-900' 
+        : 'bg-gray-100'
+  }`;
 
   return (
-    <div className="flex h-screen">
-      <div className={`${styles.container} flex-1`}>
+    <div className={containerClasses}>
+      <div className={mainContentClasses}>
         <h1 className={styles.aiheader}>
           Timewise AI<Sparkles className={styles.ailogo} />
         </h1>
@@ -544,7 +559,9 @@ const AiPage = () => {
             onChange={handleInputChange}
             onKeyDown={handleKeyPress}
             placeholder="Ask Timewise AI..."
-            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''}`}
+            className={`${styles.textarea} ${darkMode ? styles.textareaDark : ''} ${
+              selectedTheme ? 'bg-white/80 dark:bg-gray-900/80' : ''
+            }`}
             rows={1}
           />
           {selectedFile && (
@@ -571,10 +588,12 @@ const AiPage = () => {
           )}
           <button
             type="submit"
-            disabled={!input.trim()}
+            disabled={!input.trim() && !selectedFile}
             className={`${styles.button} ${
               input.trim() || selectedFile ? (darkMode ? styles.buttonActiveDark : styles.buttonActive) : ''
-            } ${darkMode ? styles.buttonDark : styles.buttonLight}`}
+            } ${darkMode ? styles.buttonDark : styles.buttonLight} ${
+              selectedTheme ? 'bg-white/80 dark:bg-gray-900/80 hover:bg-white/90 dark:hover:bg-gray-900/90' : ''
+            }`}
           >
             <ArrowUp strokeWidth={2.5} className={styles.sendicon} />
           </button>
@@ -608,6 +627,8 @@ const AiPage = () => {
         onDelete={handleDeleteChat}
         chats={chats}
         darkMode={darkMode}
+        selectedTheme={selectedTheme}
+        colors={colors}
       />
     </div>
   );

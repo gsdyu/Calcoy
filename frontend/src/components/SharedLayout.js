@@ -1,13 +1,19 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Navbar from './Navigation/Navbar';
 import AddEditEventModal from './Modals/AddEditEventModal';
 import NotificationSnackbar from './Modals/NotificationSnackbar';
 import { useTheme } from '@/contexts/ThemeContext';
 
 const SharedLayout = ({ children }) => {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('navbarCollapsed');
+      return saved ? JSON.parse(saved) : false;
+    }
+    return false;
+  });
   const [activeItem, setActiveItem] = useState('Dashboard');
   const [isAddingEvent, setIsAddingEvent] = useState(false);
   const [notification, setNotification] = useState({
@@ -17,6 +23,11 @@ const SharedLayout = ({ children }) => {
     isVisible: false
   });
   const { darkMode } = useTheme();
+
+  // Save collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
+  }, [isCollapsed]);
 
   const showNotification = (message, type = 'success', action = '') => {
     setNotification({ message, type, action, isVisible: true });

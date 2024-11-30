@@ -7,7 +7,7 @@ import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiveCalendar, fetchEvents, servers, setServers }) => {
-  const { darkMode } = useTheme();
+  const { darkMode, selectedTheme, presetThemes } = useTheme();
   const [isCreateCalendarOpen, setIsCreateCalendarOpen] = useState(false);
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
@@ -70,8 +70,15 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     }
   };
 
+  // Get the background classes based on theme
+  const backgroundClasses = selectedTheme 
+    ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
+    : darkMode 
+      ? 'bg-gray-800' 
+      : 'bg-gray-200';
+
   return (
-    <div className={`w-16 ${darkMode ? 'bg-gray-800' : 'bg-gray-200'} flex flex-col items-center py-4 h-screen relative z-40`}>
+    <div className={`w-16 ${backgroundClasses} flex flex-col items-center py-4 h-screen relative z-40`}>
       <button 
         onClick={toggleSidebar}
         className="absolute -left-3 top-1/2 transform -translate-y-1/2 bg-blue-500 hover:bg-blue-600 text-white rounded-full p-1 shadow-md transition-all duration-300"
