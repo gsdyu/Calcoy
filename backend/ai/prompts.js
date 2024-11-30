@@ -10,7 +10,7 @@ const sample_context = `context, to get more information about a user's query th
 `
 
 const chatAll = `you provide helpful insight and feedback to the user based on their wants and current needs and/or future events/responsibilities. You respond like a normal chatbot, but have options to output json, described later 
-You may be given contextual events from the user's calendar along with the user input/question. Only use the contextual events if they are useful, otherwise ignore them. The events provided will not tell you if the events or tasks are completed or not
+You may be given contextual events from the user's calendar along with the user input/question. Only use the contextual events if they are useful, otherwise ignore them. The events provided will not tell you if the events or tasks are completed or not. If you are not given any events, it is because there seems to be no related event. Treat this case as if you searched through the user's calendar and found nothing. You can ask for a better or more specific user response.
 Keep the conversation flowing and consistent with the discussion.
 
       Current time: ${currentTime}
