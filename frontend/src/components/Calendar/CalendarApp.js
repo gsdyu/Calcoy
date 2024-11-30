@@ -1,4 +1,5 @@
 'use client';
+import { io } from 'socket.io-client';
 
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
@@ -37,7 +38,53 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
+  const [socketConnect, setSocketConnect] = useState(false);
+  const currentUser = useRef(null);
+
+  // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('groupCalendarCollapsed');
+      return saved ? !JSON.parse(saved) : false;  
+    }
+    return false;
+  });
   
+  useEffect(() => {
+    localStorage.setItem('groupCalendarCollapsed', JSON.stringify(!isSidebarOpen));
+  }, [isSidebarOpen]);
+
+  const handleColorChange = async (item, color) => {
+    // Update UI immediately
+    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
+    
+    // Save to server in background
+    try {
+      const response = await fetch('http://localhost:5000/profile/preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ 
+          preferences: {
+            visibility: visibleItems,
+            colors: { ...itemColors, [item]: color },
+          }
+        }),
+      });
+      
+      if (!response.ok) {
+        // If save fails, revert the change
+        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
+        throw new Error('Failed to save color preference');
+      }
+    } catch (error) {
+      console.error('Error saving color preference:', error);
+      showNotification('Failed to save color preference');
+    }
+  };
+
   // New useEffect for loading preferences at app initialization
   useEffect(() => {
     const fetchPreferences = async () => {
@@ -99,31 +146,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     setNotification({ message, action, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
   };
-
-  const handleColorChange = async (item, color) => {
-    // Update UI immediately
-    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
-    
-    // Save to server in background
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          preferences: {
-            visibility: visibleItems,
-            colors: { ...itemColors, [item]: color }
-          }
-        }),
-      });
-      
-      if (!response.ok) {
-        // If save fails, revert the change
-        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
-        throw new Error('Failed to save color preference');
 
   const getVisibility = (event, calendarType, activeCalendar) => {
     const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
@@ -200,7 +222,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     try {
       const url = activeCalendar !== null 
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events?server_id=${activeCalendar.id}` 
-        : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
+        : '${process.env.NEXT_PUBLIC_SERVER_URL}/events';
       
       const response = await fetch(url, {
         credentials: 'include',
@@ -335,6 +357,8 @@ import { useTheme } from '@/contexts/ThemeContext';
         showNotification(`Task marked as ${completed ? 'completed' : 'uncompleted'}`);
         handleCloseEventDetails();
   
+        // not implemented yet
+        //socket.emit('taskCompleted', { taskId, completed });
       } else {
         throw new Error('Failed to update task');
       }
@@ -390,6 +414,8 @@ import { useTheme } from '@/contexts/ThemeContext';
   
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
   
+          // Emit WebSocket event only after saving completes
+          //socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
         }

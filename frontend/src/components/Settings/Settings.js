@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useTheme } from '@/contexts/ThemeContext';
 import NavBar from './NavBar';
-import SearchBars from './SearchBars';
+import SearchBar from './SearchBar';
 import Profile from './Profile';
 import CustomizationPage from './CustomizationPage';
 

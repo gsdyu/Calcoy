@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import TaskOverviewComponent from './TaskOverview/TaskOverview';
+import AIInsightsComponent from './Ai';
 import RecentCheckIns from './CheckIns';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
