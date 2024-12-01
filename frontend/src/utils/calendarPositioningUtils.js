@@ -76,7 +76,7 @@ export const calculateEventColumns = (events) => {
         width: '100%',
         left: '0%',
         zIndex: 20,
-        opacity: 0.85  // Base opacity for non-overlapping events
+        opacity: 0.65  // Lower base opacity for non-overlapping events
       });
       processedEvents.add(event.id);
     }
@@ -92,7 +92,7 @@ export const calculateEventColumns = (events) => {
         width: `${width}%`,
         left: `${index * width}%`,
         zIndex: 20 + index,
-        opacity: 0.85 + (index * 0.15)  // Increase opacity more dramatically for better contrast
+        opacity: 0.65 + (index * 0.25)  // Increased opacity steps for better contrast
       });
     });
   });
@@ -128,7 +128,7 @@ export const processEvents = (events) => {
         left: '0%',
         width: '95%',
         zIndex: 5,
-        opacity: 0.85 // Base opacity for container
+        opacity: 0.65 // Lower base opacity for container
       });
       processed.add(container.id);
 
@@ -144,7 +144,7 @@ export const processEvents = (events) => {
           left: `${adjustedLeft}%`,
           width: `${adjustedWidth}%`,
           zIndex: 10 + (pos.column || 0),
-          opacity: pos.opacity || 0.85
+          opacity: pos.opacity || 0.65
         });
         processed.add(event.id);
       });
@@ -162,7 +162,7 @@ export const processEvents = (events) => {
         left: pos.left,
         width: pos.width,
         zIndex: 15 + (pos.column || 0),
-        opacity: pos.opacity || 0.85
+        opacity: pos.opacity || 0.65
       });
     });
   }

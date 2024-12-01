@@ -645,8 +645,9 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
                       {...(event.isHoliday ? {} : getDragHandleProps(augmentedEvent))}
-                      className={`absolute ${bgGradientOther} text-xs overflow-hidden rounded cursor-pointer 
+                        className={`absolute text-xs overflow-hidden rounded cursor-pointer 
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
+                        ${eventPositions.get(event.id)?.zIndex > 20 ? `bg-${eventColor}` : bgGradientOther}
                         ${darkMode ? `text-${eventColor.replace('-500','')}-300` : `text-${eventColor.replace('-500','')}-700`}
                         ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
                       style={{
