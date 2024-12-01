@@ -104,3 +104,48 @@ Active development - Features being implemented:
 - Additional customization options
 - Extended collaboration features
 - Performance optimizations
+
+
+## ✨ Special Thanks
+
+We would like to express our heartfelt gratitude to the following individuals who contributed to making Calcoy a reality:
+
+### Core Team
+- **Nam Ton**
+  - Team Lead & Project Manager
+  - Technical Product Owner
+  - Lead UI/UX Developer
+  - Primary architect of the application's core functionality
+  - Implemented major calendar features and interface enhancements
+
+- **Justin Chong**
+  - DevOps Lead
+  - Backend Development
+  - AI Integration
+  - Deployment Management
+
+- **Toan Tran**
+  - AI User Interface Design
+  - AI Integration and Implementation
+  - User Experience Enhancement
+
+- **Mina Hanna**
+  - Backend Development
+  - Deployment Management
+  - System Architecture
+
+- **Seore Adisa**
+  - Frontend Development
+  - Project Spokesperson
+  - User Interface Contributions
+
+- **Miles Shinmachi**
+  - UI Component Development
+
+### Faculty Advisor
+We extend our deepest appreciation to **Dr. Fahd Albinali** for his invaluable guidance, constructive feedback, and continuous motivation throughout the development of this project. His mentorship was instrumental in pushing us to exceed our initial goals and create a more refined and powerful application.
+
+### Final Note
+To my amazing team - thank you for your dedication, hard work, and the incredible journey we've shared together. Each of you brought unique strengths and perspectives that made this project special. I truly appreciate all the late nights, problem-solving sessions, and moments of celebration we've shared. It has been an honor working alongside such talented individuals, and I sincerely hope our paths cross again in the future. The memories we've created and the bonds we've formed during this project will always be cherished. Wishing each of you the very best in your future endeavors - may your careers be as bright as the dedication you've shown here.
+
+\- Nam Ton
