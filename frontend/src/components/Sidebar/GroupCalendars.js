@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar, Plus, ChevronRight, ChevronLeft, Users, Calendar as CalendarIcon } from 'lucide-react';
+import { Calendar, Plus, ChevronRight, ChevronLeft, Users, Calendar as CalendarIcon, X,Copy, Check } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import CreateCalendarModal from '@/components/Modals/createCalendarModal';
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,7 +12,12 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
   const [hoveredServer, setHoveredServer] = useState(null);
-
+  const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, server: null });
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
+  const [selectedServer, setSelectedServer] = useState(null); 
+  
   // Fetch servers from the backend
   useEffect(() => {
     const fetchServers = async () => {
@@ -51,22 +56,40 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     setActiveCalendar(server);
     fetchEvents(server);
   };
+  const handleContextMenu = (event, server) => {
+    event.preventDefault();
+    setContextMenu({
+      server,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+  const handleRightClick = (e, server) => {
+    e.preventDefault();
+    setContextMenu({ visible: true, x: e.clientX, y: e.clientY });
+    setSelectedServer(server); // Set the selected server immediately
+  };
+  const closeContextMenu = () => setContextMenu({ visible: false, x: 0, y: 0, server: null });
 
-  const leaveServer = async (serverId) => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/servers/${serverId}/leave`, {
-        method: 'DELETE',
-        credentials: 'include',
-      });
-
-      if (response.ok) {
-        setServers((prev) => prev.filter((server) => server.id !== serverId));
-        setActiveCalendar(null); // Set to null or default calendar after leaving
-      } else {
-        console.error('Failed to leave server');
+  const leaveServer = async () => {
+    if (selectedServer) {
+      try {
+        const response = await fetch(`http://localhost:5000/api/servers/${selectedServer.id}/leave`, {
+          method: 'DELETE',
+          credentials: 'include',
+        });
+  
+        if (response.ok) {
+          setServers((prev) => prev.filter((server) => server.id !== selectedServer.id));
+          setActiveCalendar(null);
+          setShowLeaveModal(false); // Close the modal
+          setSelectedServer(null); // Reset selected server
+        } else {
+          console.error('Failed to leave server');
+        }
+      } catch (error) {
+        console.error('Error leaving server:', error);
       }
-    } catch (error) {
-      console.error('Error leaving server:', error);
     }
   };
 
@@ -76,7 +99,13 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     : darkMode 
       ? 'bg-gray-800' 
       : 'bg-gray-200';
-
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) closeContextMenu();
+    };
+    window.addEventListener('click', handleClickOutside);
+    return () => window.removeEventListener('click', handleClickOutside);
+  }, [contextMenu.visible]);
   return (
     <div className={`w-16 ${backgroundClasses} flex flex-col items-center py-4 h-screen relative z-40`}>
       <button 
@@ -103,6 +132,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
             <button 
               onClick={() => handleCalendarChange(server)} 
               className={`w-12 h-12 rounded-full ${darkMode ? 'bg-gray-700' : 'bg-gray-300'} flex items-center justify-center relative`}
+              onContextMenu={(e) => handleRightClick(e, server)}
+
             >
               <Avatar className="w-10 h-10">
                 {server.image_url ? (
@@ -167,7 +198,106 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
           <Plus size={24} />
         </button>
       </div>
+      {contextMenu.visible && (
+      <div
+        className="absolute z-50 bg-white shadow-lg rounded-md py-2"
+        style={{
+          top: contextMenu.y,
+          left: contextMenu.x - 1800, // Move the context menu 50px to the left
+        }}
+      >
+    <button
+      onClick={() => {
+        setShowInviteModal(true);  
+        closeContextMenu();  
+      }}
+      className="block w-full px-4 py-2 text-sm text-blue-500 hover:bg-blue-100"
+    >
+      Invite
+    </button>
+        <button
+          onClick={() => {
+            setShowLeaveModal(true);
+            closeContextMenu();
+          }}
+          className="block w-full px-4 py-2 text-sm text-red-500 hover:bg-red-100"
+        >
+          Leave
+        </button>
+      </div>
+    )}
+    {showInviteModal && selectedServer && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="bg-gray-900 text-white p-6 rounded-lg shadow-md w-96">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Invite Friends</h2>
+            <button
+              onClick={() => setShowInviteModal(false)}
+              className="p-2 text-gray-400 hover:text-gray-200"
+            >
+              <X size={20} />
+            </button>
+          </div>
+          <p className="mb-4 text-gray-400">
+            Share this invite link with your friends to join the calendar:
+          </p>
+          <div className="flex items-center space-x-3">
+            <input
+              type="text"
+              value={`https://timewise.com/invite/${selectedServer.invite_link}`}
+              readOnly
+              className="flex-grow bg-gray-800 p-2 rounded-lg border border-gray-700 text-white"
+            />
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(
+                  `https://timewise.com/invite/${selectedServer.invite_link}`
+                );
+                setCopySuccess(true);
+                setTimeout(() => setCopySuccess(false), 2000);
+              }}
+              className={`p-2 rounded-lg ${
+                copySuccess ? 'bg-green-500' : 'bg-blue-500 hover:bg-blue-600'
+              } text-white`}
+            >
+              {copySuccess ? <Check size={16} /> : <Copy size={16} />}
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
 
+    {showLeaveModal && selectedServer && (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/50">
+        <div className="bg-gray-900 text-white p-6 rounded-lg shadow-md w-96">
+          <h2 className="text-xl font-semibold mb-4">Leave '{selectedServer.name}'</h2>
+          <p className="mb-4 text-gray-400">
+            Are you sure you want to leave {selectedServer.name}? You won't be able to rejoin unless you are re-invited.
+          </p>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={() => setShowLeaveModal(false)}
+              className={`px-6 py-2 rounded-full 
+                ${darkMode 
+                  ? 'border border-gray-700 hover:bg-gray-800/50' 
+                  : 'border border-gray-200 hover:bg-gray-100'} 
+                transition-colors`}
+            >
+              Cancel
+            </button>
+            <button
+              onClick={leaveServer}
+                className="px-8 py-2 rounded-full bg-gradient-to-r from-red-500 to-red-600 
+                  hover:from-red-600 hover:to-red-700 text-white transition-colors"
+            >
+              Leave Server
+            </button>
+          </div>
+        </div>
+      </div>
+    )}
+
+     
       {isCreateCalendarOpen && (
         <CreateCalendarModal 
           onClose={handleCloseCreateCalendarModal} 
@@ -176,6 +306,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
           setIconPreview={setIconPreview}
         />
       )}
+      
     </div>
   );
 };
