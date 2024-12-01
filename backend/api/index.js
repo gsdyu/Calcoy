@@ -142,6 +142,8 @@ CREATE TABLE IF NOT EXISTS server_privacy (
       time_zone VARCHAR(50),
       server_id INT REFERENCES servers(id) ON DELETE CASCADE,
       ai BOOLEAN,
+      embedding vector(128),
+
       completed BOOLEAN,
       include_in_personal BOOLEAN DEFAULT FALSE,
       imported_from VARCHAR(50),
