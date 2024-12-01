@@ -105,6 +105,94 @@ Active development - Features being implemented:
 - Extended collaboration features
 - Performance optimizations
 
+![Calcoy Calendar Interface](./public/Calendar.png)
+## 🖥️ Interface Preview
+
+### Navigation
+  - Quick create button for events/tasks
+  - Dashboard access for overview and insights
+  - Calendar main view
+  - AI assistance feature
+  - Friends management
+  - Settings configuration
+  - User profile section
+
+### Header Controls
+- Month/Year display with navigation arrows
+- View toggles (Day/Week/Month)
+- Quick jump to "Today"
+- Calendar selection dropdown
+- Quick create event button
+
+### Main Calendar View
+- Monthly grid layout with week/day headers
+- Event display with time and title
+- Task indicators with completion status
+- Color-coded events for different calendars/types
+- Overflow indicators for busy days (+x)
+- Interactive day cells for event creation
+
+### Mini Calendar
+- Compact month view for quick navigation
+- Date selection highlighting
+- Month navigation controls
+- Current date indicator
+- Week numbers reference
+
+### Right Sidebar 
+- **Calendar Types**
+  - Personal calendar toggle
+  - Tasks visibility control
+  - Birthdays calendar
+  - Family events
+  - Additional calendar integration
+
+- **Group Management**
+  - Server-based group calendars
+  - Other calendar connections
+  
+- **Task Management**
+  - Upcoming tasks view
+  - Task completion tracking
+  - Due date display
+  - Task filtering options
+
+### AI Assistant
+![Calcoy AI Interface](./public/Ai.png)
+
+Our AI assistant provides:
+- Smart event creation suggestions
+- Schedule checking and optimization
+- Personalized scheduling recommendations
+
+### Dashboard Analytics
+![Calcoy Dashboard Interface](./public/Dashboard.png)
+
+The dashboard offers:
+- Weekly/Monthly/Yearly task completion tracking
+- AI-powered productivity insights
+- Visual completion rate metrics
+- Upcoming task management
+- Daily task distribution overview
+
+### Friend System
+![Calcoy Friends Interface](./public/Friend.png)
+
+The friends system includes:
+- Simple friend addition by username
+- Friend search functionality
+- Inbox for collaboration requests
+- Can view friends calendar
+
+### Theme Example
+![Calcoy Theme Interface](./public/Theme.png)
+
+Additional features:
+- Customizable themes
+- Seamless dark/light mode switching
+- Gradient color options
+
+
 
 ## ✨ Special Thanks
 
