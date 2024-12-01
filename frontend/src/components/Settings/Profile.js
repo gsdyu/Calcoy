@@ -8,11 +8,7 @@ const DefaultProfileIcon = () => (
     <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
   </svg>
 );
-
-const ProfileImage = ({ 
-  profileImage, 
-  onImageClick 
-}) => {
+const ProfileImage = ({ profileImage, onImageClick }) => {
   const fileInputRef = useRef(null);
   const { darkMode } = useTheme();
 
@@ -25,7 +21,7 @@ const ProfileImage = ({
       <div className="w-full h-full">
         {profileImage ? (
           <img 
-            src={`${process.env.NEXT_PUBLIC_SERVER_URL}/${profileImage}`} 
+            src={`${profileImage}?t=${new Date().getTime()}`} 
             alt="Profile" 
             className="w-full h-full object-cover"
           />
@@ -49,6 +45,7 @@ const ProfileImage = ({
     </div>
   );
 };
+
 
 const Profile = () => {
   const { darkMode } = useTheme();
@@ -153,7 +150,7 @@ const Profile = () => {
     }
 };
 
-const handleSaveEdit = async ({ file, x, y, scale }) => {
+ const handleSaveEdit = async ({ file, x, y, scale }) => {
   if (!file) return;
 
   // Check authentication
