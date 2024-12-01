@@ -105,7 +105,9 @@ Active development - Features being implemented:
 - Extended collaboration features
 - Performance optimizations
 
-![Calcoy Calendar Interface](./public/Calendar.png)
+<img width="1437" alt="Calendar" src="https://github.com/user-attachments/assets/2ff8942a-52a9-42ab-bc30-f3feda3c56c7">
+
+
 ## 🖥️ Interface Preview
 
 ### Navigation
@@ -158,7 +160,8 @@ Active development - Features being implemented:
   - Task filtering options
 
 ### AI Assistant
-![Calcoy AI Interface](./public/Ai.png)
+<img width="1438" alt="Ai" src="https://github.com/user-attachments/assets/5845369c-a6cc-42d7-ab6d-2ada50f818b8">
+
 
 Our AI assistant provides:
 - Smart event creation suggestions
@@ -166,7 +169,8 @@ Our AI assistant provides:
 - Personalized scheduling recommendations
 
 ### Dashboard Analytics
-![Calcoy Dashboard Interface](./public/Dashboard.png)
+<img width="1437" alt="Dashboard" src="https://github.com/user-attachments/assets/5139baa3-293a-4de8-82f6-1bb527f6e173">
+
 
 The dashboard offers:
 - Weekly/Monthly/Yearly task completion tracking
@@ -176,7 +180,8 @@ The dashboard offers:
 - Daily task distribution overview
 
 ### Friend System
-![Calcoy Friends Interface](./public/Friend.png)
+<img width="1438" alt="Friend" src="https://github.com/user-attachments/assets/14bcc32a-d2c2-4c10-af5e-5e87306eb183">
+
 
 The friends system includes:
 - Simple friend addition by username
@@ -185,7 +190,8 @@ The friends system includes:
 - Can view friends calendar
 
 ### Theme Example
-![Calcoy Theme Interface](./public/Theme.png)
+<img width="1440" alt="Theme" src="https://github.com/user-attachments/assets/cee0eb1c-c1e3-42f3-8279-cf8a3dbb022c">
+
 
 Additional features:
 - Customizable themes
