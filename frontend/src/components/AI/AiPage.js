@@ -393,8 +393,14 @@ const AiPage = () => {
   };
 
   const handleDeny = (eventId) => {
+    const eventToDeny = eventDetails.find((event) => event.id === eventId);
     setHandledEvents((prev) => ({ ...prev, [eventId]: true }));
-    addBotMessage(`Your event creation is canceled`);
+
+    const denyMessage = eventToDeny 
+    ? `Your event "${eventToDeny.title}" creation is canceled.`
+    : 'Your event creation is canceled.';
+
+    addBotMessage(denyMessage);
     showNotification('Event creation canceled.');
   };
 
