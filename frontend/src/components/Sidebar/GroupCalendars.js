@@ -203,7 +203,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
        className="absolute z-50 bg-gray-900 shadow-lg rounded-md py-.99"
       style={{
           top: contextMenu.y,
-          left: contextMenu.x - 1800, // Move the context menu 50px to the left
+          left: contextMenu.x - 1650, // Move the context menu 50px to the left
         }}
       >
 {/* Invite Button */}
