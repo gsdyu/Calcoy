@@ -122,7 +122,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
 
   const position = eventPositions.get(event.id) || {
     left: '0%',
-    zIndex: 10
+    zIndex: 10,
+    opacity: 0.7  
   };
 
   return {
@@ -130,7 +131,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     height: `${height}px`,
     left: position.left,
     right: '20px',
-    zIndex: position.zIndex
+    zIndex: position.zIndex,
+    opacity: position.opacity 
   };
 };
 
@@ -647,7 +649,13 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                         hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
                         ${darkMode ? `text-${eventColor.replace('-500','')}-300` : `text-${eventColor.replace('-500','')}-700`}
                         ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
-                      style={getEventStyle(event, isNextDay)}
+                      style={{
+                        ...getEventStyle(event, isNextDay),
+                        // Optional: Add hover opacity behavior
+                        '&:hover': {
+                          opacity: 1
+                        }
+                      }}
                       onClick={(e) => handleEventClick(event, e)}
                     >
                       <div className="w-full h-full pointer-events-auto min-h-[22px]">
