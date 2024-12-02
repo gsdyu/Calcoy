@@ -231,7 +231,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     //do not need to return all attribute since if there is no eventColor, that mean the event should not be displayed.
     //color attributes related are irrelevant then
     if (visibleAny === false) return {eventColor: null, otherColorList: null} 
-    tempColor = (itemColors?.[calendarType]) 
+    tempColor = (itemColors?.[calendarType] && visibleType) 
     ? itemColors[calendarType]
     : (() => {
         if (!visibleType) return
@@ -239,9 +239,11 @@ import { useTheme } from '@/contexts/ThemeContext';
           case 'Task':
             return itemColors?.tasks || 'bg-red-500';  
           case 'Personal':
-            return itemColors?.email || 'bg-blue-500'; 
+            return itemColors?.Personal || 'bg-blue-500'; 
           case 'Family':
-            return itemColors?.familyBirthday || 'bg-orange-500'; 
+            return itemColors?.Family || 'bg-orange-500'; 
+          case 'Birthday':
+            return itemColors?.Birthday || 'bg-green-500'; 
           case 'Work':
             return 'bg-purple-500'; 
           default:
@@ -265,6 +267,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     const origColorBGList = Array.from(otherColorBGList);
     const eventColor = otherColorBGList.shift();
     const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
+    console.log(eventColor, otherColorList)
 
     return {eventColor, otherColorList, otherColorBGList, origColorBGList}
   }

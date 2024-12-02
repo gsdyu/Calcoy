@@ -300,7 +300,15 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     return <p>Loading...</p>;
   }
 
-  const renderCalendarItem = (key, label, color, showEyeIcon = true) => (
+  const renderCalendarItem = (key, label, color, showEyeIcon = true) => { 
+
+    if (!(key in visibleItems)) {
+      const updatedVisibility = { ...visibleItems, [key]: !visibleItems[key] };
+      setVisibleItems(updatedVisibility);
+      savePreferences({ visibility: updatedVisibility, colors: itemColors });
+    }
+
+    return (
     <div
       key={key}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
@@ -376,7 +384,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
       )}
     </div>
-  );
+    )};
 
   return (
     <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
