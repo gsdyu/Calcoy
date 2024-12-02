@@ -49,8 +49,15 @@ module.exports = (app, pool) => {
     },
   };
   
-  const pca = new msal.ConfidentialClientApplication(msalConfig);
-  
+const pca = new msal.ConfidentialClientApplication(msalConfig);
+
+const transporter = nodemailer.createTransport({
+  service: 'gmail', 
+  auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,  
+  },
+});
 
 // Initialize Passport middleware
 app.use(passport.initialize());

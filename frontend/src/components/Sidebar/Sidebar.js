@@ -7,7 +7,7 @@ import CalendarFilter from '@/components/Sidebar/CalendarFilter';
 import Tasks from '@/components/Sidebar/Tasks';
 import MiniCalendar from '@/components/Sidebar/MiniCalendar';
 
-const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, setVisibleItems }) => {
+const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, events, onTaskComplete, activeCalendar, handleChangeActiveCalendar, itemColors, onColorChange, onVisibleChange, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems }) => {
   const { darkMode, selectedTheme, presetThemes } = useTheme();
   const [selectedDate, setSelectedDate] = useState(null);
   const [lastNonDayView, setLastNonDayView] = useState('Month');
@@ -78,6 +78,7 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
         
         <CalendarFilter 
           onColorChange={onColorChange}
+          onVisibleChange={onVisibleChange}
           itemColors={itemColors}
           activeServer={activeCalendar}
           servers={servers}
@@ -86,7 +87,6 @@ const Sidebar = ({ onDateSelect, currentView, onViewChange, mainCalendarDate, ev
           setServerUsers={setServerUsers}
           otherCalendars={otherCalendars}
           visibleItems={visibleItems}
-          setVisibleItems={setVisibleItems}
         />
         
         <Tasks 

@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, setVisibleItems }) => {
+const CalendarFilter = ({ onColorChange, onVisibleChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, savePreferences }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -255,9 +255,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     if (e) {
       e.stopPropagation();
     }
-    const updatedVisibility = { ...visibleItems, [item]: !visibleItems[item] };
-    setVisibleItems(updatedVisibility);
-    savePreferences({ visibility: updatedVisibility, colors: itemColors });
+    onVisibleChange(item)
   };
 
   const togglePopup = (item, e) => {
@@ -278,23 +276,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     togglePopup(item);
   };
 
-  const savePreferences = async (preferences) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ preferences: { ...preferences } }),    
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save preferences');
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-    }
-  };
 
   if (loading) {
     return <p>Loading...</p>;
@@ -303,9 +284,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
   const renderCalendarItem = (key, label, color, showEyeIcon = true) => { 
 
     if (!(key in visibleItems)) {
-      const updatedVisibility = { ...visibleItems, [key]: !visibleItems[key] };
-      setVisibleItems(updatedVisibility);
-      savePreferences({ visibility: updatedVisibility, colors: itemColors });
+      onVisibleChange(key);
     }
 
     return (
@@ -407,8 +386,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
           <div className="space-y-1 pl-2">
             {renderCalendarItem('Personal', 'Personal', itemColors?.Personal || 'bg-blue-500')}
             {renderCalendarItem('Task', 'Tasks', itemColors?.Task || 'bg-red-500')}
-            {renderCalendarItem('Birthday', 'Birthdays', 'bg-green-500')}
-            {renderCalendarItem('Family', 'Family', 'bg-gray-400')}
           </div>
         )}
       </div>

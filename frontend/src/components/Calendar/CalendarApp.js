@@ -19,7 +19,7 @@ import { useTheme } from '@/contexts/ThemeContext';
  const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
   const { isProfileOpen, handleProfileOpen, handleProfileClose, displayName, profileImage } = useProfile();
-  const { darkMode } = useTheme();
+  const { darkMode, preferences, setPreferences, savePreferences } = useTheme();
   const [isSaving, setIsSaving] = useState(false);
   const [events, setEvents] = useState([]);
   const [servers, setServers] = useState([]);
@@ -34,8 +34,8 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [isEventDetailsOpen, setIsEventDetailsOpen] = useState(false);
   const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
   const [lastUpdatedEvent, setLastUpdatedEvent] = useState(null);
-  const [itemColors, setItemColors] = useState({});
   const [visibleItems, setVisibleItems] = useState({});
+  const [itemColors, setItemColors] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
   const [socketConnect, setSocketConnect] = useState(false);
@@ -56,33 +56,28 @@ import { useTheme } from '@/contexts/ThemeContext';
 
   const handleColorChange = async (item, color) => {
     // Update UI immediately
-    setItemColors(prevColors => ({ ...prevColors, [item]: color }));
-    
-    // Save to server in background
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ 
-          preferences: {
-            visibility: visibleItems,
-            colors: { ...itemColors, [item]: color },
-          }
-        }),
+    setItemColors(prevColors =>{ 
+      const updatedColors = { ...prevColors, [item]: color};
+      setPreferences(prevPref => {
+        const tempPref = ({ ...prevPref, colors: updatedColors});
+        savePreferences(tempPref);
+        return tempPref;
+        })
+      return updatedColors;
       });
-      
-      if (!response.ok) {
-        // If save fails, revert the change
-        setItemColors(prevColors => ({ ...prevColors, [item]: prevColors[item] }));
-        throw new Error('Failed to save color preference');
-      }
-    } catch (error) {
-      console.error('Error saving color preference:', error);
-      showNotification('Failed to save color preference');
-    }
+  };
+
+  const handleVisibleChange = async (item) => {
+    // Update UI immediately
+    setVisibleItems(prevVisibles =>{ 
+      const updatedVisibles = { ...prevVisibles, [item]: !visibleItems[item]};
+      setPreferences(prevPref => {
+        const tempPref = ({ ...prevPref, visibility: updatedVisibles});
+        savePreferences(tempPref);
+        return tempPref
+        })
+      return updatedVisibles;
+      });
   };
 
   // New useEffect for loading preferences at app initialization
@@ -114,10 +109,22 @@ import { useTheme } from '@/contexts/ThemeContext';
 
         const data = await response.json();
         if (data.preferences?.colors) {
-          setItemColors(data.preferences.colors);
+          setItemColors(_ =>{ 
+            setPreferences(prevPref => {
+              return ({ ...prevPref, colors: data.preferences.colors})
+            })
+            return data.preferences.colors;
+          });
         }
         
         if (data.preferences?.visibility) {
+
+          setVisibleItems(_ =>{ 
+            setPreferences(prevPref => {
+              return ({ ...prevPref, visibility: data.preferences.visibility})
+            })
+            return data.preferences.visibility;
+          });
           setVisibleItems(data.preferences.visibility);
         }
       } catch (error) {
@@ -210,7 +217,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     const origColorBGList = Array.from(otherColorBGList);
     const eventColor = otherColorBGList.shift();
     const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
-    console.log(eventColor, otherColorList)
 
     return {eventColor, otherColorList, otherColorBGList, origColorBGList}
   }
@@ -652,13 +658,13 @@ import { useTheme } from '@/contexts/ThemeContext';
               handleChangeActiveCalendar={handleChangeActiveCalendar}
               itemColors={itemColors}
               onColorChange={handleColorChange}
+              onVisibleChange={handleVisibleChange}
               setServers={setServers}
               serverUsers={serverUsers}
               servers={servers}
               setServerUsers={setServerUsers}
               otherCalendars={otherCalendars}
               visibleItems={visibleItems}
-              setVisibleItems={setVisibleItems}
             />
           )}
         </div>
