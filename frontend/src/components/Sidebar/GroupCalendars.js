@@ -75,7 +75,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   const leaveServer = async () => {
     if (selectedServer) {
       try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers/${selectedServer.id}/leave`, {
+        const response = await fetch(`http://localhost:5000/api/servers/${selectedServer.id}/leave`, {
           method: 'DELETE',
           credentials: 'include',
         });
