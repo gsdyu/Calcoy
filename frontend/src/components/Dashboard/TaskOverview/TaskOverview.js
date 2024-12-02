@@ -131,6 +131,10 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
     setSelectedDate(newDate);
   };
 
+  const handleToday = () => {
+    setSelectedDate(new Date());
+  };
+
   const handleDateSelect = (date) => {
     setSelectedDate(date);
   };
@@ -157,7 +161,7 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
               </SelectContent>
             </Select>
             
-            <div className={`flex items-center justify-between gap-2 px-4 py-2 h-[45px] w-[180px] rounded-xl 
+            <div className={`flex items-center justify-between gap-2 px-4 py-2 h-[45px] rounded-xl 
               ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} border`}>
               <Button 
                 variant="ghost" 
@@ -167,11 +171,13 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
+              
               <span className={`text-sm ${darkMode ? 'text-gray-200' : 'text-gray-800'} flex-grow text-center`}>
                 {timeFrame === 'week' && `Week ${currentWeek.week}, ${currentWeek.year}`}
                 {timeFrame === 'month' && selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 {timeFrame === 'year' && selectedDate.getFullYear()}
               </span>
+              
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -181,6 +187,20 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
+
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleToday}
+              className={`h-[45px] w-[45px] rounded-xl ${
+                darkMode ? 'bg-gray-900 border-gray-700 hover:bg-gray-800' : 
+                'bg-gray-50 border-gray-200 hover:bg-gray-100'
+              }`}
+            >
+              <span className="text-sm font-medium">
+                Today
+              </span>
+            </Button>
 
             <Popover>
               <PopoverTrigger asChild>
