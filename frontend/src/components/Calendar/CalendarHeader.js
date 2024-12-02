@@ -84,6 +84,7 @@ const CalendarHeader = ({ currentDate, view, onDateChange, onViewChange }) => {
       flex items-center p-4 
       ${getBackgroundStyles()}
       text-sm border-b ${colors.buttonBorder}
+      shadow-sm relative 
     `}>
       <div className="flex-1">
         <h2 className={`text-lg font-semibold ${colors.text}`}>

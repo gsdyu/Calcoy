@@ -122,7 +122,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
 
   const position = eventPositions.get(event.id) || {
     left: '0%',
-    zIndex: 10
+    zIndex: 10,
+    opacity: 0.7  
   };
 
   return {
@@ -130,7 +131,8 @@ const getEventStyle = (event, isNextDayPortion = false) => {
     height: `${height}px`,
     left: position.left,
     right: '20px',
-    zIndex: position.zIndex
+    zIndex: position.zIndex,
+    opacity: position.opacity 
   };
 };
 
@@ -643,11 +645,18 @@ const getEventStyle = (event, isNextDayPortion = false) => {
                     <div
                       key={`${event.id}${isNextDay ? '-next' : ''}`}
                       {...(event.isHoliday ? {} : getDragHandleProps(augmentedEvent))}
-                      className={`absolute ${bgGradientOther} text-xs overflow-hidden rounded cursor-pointer 
-                        hover:bg-opacity-30 transition-colors duration-200 border border-${eventColor} pointer-events-auto
+                        className={`absolute text-xs overflow-hidden rounded cursor-pointer 
+                        hover:brightness-95 transition-all duration-200 border border-${eventColor} pointer-events-auto
+                        ${eventPositions.get(event.id)?.zIndex > 20 ? `bg-${eventColor}` : bgGradientOther}
                         ${darkMode ? `text-${eventColor.replace('-500','')}-300` : `text-${eventColor.replace('-500','')}-700`}
                         ${event.isHoliday ? 'opacity-75 hover:opacity-100' : ''}`}
-                      style={getEventStyle(event, isNextDay)}
+                      style={{
+                        ...getEventStyle(event, isNextDay),
+                        // Optional: Add hover opacity behavior
+                        '&:hover': {
+                          opacity: 1
+                        }
+                      }}
                       onClick={(e) => handleEventClick(event, e)}
                     >
                       <div className="w-full h-full pointer-events-auto min-h-[22px]">

@@ -459,8 +459,10 @@ const DayView = ({ currentDate, events, onDateDoubleClick, onEventClick, shiftDi
       <div
         key={event.id}
         {...getDragHandleProps(event)}
-        className={`absolute ${styles.regularClass} text-xs overflow-hidden rounded cursor-pointer hover:bg-opacity-30 transition-colors duration-200 border
-         ${darkMode ? styles.darkClass : styles.lightClass}`}
+        className={`absolute text-xs overflow-hidden rounded cursor-pointer 
+          hover:brightness-95 transition-all duration-200 border border-${styles.color}
+          ${eventPositions.get(event.id)?.zIndex > 20 ? `bg-${styles.color}` : styles.regularClass}
+          ${darkMode ? styles.darkClass : styles.lightClass}`}
         style={getEventStyle(event, isNextDay)}
         onClick={(e) => handleEventClick(event, e)}
       >
