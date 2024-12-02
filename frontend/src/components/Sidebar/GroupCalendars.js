@@ -287,7 +287,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
       <div className="flex items-center space-x-3">
         <input
           type="text"
-          value={`https://timewise.com/invite/${selectedServer.invite_link}`}
+          value={`https://calcoy.com/invite/${selectedServer.invite_link}`}
           readOnly
           className={`w-full p-3 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500/50
             ${darkMode 
@@ -297,7 +297,7 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
         <button
           onClick={() => {
             navigator.clipboard.writeText(
-              `https://timewise.com/invite/${selectedServer.invite_link}`
+              `https://calcoy.com/invite/${selectedServer.invite_link}`
             );
             setCopySuccess(true);
             setTimeout(() => setCopySuccess(false), 2000);
