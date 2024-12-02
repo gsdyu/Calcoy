@@ -28,9 +28,21 @@ export const calculateEventColumns = (events) => {
   const positions = new Map();
   const overlappingSets = new Set();
 
+  // Sort events by start time and duration
+  const sortedEvents = [...events].sort((a, b) => {
+    const aStart = getEventTime(a.start_time);
+    const bStart = getEventTime(b.start_time);
+    if (aStart !== bStart) return aStart - bStart;
+    
+    // If same start time, longer event comes first
+    const aDuration = getEventTime(a.end_time) - aStart;
+    const bDuration = getEventTime(b.end_time) - bStart;
+    return bDuration - aDuration;
+  });
+
   // First pass: identify overlapping events
-  events.forEach((event1, i) => {
-    events.forEach((event2, j) => {
+  sortedEvents.forEach((event1, i) => {
+    sortedEvents.forEach((event2, j) => {
       if (i < j && eventsOverlap(event1, event2)) {
         overlappingSets.add(event1.id);
         overlappingSets.add(event2.id);
@@ -42,13 +54,13 @@ export const calculateEventColumns = (events) => {
   const overlappingGroups = [];
   const processedEvents = new Set();
 
-  events.forEach(event => {
+  sortedEvents.forEach(event => {
     if (processedEvents.has(event.id)) return;
 
     if (overlappingSets.has(event.id)) {
       // Find all events that overlap with this one
       const overlappingGroup = [event];
-      events.forEach(other => {
+      sortedEvents.forEach(other => {
         if (other.id !== event.id && !processedEvents.has(other.id) && eventsOverlap(event, other)) {
           overlappingGroup.push(other);
         }
@@ -62,13 +74,15 @@ export const calculateEventColumns = (events) => {
         column: 0,
         totalColumns: 1,
         width: '100%',
-        left: '0%'
+        left: '0%',
+        zIndex: 20,
+        opacity: 0.65  // Lower base opacity for non-overlapping events
       });
       processedEvents.add(event.id);
     }
   });
 
-  // Process overlapping groups
+  // Process overlapping groups with stronger opacity contrast
   overlappingGroups.forEach(group => {
     const width = 95 / group.length;
     group.forEach((event, index) => {
@@ -76,7 +90,9 @@ export const calculateEventColumns = (events) => {
         column: index,
         totalColumns: group.length,
         width: `${width}%`,
-        left: `${index * width}%`
+        left: `${index * width}%`,
+        zIndex: 20 + index,
+        opacity: 0.65 + (index * 0.25)  // Increased opacity steps for better contrast
       });
     });
   });
@@ -111,7 +127,8 @@ export const processEvents = (events) => {
         isContainer: true,
         left: '0%',
         width: '95%',
-        zIndex: 5
+        zIndex: 5,
+        opacity: 0.65 // Lower base opacity for container
       });
       processed.add(container.id);
 
@@ -126,7 +143,8 @@ export const processEvents = (events) => {
           isContained: true,
           left: `${adjustedLeft}%`,
           width: `${adjustedWidth}%`,
-          zIndex: 10 + (pos.column || 0)
+          zIndex: 10 + (pos.column || 0),
+          opacity: pos.opacity || 0.65
         });
         processed.add(event.id);
       });
@@ -143,7 +161,8 @@ export const processEvents = (events) => {
         event,
         left: pos.left,
         width: pos.width,
-        zIndex: 15 + (pos.column || 0)
+        zIndex: 15 + (pos.column || 0),
+        opacity: pos.opacity || 0.65
       });
     });
   }

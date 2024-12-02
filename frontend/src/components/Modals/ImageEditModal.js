@@ -6,7 +6,6 @@ import { Slider } from "@/components/ui/slider";
 import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 
-
 const styles = `
   .cropper-view-box,
   .cropper-face {
@@ -34,7 +33,7 @@ const styles = `
 const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
   const { darkMode } = useTheme();
   const cropperRef = useRef(null);
-  const [scale, setScale] = useState(0); // Start at 0 for the slider
+  const [scale, setScale] = useState(0); // Start at 0
 
   useEffect(() => {
     // Reset scale when modal opens
@@ -44,9 +43,9 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
   const handleZoom = (value) => {
     const cropper = cropperRef.current?.cropper;
     if (cropper) {
-      // Convert slider value to zoom scale (0.5 to 3)
-      const zoomValue = 0.5 + (value[0] / 100) * 2.5;
-      cropper.zoomTo(zoomValue);
+      const ratio = (value[0] - scale) * 0.1;
+      cropper.zoom(ratio);
+      setScale(value[0]);
     }
   };
 
@@ -160,12 +159,10 @@ const ImageEditModal = ({ isOpen, onClose, imageUrl, onSave }) => {
               </label>
               <Slider
                 value={[scale]}
-                onValueChange={(value) => {
-                  setScale(value[0]);
-                  handleZoom(value);
-                }}
+                onValueChange={handleZoom}
                 min={0}
                 max={100}
+                defaultValue={[0]}
                 step={1}
                 className="w-full"
               />

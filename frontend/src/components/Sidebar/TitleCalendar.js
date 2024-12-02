@@ -68,11 +68,13 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
   }, []);
 
   const baseStyles = {
-    header: `flex items-center justify-between cursor-pointer w-full max-w-xs relative z-50 px-2 py-1 
+    header: `flex items-center justify-between cursor-pointer w-full max-w-xs relative z-50 px-4 py-2
       ${darkMode 
-        ? 'hover:bg-gray-800/40 text-gray-100' 
-        : 'hover:bg-gray-100 text-gray-900'} 
-      rounded-md transition-colors duration-200`,
+        ? 'hover:bg-gray-800/80 hover:shadow-lg hover:shadow-gray-900/20 text-gray-100' 
+        : 'hover:bg-gray-200/90 hover:shadow-lg hover:shadow-gray-300/60 text-gray-900'} 
+      rounded-xl transition-all duration-200 ease-in-out transform hover:scale-102 hover:-translate-y-0.5
+      border border-transparent hover:border-opacity-50
+      ${darkMode ? 'hover:border-gray-700' : 'hover:border-gray-300'}`,
     
     dropdown: `absolute top-12 mt-1 py-1 w-48 rounded-2xl shadow-lg z-50 overflow-hidden
       ${darkMode 
@@ -94,13 +96,13 @@ const TitleCalendar = ({ activeCalendar, onInvite, onLeave }) => {
   };
 
   return (
-    <div className="relative p-4 flex flex-col items-center">
+    <div className="relative p-3 flex flex-col items-center">
       <div 
         ref={headerRef}
         className={baseStyles.header} 
         onClick={handleHeaderClick}
       >
-        <h1 className="text-lg font-medium text-center flex-grow">
+        <h1 className="text-xl font-medium text-center flex-grow">
           {activeCalendar?.name || 'Main Calendar'}
         </h1>
         {isOpen ? (
