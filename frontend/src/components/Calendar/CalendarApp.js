@@ -62,11 +62,37 @@ import { useTheme } from '@/contexts/ThemeContext';
       socket.on('eventCreated', (event) => {
         if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
         const eventList = Array.isArray(event) ? event : [event]
+        const formattedEvents = data.map(event => {
+          const startTime = new Date(event.start_time);
+          const endTime = new Date(event.end_time);
+          const calendarType = event.calendar || 'default';
+          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+          return (visibleAny) ? {
+            ...event,
+            date: startTime.toLocaleDateString(),
+            startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isTask: event.calendar === 'Task',
+            completed: event.completed || false,
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
+          } : {};
+        });
         setEvents((prevEvents) => [...prevEvents, ...eventList]);
       });
       
       socket.on('eventUpdated', (updatedEvent) => {
         if (updatedEvent.user_id != currentUser.current && activeCalendar?.id !== updatedEvent.server_id) return;
+
+        const startTime = new Date(event.start_time);
+        const endTime = new Date(event.end_time);
+        event.date = startTime.toLocaleDateString(),
+        event.startTime = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event.endTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        event.calendarType = event.calendar || 'default';
+        const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+        if (!visibleAny) return
         setEvents((prevEvents) =>
           prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
         );
@@ -193,6 +219,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     weekStart.setDate(today.getDate() - today.getDay());
     setSelectedWeekStart(weekStart);
     setSelectedDate(today);
+    console.log('bahh')
 
     fetchEvents();
   }, [displayName, activeCalendar, visibleItems]); 
@@ -267,7 +294,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     const origColorBGList = Array.from(otherColorBGList);
     const eventColor = otherColorBGList.shift();
     const otherColorList=otherColorBGList.map(color => color.replace('bg-',''));
-    console.log(eventColor, otherColorList)
 
     return {eventColor, otherColorList, otherColorBGList, origColorBGList}
   }
@@ -440,12 +466,25 @@ import { useTheme } from '@/contexts/ThemeContext';
     try {
       const method = event.id ? 'PUT' : 'POST';
       const url = event.id ? `http://localhost:5000/events/${event.id}` : 'http://localhost:5000/events';
+
+      const startTime = new Date(event.start_time);
+      const endTime = new Date(event.end_time);
+      const duration = endTime - startTime;
   
       const eventData = {
         ...event,
         server_id: activeCalendar?.id || null,
         include_in_personal: event.include_in_personal ?? true,
+        date: startTime.toLocaleDateString(),
+        startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isTask: event.calendar === 'Task',
+        completed: event.completed || false,
+        server_id: event.server_id,
+        imported_from: event.imported_from,
+        imported_username: event.imported_username || event.imported_from
       };
+      console.log('saving', eventData)
   
       const response = await fetch(url, {
         method,
@@ -467,9 +506,9 @@ import { useTheme } from '@/contexts/ThemeContext';
               return prevEvents;
             }
             if (event.id) {
-              return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
+              return prevEvents.map((e) => (e.id === event.id ? eventData : e));
             } else {
-              return [...prevEvents, savedEvent];
+              return [...prevEvents, eventData];
             }
           });
   
