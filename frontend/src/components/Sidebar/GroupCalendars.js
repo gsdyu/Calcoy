@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -12,12 +13,12 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
   const [icon, setIcon] = useState(null);
   const [iconPreview, setIconPreview] = useState(null);
   const [hoveredServer, setHoveredServer] = useState(null);
+  const [isAddHovered, setIsAddHovered] = useState(false);
   const [contextMenu, setContextMenu] = useState({ visible: false, x: 0, y: 0, server: null });
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [copySuccess, setCopySuccess] = useState(false);
   const [selectedServer, setSelectedServer] = useState(null); 
-  const [isAddHovered, setIsAddHovered] = useState(false);
 
   // Fetch servers from the backend
   useEffect(() => {
@@ -99,7 +100,8 @@ const GroupCalendars = ({ toggleSidebar, isSidebarOpen, activeCalendar, setActiv
     ? `${presetThemes[selectedTheme]?.gradient} bg-opacity-95`
     : darkMode 
       ? 'bg-gray-800' 
-      : 'bg-gray-200';
+      : 'bg-white';
+
   useEffect(() => {
     const handleClickOutside = () => {
       if (contextMenu.visible) closeContextMenu();
