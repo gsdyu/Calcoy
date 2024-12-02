@@ -112,7 +112,7 @@ pool.query(`
     receiver_id INT REFERENCES users(id) ON DELETE CASCADE,
     status VARCHAR(20) DEFAULT 'pending'
   );
-CREATE TABLE server_privacy (
+CREATE TABLE IF NOT EXISTS server_privacy (
     user_id INT NOT NULL,
     server_id INT NOT NULL,
     privacy VARCHAR(10) NOT NULL DEFAULT 'public',
