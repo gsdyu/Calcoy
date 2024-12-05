@@ -129,7 +129,7 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`${process.env.CLIENT_URL}`);
+    res.redirect('https://www.calcoy.com/calendar');
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');

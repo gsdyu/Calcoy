@@ -258,6 +258,8 @@ module.exports = (pool) => {
       await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
   
       user.accessToken = accessToken;
+      user.redirectTo = '/calendar'; 
+  
       return done(null, user);
   
     } catch (error) {
