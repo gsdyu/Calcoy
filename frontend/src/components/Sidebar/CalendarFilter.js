@@ -296,6 +296,7 @@ const CalendarFilter = ({ onColorChange, onVisibleChange, itemColors, activeServ
     if (e) {
       e.stopPropagation();
     }
+    if (popupVisible[item]) togglePopup(item)
     onVisibleChange(item)
   };
 

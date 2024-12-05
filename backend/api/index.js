@@ -14,7 +14,7 @@ const app = express();
 
 app.use(express.json())
 app.use(cors({
-    origin: 'https://www.calcoy.com',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
