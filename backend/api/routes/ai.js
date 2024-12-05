@@ -156,10 +156,10 @@ async function useRag(userInput, userId, context_query, pool) {
   let output = "Error in Rag"
   await createEmbeddings(userInput).then(async embed => {
     let query = `SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone,
-      embedding <-> '${JSON.stringify(embed[0])}' as correlation
+      embedding <-> '${JSON.stringify(embed)}' as correlation
       FROM events
       WHERE user_id=$1 AND COALESCE(${context_query}, TRUE)
-      ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
+      ORDER BY embedding <-> '${JSON.stringify(embed)}'
       LIMIT 5;`
     await pool.query(query, [ userId]
     ).then(async (context) => {
@@ -231,6 +231,7 @@ module.exports = (app, pool) => {
       if (initial_context.type !== "none") {
         await agentManager.saveMessage(conversationId, 'model', JSON.stringify(initial_context));
       }
+      console.log('context', initial_context)
 
       let initial_events = ''
       if (initial_context.type === "none"){

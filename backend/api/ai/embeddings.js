@@ -27,7 +27,6 @@ async function createEmbeddings(input) {
 	return response;
 }
 
-const result = createEmbeddings('dog').then(response=>console.log(response));
   /**
 createEmbeddings(["hello", "there"])
 	.then(response=>console.log(JSON.stringify(response[0])))
