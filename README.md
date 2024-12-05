@@ -79,13 +79,13 @@ node index.js
 - React/Next.js
 - OAuth for authentication
 - Tailwind CSS for styling
-- Socket.IO client for real-time features
+- Socket.IO/Pusher client for real-time features
 
 ### Backend
 - Node.js/Express
 - PostgreSQL with pgvector
-- Socket.IO for real-time collaboration
-- Jina AI for embeddings
+- Socket.IO/Pusher for real-time collaboration
+- Gemini/Jina AI for embeddings
 - Gemini/Groq for AI features
 
 ## 🔗 Links

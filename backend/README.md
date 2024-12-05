@@ -5,7 +5,7 @@
 ```
 ## env file
 - by default, env name is .env
-- .env file should be in root directory of backend; timewise/backend/.
+- .env file should be in root directory of backend; calcoy/backend/.
 - env file location might be different for everyone; just make sure the program access the env location relative to where you have your own env
 
 ## have a running local Postgre server.
