@@ -195,7 +195,7 @@ const AboutPage = () => {
           >
               <TeamMemberCard 
               name="Nam Ton"
-              role="Full-Stack | UI designer | Project Lead"
+              role=" CEO | Full-Stack | UI designer | Project Lead"
               description="Creative visionary with a passion for user experience and interface design. Minimal design advocate."
               image="/nam.png"
               imagePosition="object-center"
@@ -206,9 +206,9 @@ const AboutPage = () => {
               }}
             />
               <TeamMemberCard 
-              name="Mina"
-              role="Backend Devleoper"
-              description="Backend developer. Immortal Valorant player. Roblox enthusiast."
+              name="Mina Hanna"
+              role=" CIO | Backend Developer | Software Deployment"
+              description="Expertise in backend systems and authentication solutions. Dedicated to creating efficient and secure solutions."
               image="/mina.png"
               imagePosition="object-center"
               socials={{
@@ -219,8 +219,8 @@ const AboutPage = () => {
               
             />
               <TeamMemberCard 
-              name="Toan"
-              role="Full-Stack & AI Developer | UI Designer"
+              name="Toan Tran"
+              role=" CIO Full-Stack & AI Developer | UI Designer"
               description="loves his gf"
               image="/toan.png"
               imagePosition="object-[50%_40%]"
@@ -232,14 +232,28 @@ const AboutPage = () => {
               
             />
               <TeamMemberCard 
-              name="Justin"
-              role="Backend & AI Developer | DevOps"
+              name="Justin Chong"
+              role=" CTO Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
               image="/justin.jpg"
-              imagePosition="object-[50%_10%]"
+              imagePosition="object-[50%_15%]"
               socials={{
                 github: "https://github.com/gsdyu",
                 linkedin: "https://www.linkedin.com/in/justin-chong-852689247",
+                website: ""
+              }}
+              
+            />
+                     
+              <TeamMemberCard 
+              name="Miles Shinmachi"
+              role="UI Component Development"
+              description="Technically focused developer with a passion to develop and design purposeful applications."
+              image="/miles.jpg"
+              imagePosition="object-center"
+              socials={{
+                github: "https://github.com/miles-akio",
+                linkedin: "https://www.linkedin.com/in/mshinmachi/",
                 website: ""
               }}
               
