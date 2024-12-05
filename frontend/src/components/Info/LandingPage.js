@@ -25,7 +25,7 @@ const LandingPage = () => {
   const router = useRouter();
 
   const handleDemoRequest = () => {
-    router.push('/calendar');
+    router.push('/auth/signup');
   };
 
   return (
@@ -135,13 +135,6 @@ const LandingPage = () => {
                 Start for free
                 <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <button 
-                onClick={handleDemoRequest}
-                className="w-full sm:w-auto px-8 py-4 rounded-full font-medium border-2 border-indigo-600 text-indigo-600 hover:bg-indigo-50 transition-all flex items-center justify-center group"
-              >
-                Demo
-                <ChevronRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
             </motion.div>
           </motion.div>
         </div>
