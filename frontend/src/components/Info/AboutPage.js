@@ -236,8 +236,8 @@ const AboutPage = () => {
               name="Justin"
               role="Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
-              image="/Justin.png"
-              imagePosition="object-[50%_40%]"
+              image="/justin.png"
+              imagePosition="object-[50%_10%]"
               socials={{
                 github: "https://github.com/gsdyu",
                 linkedin: "https://www.linkedin.com/in/justin-chong-852689247",
