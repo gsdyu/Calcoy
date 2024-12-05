@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight } from 'lucide-react';
+import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight, Github } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeIn = {
@@ -193,17 +193,7 @@ const AboutPage = () => {
             variants={staggerChildren}
             className="flex flex-wrap justify-center"
           >
-            <TeamMemberCard 
-              name="Big D"
-              role="CEO"
-              description="Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac"
-              image="/kevh.png"
-              socials={{
-                instagram: "Placeholder",
-                linkedin: "placeholder",
-                website: "placeholder"
-              }}
-            />
+ 
               <TeamMemberCard 
               name="Nam Ton"
               role="Full-Stack | UI designer | Project Lead"
@@ -211,9 +201,9 @@ const AboutPage = () => {
               image="/nam.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/DeathGumi",
+                linkedin: "https://www.linkedin.com/in/nam-ton-6766a2201/",
+                website: "https://website-rho-beige-21.vercel.app"
               }}
             />
               <TeamMemberCard 
@@ -223,9 +213,9 @@ const AboutPage = () => {
               image="/mina.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/MinaHanna34",
+                linkedin: "https://www.linkedin.com/in/mina-hanna-38a1a4252/",
+                website: "https://minaehabhanna.com/"
               }}
               
             />
@@ -236,8 +226,8 @@ const AboutPage = () => {
               image="/toan.png"
               imagePosition="object-[50%_40%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/ttoanttran",
+                linkedin: "https://www.linkedin.com/in/toanphtran/",
                 website: ""
               }}
               
@@ -249,8 +239,8 @@ const AboutPage = () => {
               image="/Justin.png"
               imagePosition="object-[50%_40%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/gsdyu",
+                linkedin: "https://www.linkedin.com/in/justin-chong-852689247",
                 website: ""
               }}
               
@@ -312,9 +302,10 @@ const TeamMemberCard = ({ name, role, description, image, socials, imagePosition
         className={`w-full h-64 object-cover ${imagePosition}`} 
       />
       <div className="absolute top-0 right-0 p-4 flex space-x-2">
-        {socials.instagram && (
-          <SocialIcon Icon={Instagram} href={socials.instagram} />
+      {socials.github && (
+          <SocialIcon Icon={Github} href={socials.github} />
         )}
+
         {socials.linkedin && (
           <SocialIcon Icon={Linkedin} href={socials.linkedin} />
         )}
