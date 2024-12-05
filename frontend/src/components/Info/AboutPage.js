@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight } from 'lucide-react';
+import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight, Github } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeIn = {
@@ -193,64 +193,53 @@ const AboutPage = () => {
             variants={staggerChildren}
             className="flex flex-wrap justify-center"
           >
-            <TeamMemberCard 
-              name="Big D"
-              role="CEO"
-              description="Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac"
-              image="/kevh.png"
-              socials={{
-                instagram: "Placeholder",
-                linkedin: "placeholder",
-                website: "placeholder"
-              }}
-            />
               <TeamMemberCard 
               name="Nam Ton"
-              role=" CEO | Full-Stack | UI designer | Project Lead"
+              role="Full-Stack | UI designer | Project Lead"
               description="Creative visionary with a passion for user experience and interface design. Minimal design advocate."
               image="/nam.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/DeathGumi",
+                linkedin: "https://www.linkedin.com/in/nam-ton-6766a2201/",
+                website: "https://website-rho-beige-21.vercel.app"
               }}
             />
               <TeamMemberCard 
               name="Mina"
-              role=" CIO | Backend Developer | Software Deployment"
-              description="Expertise in backend systems and authentication solutions. Dedicated to creating efficient and secure solutions."
+              role="Backend Devleoper"
+              description="Backend developer. Immortal Valorant player. Roblox enthusiast."
               image="/mina.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/MinaHanna34",
+                linkedin: "https://www.linkedin.com/in/mina-hanna-38a1a4252/",
+                website: "https://minaehabhanna.com/"
               }}
               
             />
               <TeamMemberCard 
               name="Toan"
-              role=" CIO Full-Stack & AI Developer | UI Designer"
+              role="Full-Stack & AI Developer | UI Designer"
               description="loves his gf"
               image="/toan.png"
               imagePosition="object-[50%_40%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/ttoanttran",
+                linkedin: "https://www.linkedin.com/in/toanphtran/",
                 website: ""
               }}
               
             />
               <TeamMemberCard 
               name="Justin"
-              role=" CTO Backend & AI Developer | DevOps"
+              role="Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
               image="/Justin.png"
               imagePosition="object-[50%_40%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/gsdyu",
+                linkedin: "https://www.linkedin.com/in/justin-chong-852689247",
                 website: ""
               }}
               
@@ -258,6 +247,7 @@ const AboutPage = () => {
           </motion.div>
         </div>
       </section>
+
 
       {/* CTA Section */}
       <section className="relative z-10 py-32 bg-gradient-to-b from-white to-indigo-50/30">
@@ -312,8 +302,8 @@ const TeamMemberCard = ({ name, role, description, image, socials, imagePosition
         className={`w-full h-64 object-cover ${imagePosition}`} 
       />
       <div className="absolute top-0 right-0 p-4 flex space-x-2">
-        {socials.instagram && (
-          <SocialIcon Icon={Instagram} href={socials.instagram} />
+      {socials.github && (
+          <SocialIcon Icon={Github} href={socials.github} />
         )}
         {socials.linkedin && (
           <SocialIcon Icon={Linkedin} href={socials.linkedin} />
