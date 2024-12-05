@@ -192,13 +192,14 @@ module.exports = (pool) => {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
-        accessType: 'offline', // Request offline access
         prompt: 'consent',     // Force re-consent to receive the refresh token
       },
       async (accessToken, refreshToken, profile, done) => {
         const email = profile.emails[0].value;
         const googleUsername = profile.displayName; // Retrieve the Google username
-  
+        if (!email) {
+          return done(new Error("No email found in profile"), null);
+      }
         try {
           // Find or create the user
           const user = await findOrCreateUser(email, googleUsername, pool); // Include username
@@ -212,55 +213,59 @@ module.exports = (pool) => {
   );
 
 
-  // Google OAuth Strategy for Calendar access
- passport.use('google-calendar', new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/calendar/callback',
+  passport.use('google-calendar', new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/calendar/callback',
+    scope: [
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ],
+    prompt: 'consent',
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      const email = profile.emails?.[0]?.value;
+      const googleUsername = profile.displayName || profile.name?.givenName;
   
-  scope: [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile'
-  ],
-  accessType: 'offline',
-  prompt: 'consent',
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    const email = profile.emails && profile.emails[0] && profile.emails[0].value;
-    if (!email) return done(new Error("No email found in profile"));
-
-    // Fetch or create the user
-    const user = await findOrCreateUser(email, pool);
-    if (refreshToken) {
-      await pool.query(
-        'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
-        [accessToken, refreshToken, user.id]
-      );
-    } else {
-      await pool.query(
-        'UPDATE users SET access_token = $1 WHERE id = $2',
-        [accessToken, user.id]
-      );
+      if (!email) {
+        console.error('Error: No email found in profile');
+        return done(new Error("No email found in profile"), null);
+      }
+  
+      // Debugging
+      console.log('Processing user with email:', email);
+  
+      const user = await findOrCreateUser(email, googleUsername, pool);
+  
+      if (!user) {
+        console.error('Error: User creation or retrieval failed');
+        return done(new Error("User creation or retrieval failed"), null);
+      }
+  
+      if (refreshToken) {
+        await pool.query(
+          'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
+          [accessToken, refreshToken, user.id]
+        );
+      } else {
+        await pool.query(
+          'UPDATE users SET access_token = $1 WHERE id = $2',
+          [accessToken, user.id]
+        );
+      }
+  
+      await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
+  
+      user.accessToken = accessToken;
+      return done(null, user);
+  
+    } catch (error) {
+      console.error('Google Calendar OAuth error:', error);
+      return done(error, null);
     }
-    // Save calendar events to the database
-    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
-
-    // Webhook URL for Google Calendar notifications
-    const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
-     
-    // Set up Google Calendar notification only once
-    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool, email);
-
-    // Add accessToken to the user object for further use
-    user.accessToken = accessToken;
-    
-    return done(null, user);
-  } catch (error) {
-    console.error('Google Calendar OAuth error:', error);
-    return done(error, null);
-  }
-}));
+  }));
+  
 
 
   // Serialize user to session
@@ -268,6 +273,9 @@ module.exports = (pool) => {
   passport.deserializeUser(async (id, done) => {
     try {
       const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+      if (!userResult.rows.length) {
+        throw new Error(`No user found with id ${id}`);
+    }
       done(null, userResult.rows[0]);
     } catch (error) {
       done(error, null);
