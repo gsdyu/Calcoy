@@ -100,7 +100,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
             pool.query(`UPDATE events
               SET embedding = $6
               WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
+              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result)]
             );  
           }
          ) 

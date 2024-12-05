@@ -39,7 +39,7 @@ app.post('/events', authenticateToken, async (req, res) => {
           UPDATE events
           SET embedding = $1
           WHERE id = $2
-        `, [JSON.stringify(embed[0]), result.rows[0].id]);
+        `, [JSON.stringify(embed), result.rows[0].id]);
       }
 
     res.status(201).json({
