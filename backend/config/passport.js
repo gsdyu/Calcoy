@@ -241,12 +241,14 @@ module.exports = (pool) => {
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
-    
+    res.redirect('/calendar');
     return done(null, user);
+    
   } catch (error) {
     console.error('Google Calendar OAuth error:', error);
     return done(error, null);
   }
+  
 }));
 
 
