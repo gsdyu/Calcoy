@@ -10,6 +10,7 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import AiPromptExamples from './StartPrompt';
 import ChatSidebar from './ChatSidebar';
 import DeleteChatModal from './DeleteChatModal';
+import { Analytics } from '@vercel/analytics/react';
 
 const AiPage = () => {
   const { darkMode, selectedTheme, colors, presetThemes } = useTheme();
@@ -484,6 +485,7 @@ const AiPage = () => {
         <h1 className={styles.aiheader}>
           Calcoy AI<Sparkles className={styles.ailogo} />
         </h1>
+        <Analytics />
 
         <AiPromptExamples onExampleClick={handleExampleClick} visible={showPrompts && messages.length === 0} />
 

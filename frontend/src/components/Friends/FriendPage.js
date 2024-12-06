@@ -7,6 +7,7 @@ import FriendCalendar from '@/components/Friends/FriendCalendar';
 import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import axios from 'axios';
+import { Analytics } from '@vercel/analytics/react';
 
 const FriendPage = ({ userId }) => {
   const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
@@ -259,6 +260,7 @@ const FriendPage = ({ userId }) => {
         activeItem={activeItem}
         setActiveItem={setActiveItem}
       />
+              <Analytics />
 
       <div className={`flex-grow ${isCollapsed ? 'ml-14' : 'ml-60'} transition-all duration-300 ${backgroundClasses}`}>
         <div className="h-full p-8">

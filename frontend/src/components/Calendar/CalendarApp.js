@@ -15,6 +15,7 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Analytics } from '@vercel/analytics/react';
 
  const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
@@ -589,6 +590,8 @@ import { useTheme } from '@/contexts/ThemeContext';
           onViewChange={handleViewChange}
           onAddEvent={() => handleAddEvent()}
         />
+              <Analytics />
+
         <div className="flex-1 overflow-auto">
           {view === 'Month' && (
             <MonthView 

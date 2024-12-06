@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Analytics } from '@vercel/analytics/react';
+
 import { motion, AnimatePresence } from 'framer-motion';
 import styles from './AiPage.module.css';
 import {
@@ -258,6 +260,7 @@ const ChatSidebar = ({
         ${isCollapsed ? 'w-16' : 'w-72'}
         h-full
       `}
+      
     >
       {/* top buttons */}
       <div className="flex flex-col items-start">
@@ -276,6 +279,7 @@ const ChatSidebar = ({
         >
           <Menu size={24} />
         </button>
+        <Analytics />
 
         <div className="w-full px-2">
           <button

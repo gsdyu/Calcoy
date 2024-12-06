@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight, Github } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -27,10 +28,13 @@ const AboutPage = () => {
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <motion.div 
           initial={{ opacity: 0 }}
+          
           animate={{ opacity: 1 }}
           transition={{ duration: 2.5, ease: "easeOut" }}
           className="absolute top-20 left-20 w-96 h-96 bg-blue-200/20 rounded-full blur-3xl"
         />
+        <Analytics />
+
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

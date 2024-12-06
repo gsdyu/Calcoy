@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { CirclePlus, CircleX, Edit2, X, Check } from 'lucide-react';
 import styles from './AiPage.module.css';
 import MiniCalendar from '../Sidebar/MiniCalendar';
+import { Analytics } from '@vercel/analytics/react';
 
 const EventDetailsBox = ({ 
   eventDetails, 
@@ -206,6 +207,8 @@ const EventDetailsBox = ({
   return (
     <div className={`${styles.eventDetailsBox} ${darkMode ? styles.dark : ''}`}>
       <div className="grid grid-cols-2 gap-4">
+      <Analytics />
+
         <div className={styles.contentSection}>
           <div className={`${styles.titleRow} flex flex-col space-y-2`}>
             <div className="flex items-start justify-between w-full gap-2">

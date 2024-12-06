@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon, MicrosoftIcon, AppleIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
 import { Mail, Lock, User, Check, X } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const SignUpPage = () => {
     const [formData, setFormData] = useState({
@@ -179,7 +180,7 @@ const SignUpPage = () => {
                     <div className="w-[400px] h-[400px] bg-pink-200/30 rounded-full blur-2xl"></div>
                     <div className="w-[300px] h-[300px] bg-purple-200/30 rounded-full blur-xl"></div>
                 </div>
-
+                <Analytics />
                 {/* Additional Light Effects */}
                 <div className="absolute top-0 left-0 right-0 h-1/2 bg-gradient-to-b from-yellow-100/40 to-transparent"></div>
                 <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-gradient-to-t from-blue-200/40 to-transparent"></div>
