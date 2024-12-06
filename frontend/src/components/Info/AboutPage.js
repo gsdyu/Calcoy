@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight } from 'lucide-react';
+import { Clock, Zap, Users, Instagram, Linkedin, Globe, ArrowRight, Github } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const fadeIn = {
@@ -193,17 +193,6 @@ const AboutPage = () => {
             variants={staggerChildren}
             className="flex flex-wrap justify-center"
           >
-            <TeamMemberCard 
-              name="Big D"
-              role="CEO"
-              description="Taekwondo master, Kenstyle Older Brother, Chipotle Fiend, Monster Muncher, Caniac"
-              image="/kevh.png"
-              socials={{
-                instagram: "Placeholder",
-                linkedin: "placeholder",
-                website: "placeholder"
-              }}
-            />
               <TeamMemberCard 
               name="Nam Ton"
               role=" CEO | Full-Stack | UI designer | Project Lead"
@@ -211,46 +200,60 @@ const AboutPage = () => {
               image="/nam.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/DeathGumi",
+                linkedin: "https://www.linkedin.com/in/nam-ton-6766a2201/",
+                website: "https://website-rho-beige-21.vercel.app"
               }}
             />
               <TeamMemberCard 
-              name="Mina"
+              name="Mina Hanna"
               role=" CIO | Backend Developer | Software Deployment"
               description="Expertise in backend systems and authentication solutions. Dedicated to creating efficient and secure solutions."
               image="/mina.png"
               imagePosition="object-center"
               socials={{
-                instagram: "",
-                linkedin: "",
-                website: ""
+                github: "https://github.com/MinaHanna34",
+                linkedin: "https://www.linkedin.com/in/mina-hanna-38a1a4252/",
+                website: "https://minaehabhanna.com/"
               }}
               
             />
               <TeamMemberCard 
-              name="Toan"
+              name="Toan Tran"
               role=" CIO Full-Stack & AI Developer | UI Designer"
               description="loves his gf"
               image="/toan.png"
               imagePosition="object-[50%_40%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/ttoanttran",
+                linkedin: "https://www.linkedin.com/in/toanphtran/",
                 website: ""
               }}
               
             />
               <TeamMemberCard 
-              name="Justin"
+              name="Justin Chong"
               role=" CTO Backend & AI Developer | DevOps"
               description="Powered by coffee, cheese, and In-N-Out Cheese-Burgers. ☕️ 🧀 🍔."
-              image="/Justin.png"
-              imagePosition="object-[50%_40%]"
+              image="/justin.jpg"
+              imagePosition="object-[50%_15%]"
               socials={{
-                instagram: "",
-                linkedin: "",
+                github: "https://github.com/gsdyu",
+                linkedin: "https://www.linkedin.com/in/justin-chong-852689247",
+                website: ""
+              }}
+              
+            />
+                     
+              <TeamMemberCard 
+              name="Miles Shinmachi"
+              role="UI Component Development"
+              description="Technically focused developer with a passion to develop and design purposeful applications."
+              image="/miles.jpg"
+              imagePosition="object-center"
+              socials={{
+                github: "https://github.com/miles-akio",
+                linkedin: "https://www.linkedin.com/in/mshinmachi/",
                 website: ""
               }}
               
@@ -312,9 +315,10 @@ const TeamMemberCard = ({ name, role, description, image, socials, imagePosition
         className={`w-full h-64 object-cover ${imagePosition}`} 
       />
       <div className="absolute top-0 right-0 p-4 flex space-x-2">
-        {socials.instagram && (
-          <SocialIcon Icon={Instagram} href={socials.instagram} />
+      {socials.github && (
+          <SocialIcon Icon={Github} href={socials.github} />
         )}
+
         {socials.linkedin && (
           <SocialIcon Icon={Linkedin} href={socials.linkedin} />
         )}
