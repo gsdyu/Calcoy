@@ -25,6 +25,7 @@ const EventDetailsModal = ({ event, onClose, onEdit, onDelete, onTaskComplete, t
   // for the color dots on modal
   useEffect(() => {
     if (!event) return
+    console.log(event)
     const {origColorBGList} = getEventColor(event);
     setColorBGList(origColorBGList);
   }, [event, getEventColor])

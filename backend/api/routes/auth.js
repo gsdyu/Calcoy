@@ -275,7 +275,7 @@ app.get('/auth/azure', (req, res) => {
 
       const authCodeUrlParameters = {
         scopes: ['openid', 'profile', 'email'],
-        redirectUri: 'https://backend-three-puce-56.vercel.app/auth/azure/callback', // Fully qualified URI
+        redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`, // Fully qualified URI
         codeChallenge: challenge,
         codeChallengeMethod: 'S256',
       };
@@ -301,7 +301,7 @@ app.get('/auth/azure/callback', (req, res) => {
   const tokenRequest = {
     code: req.query.code,
     scopes: ['openid', 'profile', 'email'],
-    redirectUri: 'https://backend-three-puce-56.vercel.app/auth/azure/callback',
+    redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
     codeVerifier: req.session.codeVerifier, // Retrieve codeVerifier from session
   };
 

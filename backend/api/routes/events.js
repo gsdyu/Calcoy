@@ -1,8 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
 
-module.exports = (app, pool) => {
-  // Create event route
+module.exports = (app, pool, pusher) => {
 // Create event route
 app.post('/events', authenticateToken, async (req, res) => {
   const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, privacy } = req.body;
@@ -19,14 +18,12 @@ app.post('/events', authenticateToken, async (req, res) => {
   }
 
   try {
- 
       let embed = '';
       try {
         embed = await createEmbeddings(JSON.stringify(req.body));
       } catch {
         console.error('Embed error: failed to create embedding for event');
       }
-
      const result = await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal, privacy) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
@@ -34,24 +31,31 @@ app.post('/events', authenticateToken, async (req, res) => {
       [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal, privacy || 'public']
     );
 
-      if (embed) {
-        await pool.query(`
-          UPDATE events
-          SET embedding = $1
-          WHERE id = $2
-        `, [JSON.stringify(embed), result.rows[0].id]);
-      }
+    if (embed) {
+      await pool.query(`
+        UPDATE events
+        SET embedding = $1
+        WHERE id = $2
+      `, [JSON.stringify(embed), result.rows[0].id]);
+    }
+
+    const newEvent = result.rows[0];
+
+    // Trigger Pusher event
+    pusher.trigger("events-channel", "eventCreated", {
+      event: newEvent
+    });
 
     res.status(201).json({
       message: 'Event created successfully',
-      event: result.rows[0],
+      event: newEvent,
     });
   } catch (error) {
-    await pool.query('ROLLBACK');
     console.error('Create event error:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 
   
   
@@ -184,6 +188,10 @@ app.post('/events/import', authenticateToken, async (req, res) => {
       );
       
       if (updateResult.rowCount > 0) {
+
+        pusher.trigger("events-channel", "eventUpdated", {
+          updatedEvent: updateResult.rows[0] 
+        });
         res.json({ message: 'Event updated successfully', event: updateResult.rows[0] });
       } else {
         res.status(500).json({ error: 'Failed to update the event' });
@@ -238,6 +246,10 @@ app.post('/events/import', authenticateToken, async (req, res) => {
       const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
       
       if (deleteResult.rowCount > 0) {
+
+        pusher.trigger("events-channel", "eventDeleted", {
+          deletedEvent: deletedResult.rows[0] 
+        });
         res.json({ message: 'Event deleted successfully' });
       } else {
         res.status(500).json({ error: 'Failed to delete the event' });

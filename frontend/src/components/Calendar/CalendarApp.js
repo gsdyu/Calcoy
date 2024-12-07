@@ -1,6 +1,4 @@
 'use client';
-import { io } from 'socket.io-client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
@@ -15,6 +13,8 @@ import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useCalendar } from '@/hooks/useCalendar';
 import { useProfile } from '@/hooks/useProfile';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Analytics } from '@vercel/analytics/react';
+import Pusher from 'pusher-js';
 
  const CalendarApp = () => {
   const { currentDate, view, handleViewChange } = useCalendar();
@@ -38,8 +38,8 @@ import { useTheme } from '@/contexts/ThemeContext';
   const [itemColors, setItemColors] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-  const [socketConnect, setSocketConnect] = useState(false);
   const currentUser = useRef(null);
+  const lastSavedEvent = useRef(null);
 
   // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -147,8 +147,95 @@ import { useTheme } from '@/contexts/ThemeContext';
     fetchEvents();
   }, [displayName, activeCalendar, visibleItems]); 
   
+  useEffect(() => {
+    // Initialize Pusher
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    });
   
-    
+    const eventsChannel = pusher.subscribe('events-channel');
+    const serversChannel = pusher.subscribe('servers-channel')
+  
+    eventsChannel.bind('eventCreated', (data) => {
+      const event = data.event;
+        if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
+        const eventList = Array.isArray(event) ? event : [event]
+        const formattedEvents = eventList.map(savedEvent => {
+          if (lastSavedEvent.current===savedEvent.id) return {}
+          const startTime = new Date(savedEvent.start_time);
+          const endTime = new Date(savedEvent.end_time);
+          const calendarType = savedEvent.calendar || 'default';
+          const {visibleAny} = getVisibility(savedEvent, calendarType, activeCalendar);
+          return (visibleAny) ? {
+            ...savedEvent,
+            date: startTime.toLocaleDateString(),
+            startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isTask: savedEvent.calendar === 'Task',
+            imported_username: savedEvent.imported_username || savedEvent.imported_from
+          } : {};
+        });
+
+        setEvents((prevEvents) => [...prevEvents, ...formattedEvents]);
+        showNotification('A new event has been added!', 'Undo');
+    });
+
+    eventsChannel.bind('eventUpdated', (data) => {
+      const updatedEvent = data.updatedEvent
+      if (updatedEvent.user_id != currentUser.current && activeCalendar?.id !== updatedEvent.server_id) return;
+
+      const startTime = new Date(updatedEvent.start_time);
+      const endTime = new Date(updatedEvent.end_time);
+      const calendarType = updatedEvent.calendar || 'default';
+      updatedEvent.date = startTime.toLocaleDateString()
+      updatedEvent.startTime = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      updatedEvent.endTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      const {visibleAny} = getVisibility(updatedEvent, calendarType, activeCalendar);
+      if (!visibleAny) return
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
+      );
+    });
+
+    eventsChannel.bind('eventDeleted', (data) => {
+      const deletedEvent = data.deletedEvent
+      if (deletedEvent.user_id !== currentUser.current && activeCalendar?.id !== deletedEvent.server_id) return;
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== deletedEvent.id));
+    });
+
+    // serverLeft not implemented yet. only applicable really when user is kicked from server, but we do not have that functionality yet
+    /*
+    serversChannel.bind('serverLeft', (leftServer) => {
+      if (!(leftServer.user_id === currentUser.current)) return;
+      const serverId = Number(leftServer.server_id)
+      setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
+
+      if (activeCalendar === serverId) {
+        setActiveCalendar(null);
+      };
+    });
+    */
+
+    serversChannel.bind('userJoined', (data) => {
+      const userInfo = data.userInfo;
+      console.log('userJoined', userInfo)
+      if (Number(userInfo.server_id) != activeCalendar?.id) return;
+      setServerUsers((prevUsers) => [...prevUsers, userInfo])
+    });
+
+    serversChannel.bind('userLeft', (data) => {
+      const userInfo = data.userInfo;
+      if (Number(userInfo.server_id) != activeCalendar?.id) return;
+      setServerUsers((prev) => prev.filter((user) => !(user.server_id === userInfo.server_id && user.id ===userInfo.user_id)));
+    });
+  
+    return () => {
+      // Clean up subscription on component unmount
+      pusher.unsubscribe('events-channel');
+      pusher.unsubscribe('servers-channel');
+    };
+  }, [activeCalendar, currentUser, lastSavedEvent]);
+
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
     setTimeout(() => setNotification(prev => ({ ...prev, isVisible: false })), 3000);
@@ -158,7 +245,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
     const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
     const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
-    const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
+    const visibleImport = (typeof visibleItems[`${event.imported_from}:${event.imported_username}`]) === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
     const visibleAny = (visibleType || visibleUser || visibleServer || visibleImport)
 
     return {visibleType, visibleUser, visibleServer, visibleImport, visibleAny}
@@ -239,8 +326,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
           const calendarType = event.calendar || 'default';
-          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
-          return (visibleAny) ? {
+          const formattedEvent = {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -250,7 +336,9 @@ import { useTheme } from '@/contexts/ThemeContext';
             server_id: event.server_id,
             imported_from: event.imported_from,
             imported_username: event.imported_username || event.imported_from
-          } : {};
+          }
+          const {visibleAny, visibleImport} = getVisibility(formattedEvent, calendarType, activeCalendar);
+          return (visibleAny) ? formattedEvent : {};
         });
 
         const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
@@ -374,13 +462,27 @@ import { useTheme } from '@/contexts/ThemeContext';
   
     try {
       const method = event.id ? 'PUT' : 'POST';
-      const url = event.id ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}` : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
+      const url = event.id
+        ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}`
+        : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
+      const startTime = new Date(event.start_time);
+      const endTime = new Date(event.end_time);
+      const duration = endTime - startTime;
   
       const eventData = {
         ...event,
         server_id: activeCalendar?.id || null,
         include_in_personal: event.include_in_personal ?? true,
+        date: startTime.toLocaleDateString(),
+        startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isTask: event.calendar === 'Task',
+        completed: event.completed || false,
+        server_id: event.server_id,
+        imported_from: event.imported_from,
+        imported_username: event.imported_username || event.imported_from
       };
+      console.log('saving', eventData)
   
       const response = await fetch(url, {
         method,
@@ -394,24 +496,18 @@ import { useTheme } from '@/contexts/ThemeContext';
       if (response.ok) {
         const savedEventResponse = await response.json();
         const savedEvent = savedEventResponse.event;
+        lastSavedEvent.current=savedEvent.id;
   
         if (savedEvent) {
           setEvents((prevEvents) => {
-            // Prevent duplicates by ensuring no other event has the same ID
-            if (prevEvents.some(e => e.id === savedEvent.id)) {
-              return prevEvents;
-            }
             if (event.id) {
-              return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
+              return prevEvents.map((e) => (e.id === event.id ? eventData : e));
             } else {
-              return [...prevEvents, savedEvent];
+              return [...prevEvents, eventData];
             }
           });
   
           showNotification(`${isTask ? 'Task' : 'Event'} saved successfully`, 'Undo');
-  
-          // Emit WebSocket event only after saving completes
-          //socket.emit(event.id ? 'eventUpdated' : 'eventCreated', savedEvent);
         } else {
           throw new Error('Response did not include event data');
         }
@@ -589,6 +685,8 @@ import { useTheme } from '@/contexts/ThemeContext';
           onViewChange={handleViewChange}
           onAddEvent={() => handleAddEvent()}
         />
+              <Analytics />
+
         <div className="flex-1 overflow-auto">
           {view === 'Month' && (
             <MonthView 

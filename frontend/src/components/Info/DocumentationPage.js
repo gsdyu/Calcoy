@@ -1,9 +1,11 @@
 import React from 'react';
 import Link from 'next/link';
+import { Analytics } from '@vercel/analytics/react';
 
 const DocumentationPage = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-white">
+    <Analytics />
       {/* Navigation */}
       <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold text-indigo-600">Calcoy</Link>

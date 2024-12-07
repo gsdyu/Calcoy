@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { GoogleIcon, MicrosoftIcon, EyeIcon, EyeOffIcon } from '@/components/icons/SocialIcons';
 import { Mail, Lock } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -108,6 +109,7 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-b from-sky-400 via-blue-500 to-blue-600">
       {/* Decorative waves */}
+      <Analytics />
       <div className="absolute inset-0 overflow-hidden">
         {/* Animated waves */}
         <div className="absolute bottom-0 left-0 right-0 h-64">

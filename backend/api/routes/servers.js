@@ -5,7 +5,7 @@ const { authenticateToken } = require('../authMiddleware');
 const { v4: uuidv4 } = require('uuid');
 const { put } = require('@vercel/blob');
 
-module.exports = (app, pool) => {
+module.exports = (app, pool, pusher) => {
   app.get('/api/user', authenticateToken, async (req, res) => {
     const userId = req.user.userId;  
     if (userId) {
@@ -71,6 +71,9 @@ module.exports = (app, pool) => {
       if (result.rowCount === 0) {
         return res.status(404).json({ error: 'Server not found or user not a member' });
       }
+      pusher.trigger("servers-channel", "userLeft", {
+        userInfo: {server_id:Number(serverId), user_id:userId} 
+      });
 
       res.json({ message: 'Successfully left the server' });
     } catch (err) {
@@ -112,6 +115,9 @@ module.exports = (app, pool) => {
                                          WHERE users.id=$1`, [userId]);
       result.rows[0].server_id=serverId
       console.log(result.rows)
+      pusher.trigger("servers-channel", "userJoined", {
+        userInfo: result.rows[0] 
+      });
       res.status(201).json({ message: 'Successfully joined the server', serverId });
     } catch (error) {
       console.error('Error joining server:', error);

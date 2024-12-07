@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
+import { Analytics } from '@vercel/analytics/react';
 
 const DeleteModal = ({ isOpen, onClose, onConfirm, chatTitle }) => {
   const { darkMode } = useTheme();
@@ -64,6 +65,7 @@ const DeleteModal = ({ isOpen, onClose, onConfirm, chatTitle }) => {
         <p className="text-gray-400 dark:text-gray-400 mb-6">
           Are you sure you want to delete this chat? This action cannot be undone.
         </p>
+        <Analytics />
 
         <div className="flex justify-end space-x-3">
           <button

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Calendar, Users, Palette, ChevronRight, ArrowRight } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Analytics } from '@vercel/analytics/react';
 
 const fadeIn = {
   initial: { opacity: 0, y: 20 },
@@ -139,6 +140,7 @@ const LandingPage = () => {
           </motion.div>
         </div>
       </section>
+      <Analytics />
 
       {/* Features Grid */}
       <section className="relative z-10 bg-gradient-to-b from-white via-indigo-50/30 to-white py-32">
