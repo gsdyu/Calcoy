@@ -48,7 +48,7 @@ class GeminiAgent {
     return this.#system_message;
   }
 
-  async inputChat({input, context, file} = {}) {
+  async inputChat({input, context, file, useHistory = true} = {}) {
     // if bot outputs a json string, it will be parsed into json
     let real_input = input
     if (context) real_input += `\n\nEvents - ${context}`
@@ -58,9 +58,13 @@ class GeminiAgent {
       parts.push(filePart)
     }
 
-    this.#history = [...this.#history, {role: "user", parts: parts}];
+    let history = [{role: "user", parts: parts}];
+    if (useHistory) {
+      this.#history = [...this.#history, {role: "user", parts: parts}];
+      history = this.#history 
+    }
     var result = await this.#client.generateContent({
-      contents: this.#history,
+      contents: history,
       generationConfig: this.#config,
     });
     let message = result.response.text(); 
@@ -73,7 +77,7 @@ class GeminiAgent {
       message = message.split('').slice(0,100).join('')+'...Sorry, I cannot provide a response that is beyond 100 words. Please try again.';
     }
      **/
-    this.#history = [...this.#history, {role: "model", parts: [{text: message}]}];
+    if (useHistory) this.#history = [...this.#history, {role: "model", parts: [{text: message}]}];
     try {
       message=JSON.parse(message);
     } catch (error) {
@@ -110,19 +114,28 @@ class GeminiAgent {
   let query = ``
   switch (json_request.time) {
     case 'anytime':
-      query += "True"
+      query += "True";
       break
     case 'near':
-      query += "start_time between NOW() - INTERVAL '7 days' AND NOW() + INTERVAL '7 days'"
+      query += "start_time between NOW() - INTERVAL '7 days' AND NOW() + INTERVAL '7 days'";
       break
     case 'future':
-      query += "start_time >= NOW()"
+      query += "start_time >= NOW()";
       break
     case 'past':
-      query += "start_time <= NOW()"
+      query += "start_time <= NOW()";
       break
+    case 'week':
+      query += `start_time BETWEEN date_trunc('week', NOW()) AND date_trunc('week', NOW()) + INTERVAL '7 days'`;
+      break;
+    case 'month':
+      query += `start_time BETWEEN date_trunc('month', NOW()) AND date_trunc('month', NOW()) + INTERVAL '1 month'`;
+      break;
+    case 'year':
+      query += `start_time BETWEEN date_trunc('week', NOW()) AND date_trunc('week', NOW()) + INTERVAL '1 year'`;
+      break;
     default:
-      console.error(`Context Error: Given an invalid time. ${json_request.time}`)
+      console.error(`Context Error: Given an invalid time: ${json_request.time}`)
   }
   return query 
 }

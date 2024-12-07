@@ -13,7 +13,7 @@ import YearlyOverviewComponent from './YearlyOverview';
 import { transformTaskData, getWeekNumber } from './dateutils';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
-const TaskOverviewComponent = ({ events, onUpdateTask }) => {
+const TaskOverviewComponent = ({ events, onUpdateTask, setView }) => {
   const [timeFrame, setTimeFrame] = useState('week');
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentWeek, setCurrentWeek] = useState({ week: 0, year: 0 });
@@ -49,6 +49,11 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
         return [];
     }
   }, [timeFrame, weeklyData, monthlyData, yearlyData]);
+
+  const handleTimeFrameUpdate = async (timeFrame) => {
+    setTimeFrame(timeFrame);
+    setView(timeFrame);
+  }
 
   const handleWeeklyDataUpdate = async (newData, fromTask, updates) => {
     setWeeklyData(newData);
@@ -149,7 +154,7 @@ const TaskOverviewComponent = ({ events, onUpdateTask }) => {
             {timeFrame === 'week' ? 'Weekly' : timeFrame === 'month' ? 'Monthly' : 'Yearly'} Task Overview
           </CardTitle>
           <div className="flex items-center gap-3">
-            <Select value={timeFrame} onValueChange={setTimeFrame}>
+            <Select value={timeFrame} onValueChange={handleTimeFrameUpdate}>
               <SelectTrigger className={`w-[180px] h-[45px] ${darkMode ? 'bg-gray-900 border-gray-700' : 'bg-gray-50 border-gray-200'} 
                 rounded-xl transition-colors duration-200`}>
                 <SelectValue placeholder="Time Frame" />

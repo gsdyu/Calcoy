@@ -229,7 +229,7 @@ module.exports = (pool) => {
       console.log(process.env.SERVER_URL)
       const email = profile.emails?.[0]?.value;
       const googleUsername = profile.displayName || profile.name?.givenName;
-  
+
       if (!email) {
         console.error('Error: No email found in profile');
         return done(new Error("No email found in profile"), null);

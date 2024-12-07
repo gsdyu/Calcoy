@@ -244,7 +244,7 @@ import Pusher from 'pusher-js';
     const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
     const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
     const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
-    const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
+    const visibleImport = (typeof visibleItems[`${event.imported_from}:${event.imported_username}`]) === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
     const visibleAny = (visibleType || visibleUser || visibleServer || visibleImport)
 
     return {visibleType, visibleUser, visibleServer, visibleImport, visibleAny}
@@ -325,8 +325,7 @@ import Pusher from 'pusher-js';
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
           const calendarType = event.calendar || 'default';
-          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
-          return (visibleAny) ? {
+          const formattedEvent = {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -336,7 +335,9 @@ import Pusher from 'pusher-js';
             server_id: event.server_id,
             imported_from: event.imported_from,
             imported_username: event.imported_username || event.imported_from
-          } : {};
+          }
+          const {visibleAny, visibleImport} = getVisibility(formattedEvent, calendarType, activeCalendar);
+          return (visibleAny) ? formattedEvent : {};
         });
 
         const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))
@@ -463,12 +464,24 @@ import Pusher from 'pusher-js';
       const url = event.id
         ? `${process.env.NEXT_PUBLIC_SERVER_URL}/events/${event.id}`
         : `${process.env.NEXT_PUBLIC_SERVER_URL}/events`;
+      const startTime = new Date(event.start_time);
+      const endTime = new Date(event.end_time);
+      const duration = endTime - startTime;
   
       const eventData = {
         ...event,
         server_id: activeCalendar?.id || null,
         include_in_personal: event.include_in_personal ?? true,
+        date: startTime.toLocaleDateString(),
+        startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isTask: event.calendar === 'Task',
+        completed: event.completed || false,
+        server_id: event.server_id,
+        imported_from: event.imported_from,
+        imported_username: event.imported_username || event.imported_from
       };
+      console.log('saving', eventData)
   
       const response = await fetch(url, {
         method,
@@ -487,10 +500,9 @@ import Pusher from 'pusher-js';
         if (savedEvent) {
           setEvents((prevEvents) => {
             if (event.id) {
-              return prevEvents.map((e) => (e.id === event.id ? savedEvent : e));
+              return prevEvents.map((e) => (e.id === event.id ? eventData : e));
             } else {
-              // The real-time update via Pusher should already add the event
-              return prevEvents;
+              return [...prevEvents, eventData];
             }
           });
   
