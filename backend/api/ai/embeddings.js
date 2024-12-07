@@ -1,31 +1,29 @@
 const axios = require('axios')
 const path = require("path");
-require('dotenv').config({ path: path.join(__dirname,"../.env") });
+require('dotenv').config({ path: path.join(__dirname,"../../.env") });
 
-async function createEmbeddings(input, key = process.env.JINA_API_KEY) {
+async function createEmbeddings(input) {
+  // gemini embedding model. using fetch request rather than @google/generative-ai js library as the library does not seem to support outputDimensionality
 	const headers = {
 		"Content-Type": "application/json",
-		"Authorization": `Bearer ${key}`
 	};
-
-	const url = "https://api.jina.ai/v1/embeddings";
+	const url = `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${process.env.GEMINI_API_KEY}`;
 	const data = {
-		model: "jina-embeddings-v3",
-		task : "text-matching",
-		dimensions: 128,
-		late_chunking: true,
-		embedding_type: "float",
-		input: input
+		model: "models/text-embedding-004",
+    content: {
+      parts: [{
+        text: input}],},
+		taskType : "SEMANTIC_SIMILARITY",
+		outputDimensionality: 128,
 	};
 	const response = await axios.post(url, data, {headers})
 		.then(response=> {
       //add an argument to show token usage or not to function
       //console.log(response.data.usage);
       //console.log(response.data)
-      return response.data.data.map(item => {return item.embedding})
+      return response.data.embedding.values
     })
-		.then(data=>data)
-		//.catch(error=>console.error(error));
+		.catch(error=>console.error(error));
 	return response;
 }
 

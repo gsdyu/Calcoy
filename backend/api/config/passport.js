@@ -48,7 +48,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
           imported_username: email
         };
       } else if (!event.start.datetime && !event.end.datetime) {
-        event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
+        const event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
         eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
@@ -100,7 +100,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
             pool.query(`UPDATE events
               SET embedding = $6
               WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
+              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result)]
             );  
           }
          ) 
@@ -191,8 +191,9 @@ module.exports = (pool) => {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
+        callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
         prompt: 'consent',     // Force re-consent to receive the refresh token
+
       },
       async (accessToken, refreshToken, profile, done) => {
         const email = profile.emails[0].value;
@@ -216,7 +217,7 @@ module.exports = (pool) => {
   passport.use('google-calendar', new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/calendar/callback',
+    callbackURL: `${process.env.SERVER_URL}/auth/google/calendar/callback`,
     scope: [
       'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/userinfo.email',
@@ -225,9 +226,10 @@ module.exports = (pool) => {
     prompt: 'consent',
   }, async (accessToken, refreshToken, profile, done) => {
     try {
+      console.log(process.env.SERVER_URL)
       const email = profile.emails?.[0]?.value;
       const googleUsername = profile.displayName || profile.name?.givenName;
-  
+
       if (!email) {
         console.error('Error: No email found in profile');
         return done(new Error("No email found in profile"), null);
@@ -257,6 +259,11 @@ module.exports = (pool) => {
   
       await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
   
+      // Webhook URL for Google Calendar notifications
+      const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
+       
+      // Set up Google Calendar notification only once
+      await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool, email);
       user.accessToken = accessToken;
       user.redirectTo = '/calendar'; 
   
@@ -267,8 +274,6 @@ module.exports = (pool) => {
       return done(error, null);
     }
   }));
-  
-
 
   // Serialize user to session
   passport.serializeUser((user, done) => done(null, user.id));

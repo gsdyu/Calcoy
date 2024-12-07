@@ -323,6 +323,7 @@ const TeamMemberCard = ({ name, role, description, image, socials, imagePosition
       {socials.github && (
           <SocialIcon Icon={Github} href={socials.github} />
         )}
+
         {socials.linkedin && (
           <SocialIcon Icon={Linkedin} href={socials.linkedin} />
         )}

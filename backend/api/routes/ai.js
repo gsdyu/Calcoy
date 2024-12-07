@@ -1,7 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { GeminiAgent, handleContext } = require('../ai/GeminiAgent');
 const { createEmbeddings } = require('../ai/embeddings');
-const { chatAll, chat_createEvent, chat_context, jsonEvent } = require('../ai/prompts');
+const { chatAll, chat_createEvent, chat_context, jsonEvent, insightAll, jsonInsight} = require('../ai/prompts');
 const multer = require('multer');
 const fs = require('fs');
 const path = require("path");
@@ -9,6 +9,15 @@ require('dotenv').config({ path: path.join(__dirname,"../.env")});
 const { GoogleAIFileManager } = require("@google/generative-ai/server")
 
 const upload = multer({ storage: multer.memoryStorage()});
+
+// outside sharedAgentsManager because this agent does not rely on chat history (yet)
+const insightAgent = new GeminiAgent({
+  content: insightAll,
+  responseSchema: jsonInsight,
+  responseMimeType: "application/json",
+  maxOutputTokens: 500,
+});
+
 class SharedAgentsManager {
   constructor(pool) {
     this.pool = pool;
@@ -33,6 +42,7 @@ class SharedAgentsManager {
     this.titleAgent = new GeminiAgent({
       content: `You are a chat title generator. Given a conversation message, create a brief, contextual title (max 50 chars) that captures the essence of what the conversation will be about. Respond with just the title, no extra text.`,
     });
+
   }
 
   // Load conversation history from database
@@ -152,15 +162,47 @@ class SharedAgentsManager {
   }
 }
 
-async function useRag(userInput, userId, context_query, pool) {
+async function getEvents(userId, context_query, pool, limit=5) {
+  let output = "Error in getting Events"
+  let query = `SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, completed, time_zone
+    FROM events
+    WHERE user_id=$1 AND COALESCE(${context_query}, TRUE)
+    LIMIT ${limit};`
+  await pool.query(query, [ userId]
+  ).then(async (context) => {
+    const formattedContext = context.rows.map(event => {
+      const startTime = new Date(event.start_time);
+      const endTime = new Date(event.end_time)
+      return {
+        ...event,
+        date: startTime.toLocaleDateString(),
+        start_time: startTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+        end_time: endTime.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+      }
+    })
+    const textContext = formattedContext.map(context => `\n ${JSON.stringify(context)}`)
+    // you can use a fileReader to read the context
+    output = textContext;
+    /*
+    fs.writeFile('scripts/logs/context.txt',`${context_query}:\n${textContext.join('\n')}`, (err) => { if (err) {
+        console.error("Error writing file: ", err);
+      }
+    })
+    */
+  })
+  return output 
+
+}
+
+async function useRag(userInput, userId, context_query, pool, limit=5) {
   let output = "Error in Rag"
   await createEmbeddings(userInput).then(async embed => {
     let query = `SELECT user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone,
-      embedding <-> '${JSON.stringify(embed[0])}' as correlation
+      embedding <-> '${JSON.stringify(embed)}' as correlation
       FROM events
       WHERE user_id=$1 AND COALESCE(${context_query}, TRUE)
-      ORDER BY embedding <-> '${JSON.stringify(embed[0])}'
-      LIMIT 5;`
+      ORDER BY embedding <-> '${JSON.stringify(embed)}'
+      LIMIT ${limit};`
     await pool.query(query, [ userId]
     ).then(async (context) => {
       const formattedContext = context.rows.map(event => {
@@ -231,6 +273,7 @@ module.exports = (app, pool) => {
       if (initial_context.type !== "none") {
         await agentManager.saveMessage(conversationId, 'model', JSON.stringify(initial_context));
       }
+      console.log('context', initial_context)
 
       let initial_events = ''
       if (initial_context.type === "none"){
@@ -290,6 +333,26 @@ module.exports = (app, pool) => {
       return res.status(500).json({error: 'Internal server error'});
     }
   });
+
+  app.get('/insights/:view', authenticateToken, async (req, res) => {
+    if (Number.isInteger(Number(req.params.view))) res.status(400).json({error: 'Does not handle server id yet'})
+    const userId = req.user.userId;
+    const initial_events = await getEvents(userId, handleContext({type:'context', time: req.params.view}), pool, 10);
+    let retry = 0;
+    let validInsight = false;
+    let insights = [{'label': 'normal', 'message': `unable to get insight for the ${req.params.view}`}]
+    while (!validInsight && retry<5){
+      try {
+        insights = await insightAgent.inputChat({input:"", context:initial_events, useHistory:false})
+        insights.map(insight=>[insight['label'], insight['message']])
+        validInsight = true;
+      } catch (error) {
+        console.error(error)
+      }
+      retry += 1;
+    }
+    res.status(200).json(insights); 
+  })
 
     // Add route to get conversation history
   app.get('/conversations/:conversationId', authenticateToken, async (req, res) => {

@@ -5,6 +5,7 @@ const msal = require('@azure/msal-node');
 const expressSession = require('express-session');
 const pgSession = require('connect-pg-simple')(expressSession);
 const passport = require('passport');
+const { createEmbeddings } = require('../ai/embeddings');
 const ICAL = require('ical.js');
 const ICALgen = require('ical-generator').default
 
@@ -228,7 +229,32 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.time_zone,
           event.imported_from
         ]
-      )
+    ).then(async result => {
+       // checks for embedding on all events. can convert to function
+       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+       // callback events will always be given even if our calendar already has it stored
+       const row = result.rows;
+       if (!row[0]) {
+         console.log('Import: Event already added')
+         return};
+       try {
+         const embed = await createEmbeddings(JSON.stringify(row)
+         ).then(embed_result => {
+           if (embed_result === null || embed_result === undefined) { 
+             console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+             return
+           }
+           pool.query(`UPDATE events
+                       SET embedding = $6
+                       WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                       [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result)]);  
+         }) 
+       } catch (error) {
+           if (error.status===402) {
+             console.log("Error: Out of tokens")
+           }
+         }
+    })
     );
 
     await Promise.all(insertPromises);
@@ -249,7 +275,7 @@ app.get('/auth/azure', (req, res) => {
 
       const authCodeUrlParameters = {
         scopes: ['openid', 'profile', 'email'],
-        redirectUri: 'https://backend-three-puce-56.vercel.app/auth/azure/callback', // Fully qualified URI
+        redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`, // Fully qualified URI
         codeChallenge: challenge,
         codeChallengeMethod: 'S256',
       };
@@ -275,7 +301,7 @@ app.get('/auth/azure/callback', (req, res) => {
   const tokenRequest = {
     code: req.query.code,
     scopes: ['openid', 'profile', 'email'],
-    redirectUri: 'https://backend-three-puce-56.vercel.app/auth/azure/callback',
+    redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
     codeVerifier: req.session.codeVerifier, // Retrieve codeVerifier from session
   };
 

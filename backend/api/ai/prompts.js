@@ -230,6 +230,58 @@ const jsonEvent = {
   }
 };
 
+const jsonInsight = {
+  "type": "ARRAY",
+  "items": {
+    "type": "object",
+    "properties": {
+      "label": {"description": "[normal|warning|praise|reminder]", "type": "string", "nullable": false},
+      "message": {"description": "<the short and concise insight to give based on given event>", "type": "string", "nullable": false}
+    },
+    "required": ["label", "message"],
+  }
+}
+
+const insightAll = `
+  You provide concise and short insights based on the user's events (which can be empty). Your insights must be categorizes
+  into four main label: normal, warning, praise, and reminder
+
+  label:
+    normal:
+    warning:
+    praise:
+    reminder:
+
+  Your response must be a JSON object with the following schema:
+  type: one of the four main label of the insight: Normal, Warning, Praise, Reminder
+  message: the actual concise and short insight/message to offer to the user
+
+  - only tasks (event attribute calendar: task) can be completed (event attribute completed: [true|false]). other calendars will have completed as null. do not mention completion for other calendars but you can for tasks
+  - if you are given no events, you can consider that the user has free time, completed all their tasks, or is procastinating on adding their events to the calendar
+  - do not repeat the same insight. if an insight crosses multiple labels, only use the one that is most likely. for example, do not repeat that the user has freetime and suggest activities twice. you have though have two insights if the user has free time if the intentions are different: free time -> go relax, or free time -> get some future work done early
+  - ignore differing time zone. all time zone are converted to for the user
+  - consider future wants or need that the user may want to plan for. ex. christmas is coming around the corner but having too many homework can ruin christmas; a bunch of assignments or tests on the same work. should get these done earlier so not cramming on that week
+  - max token is 350, do not go above
+  - attitude, be more suggestive rather than forcing
+  - todays date is ${new Date()}. make insights relative to this date
+  - do not use markdown
+  - you can give up to 5 insights/5 items in your response
+  - a normal label insight is just any other insight that do not fit with the other 3 insight label 
+  = do not treat this as a conversation. 
+
+-----
+
+
+example insight response: 
+
+[{"label": "normal", "message": "You're most productive on Tuesday. Consider scheduling important tasks for this day"},{"label":"warning","message":"You often miss tasks scheduled after 4 PM. Try rescheduling these to earlier in the day"},{"label":"praise", "message":"Great job on completing all your high-prioirty tasks this week!"},{"label":"reminder","message":"You have 3 upcoming deadlines this week. Consider starting on them early"}]
+
+bad example of repeating the same insight response (Freetime and suggesting activities is mentioned twice/repeating):
+
+[ { label: 'normal', message: 'It seems you have some free time. Consider planning some relaxation or hobbies for the weekend.' }, { label: 'reminder', message: 'Christmas is just around the corner! You might want to start planning for it, such as making a shopping list or deciding on gifts.' }, { label: 'normal', message: 'Having some free time allows for spontaneity. Consider trying out a new restaurant or activity this weekend.' }, { label: 'reminder', message: "The end of the year is approaching. It might be helpful to start planning for next year's goals and objectives." }, { label: 'normal', message: 'Free time is valuable. Use it to pursue personal projects or simply unwind and recharge.' } ]
+
+`
+
 const chat_createEvent = `createevent:
    you are a secretary that is in charge of scheduling events for the boss. the boss tells you what events he has coming up in plain language.
 
@@ -278,6 +330,6 @@ user input: "middle school day starting at 6am (end_time not given but assume ge
 {"title":"Event Today","description":"Created on 11/4/2024","start_time":"2024-11-04T00:00","end_time":"2024-11-05T00:00","location":"N/A","frequency":"do not repeat","calendar":"Personal","allDay":false,"time_zone":"America/Los_Angeles"}
 `
 
-module.exports = {chatAll, chat_createEvent, chat_context, jsonEvent};
+module.exports = {chatAll, chat_createEvent, chat_context, jsonEvent, insightAll, jsonInsight};
 
 

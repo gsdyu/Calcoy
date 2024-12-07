@@ -40,6 +40,8 @@
     "passport-azure-ad": "^4.3.5",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.12.0",
+    "pusher": "^5.2.0",
+    "pusher-js": "^8.4.0-rc2",
     "readline-sync": "^1.4.10",
     "socket.io": "^4.8.1",
     "ws": "^8.18.0"

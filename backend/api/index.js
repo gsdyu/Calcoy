@@ -8,13 +8,21 @@ const pgSession = require('connect-pg-simple')(expressSession);
 const jwt = require('jsonwebtoken'); 
 const cookieParser = require('cookie-parser');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
+const Pusher = require("pusher");
 
+const pusher = new Pusher({
+  appId: "1907546",
+  key: process.env.PUSHER_KEY, 
+  secret: "88a34798a4ac4ff5a016",
+  cluster: process.env.PUSHER_CLUSTER, 
+  useTLS: true
+});
 // Initialize express app
 const app = express();
 
 app.use(express.json())
 app.use(cors({
-    origin: 'https://www.calcoy.com',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
     credentials: true
 }));
@@ -48,9 +56,9 @@ require('./config/passport')(pool);
 
 //routes
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool); 
+require('./routes/events')(app, pool, pusher); 
 require('./routes/profile')(app, pool);
-require('./routes/servers')(app, pool); 
+require('./routes/servers')(app, pool, pusher); 
 require('./routes/ai')(app,pool);
 
 /**
