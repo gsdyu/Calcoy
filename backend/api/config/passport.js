@@ -191,7 +191,7 @@ module.exports = (pool) => {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'https://backend-three-puce-56.vercel.app/auth/google/callback',
+        callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
         accessType: 'offline', // Request offline access
         prompt: 'consent',     // Force re-consent to receive the refresh token
       },
@@ -216,7 +216,7 @@ module.exports = (pool) => {
  passport.use('google-calendar', new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
   clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.NEXT_PUBLIC_SERVER_URL}/auth/google/calendar/callback`,
+  callbackURL: `${process.env.SERVER_URL}/auth/google/calendar/callback`,
   
   scope: [
     'https://www.googleapis.com/auth/calendar.readonly',

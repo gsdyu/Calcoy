@@ -1,6 +1,4 @@
 'use client';
-import { io } from 'socket.io-client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import Sidebar from '@/components/Sidebar/Sidebar';
 import GroupCalendars from '@/components/Sidebar/GroupCalendars';
@@ -39,7 +37,7 @@ import Pusher from 'pusher-js';
   const [visibleItems, setVisibleItems] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-  const [socketConnect, setSocketConnect] = useState(false);
+  const [pusherConnect, setPusherConnect] = useState(false);
   const currentUser = useRef(null);
 
   // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
@@ -147,27 +145,82 @@ import Pusher from 'pusher-js';
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
     });
   
-    const channel = pusher.subscribe('events-channel');
+    const eventsChannel = pusher.subscribe('events-channel');
+    const serversChannel = pusher.subscribe('servers-channel')
   
-    channel.bind('new-event', (data) => {
-      console.log('New event received:', data);
-      const newEvent = data.event;
-  
-      // Update state with the new event
-      setEvents((prevEvents) => {
-        // Prevent duplicates
-        if (prevEvents.some((e) => e.id === newEvent.id)) {
-          return prevEvents;
-        }
-        return [...prevEvents, newEvent];
-      });
-  
-      showNotification('A new event has been added!', 'Undo');
+    eventsChannel.bind('eventCreated', (event) => {
+      console.log('New event received:', event);
+        if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
+        const eventList = Array.isArray(event) ? event : [event]
+        const formattedEvents = eventList.map(event => {
+          const startTime = new Date(event.start_time);
+          const endTime = new Date(event.end_time);
+          const calendarType = event.calendar || 'default';
+          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+          return (visibleAny) ? {
+            ...event,
+            date: startTime.toLocaleDateString(),
+            startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            isTask: event.calendar === 'Task',
+            completed: event.completed || false,
+            server_id: event.server_id,
+            imported_from: event.imported_from,
+            imported_username: event.imported_username || event.imported_from
+          } : {};
+        });
+        setEvents((prevEvents) => [...prevEvents, ...eventList]);
+        showNotification('A new event has been added!', 'Undo');
+    });
+
+    eventsChannel.bind('eventUpdated', (updatedEvent) => {
+      if (updatedEvent.user_id != currentUser.current && activeCalendar?.id !== updatedEvent.server_id) return;
+
+      const startTime = new Date(event.start_time);
+      const endTime = new Date(event.end_time);
+      event.date = startTime.toLocaleDateString(),
+      event.startTime = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      event.endTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      event.calendarType = event.calendar || 'default';
+      const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+      if (!visibleAny) return
+      setEvents((prevEvents) =>
+        prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
+      );
+    });
+
+    eventsChannel.bind('eventDeleted', (deletedEvent) => {
+      if (deletedEvent.user_id !== currentUser.current && activeCalendar?.id !== deletedEvent.server_id) return;
+      setEvents((prevEvents) => prevEvents.filter((event) => event.id !== deletedEvent.id));
+    });
+
+    // serverLeft not implemented yet. only applicable really when user is kicked from server, but we do not have that functionality yet
+    /*
+    serversChannel.bind('serverLeft', (leftServer) => {
+      if (!(leftServer.user_id === currentUser.current)) return;
+      const serverId = Number(leftServer.server_id)
+      setServers((prevServers) => prevServers.filter((server) => server.id !== serverId))
+
+      if (activeCalendar === serverId) {
+        setActiveCalendar(null);
+      };
+    });
+    */
+
+    serversChannel.bind('userJoined', (userInfo) => {
+      if (Number(userInfo.server_id) != activeCalendar.id) return;
+      setServerUsers((prevUsers) => [...prevUsers, userInfo])
+    });
+
+    serversChannel.bind('userLeft', (userInfo) => {
+      if (Number(userInfo.server_id) != activeCalendar.id) return;
+      setServersUsers((prev) => prev.filter((user) => (user.server_id !== userInfo.server_id && user.id !==userInfo.id)));
     });
   
     return () => {
       // Clean up subscription on component unmount
       pusher.unsubscribe('events-channel');
+      pusher.unsubscribe('servers-channel');
     };
   }, []);
 

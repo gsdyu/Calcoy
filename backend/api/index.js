@@ -12,9 +12,9 @@ const Pusher = require("pusher");
 
 const pusher = new Pusher({
   appId: "1902181",
-  key: "c6510a0a80e178701624",
+  key: process.env.PUSHER_KEY, 
   secret: "dd5ed59959277833f4e2",
-  cluster: "us3",
+  cluster: process.env.PUSHER_CLUSTER, 
   useTLS: true
 });
 // Initialize express app
@@ -56,9 +56,9 @@ require('./config/passport')(pool);
 
 //routes
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool); 
+require('./routes/events')(app, pool, pusher); 
 require('./routes/profile')(app, pool);
-require('./routes/servers')(app, pool); 
+require('./routes/servers')(app, pool, pusher); 
 require('./routes/ai')(app,pool);
 
 /**

@@ -1,17 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
-const Pusher = require('pusher');
 
-// Initialize Pusher instance
-const pusher = new Pusher({
-  appId: "1902181",
-  key: "c6510a0a80e178701624",
-  secret: "dd5ed59959277833f4e2",
-  cluster: "us3",
-  useTLS: true
-});
-
-module.exports = (app, pool) => {
+module.exports = (app, pool, pusher) => {
 // Create event route
 app.post('/events', authenticateToken, async (req, res) => {
   const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, privacy } = req.body;
@@ -38,7 +28,7 @@ app.post('/events', authenticateToken, async (req, res) => {
     const newEvent = result.rows[0];
 
     // Trigger Pusher event
-    pusher.trigger("events-channel", "new-event", {
+    pusher.trigger("events-channel", "eventCreated", {
       event: newEvent
     });
 
@@ -184,6 +174,10 @@ app.post('/events/import', authenticateToken, async (req, res) => {
       );
       
       if (updateResult.rowCount > 0) {
+
+        pusher.trigger("events-channel", "eventUpdated", {
+          updatedEvent: updateResult.rows[0] 
+        });
         res.json({ message: 'Event updated successfully', event: updateResult.rows[0] });
       } else {
         res.status(500).json({ error: 'Failed to update the event' });
@@ -238,6 +232,10 @@ app.post('/events/import', authenticateToken, async (req, res) => {
       const deleteResult = await pool.query('DELETE FROM events WHERE id = $1', [eventId]);
       
       if (deleteResult.rowCount > 0) {
+
+        pusher.trigger("events-channel", "eventDeleted", {
+          deletedEvent: deletedResult.rows[0] 
+        });
         res.json({ message: 'Event deleted successfully' });
       } else {
         res.status(500).json({ error: 'Failed to delete the event' });
