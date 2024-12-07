@@ -31,19 +31,20 @@ app.post('/events', authenticateToken, async (req, res) => {
       [userId, title, description, startDate.toISOString(), endDate.toISOString(), location, frequency, calendar, time_zone, serverId, includeInPersonal, privacy || 'public']
     );
 
+    if (embed) {
+      await pool.query(`
+        UPDATE events
+        SET embedding = $1
+        WHERE id = $2
+      `, [JSON.stringify(embed), result.rows[0].id]);
+    }
+
     const newEvent = result.rows[0];
 
     // Trigger Pusher event
     pusher.trigger("events-channel", "eventCreated", {
       event: newEvent
     });
-      if (embed) {
-        await pool.query(`
-          UPDATE events
-          SET embedding = $1
-          WHERE id = $2
-        `, [JSON.stringify(embed), result.rows[0].id]);
-      }
 
     res.status(201).json({
       message: 'Event created successfully',

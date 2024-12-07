@@ -11,9 +11,9 @@ const handleGoogleCalendarWebhook = require('./routes/webhook');
 const Pusher = require("pusher");
 
 const pusher = new Pusher({
-  appId: "1902181",
+  appId: "1907546",
   key: process.env.PUSHER_KEY, 
-  secret: "dd5ed59959277833f4e2",
+  secret: "88a34798a4ac4ff5a016",
   cluster: process.env.PUSHER_CLUSTER, 
   useTLS: true
 });

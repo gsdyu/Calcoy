@@ -37,8 +37,8 @@ import Pusher from 'pusher-js';
   const [itemColors, setItemColors] = useState({});
   const [preferencesLoading, setPreferencesLoading] = useState(true);
   const [eventModalTriggerRect, setEventModalTriggerRect] = useState(null);
-  const [pusherConnect, setPusherConnect] = useState(false);
   const currentUser = useRef(null);
+  const lastSavedEvent = useRef(null);
 
   // Saves sidebar state if open then stay open on refresh if closed stay closed on refresh till state is changed
   const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
@@ -155,48 +155,49 @@ import Pusher from 'pusher-js';
     const eventsChannel = pusher.subscribe('events-channel');
     const serversChannel = pusher.subscribe('servers-channel')
   
-    eventsChannel.bind('eventCreated', (event) => {
-      console.log('New event received:', event);
+    eventsChannel.bind('eventCreated', (data) => {
+      const event = data.event;
         if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
         const eventList = Array.isArray(event) ? event : [event]
-        const formattedEvents = eventList.map(event => {
-          const startTime = new Date(event.start_time);
-          const endTime = new Date(event.end_time);
-          const calendarType = event.calendar || 'default';
-          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+        const formattedEvents = eventList.map(savedEvent => {
+          if (lastSavedEvent.current===savedEvent.id) return {}
+          const startTime = new Date(savedEvent.start_time);
+          const endTime = new Date(savedEvent.end_time);
+          const calendarType = savedEvent.calendar || 'default';
+          const {visibleAny} = getVisibility(savedEvent, calendarType, activeCalendar);
           return (visibleAny) ? {
-            ...event,
+            ...savedEvent,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             endTime: endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            isTask: event.calendar === 'Task',
-            completed: event.completed || false,
-            server_id: event.server_id,
-            imported_from: event.imported_from,
-            imported_username: event.imported_username || event.imported_from
+            isTask: savedEvent.calendar === 'Task',
+            imported_username: savedEvent.imported_username || savedEvent.imported_from
           } : {};
         });
-        setEvents((prevEvents) => [...prevEvents, ...eventList]);
+
+        setEvents((prevEvents) => [...prevEvents, ...formattedEvents]);
         showNotification('A new event has been added!', 'Undo');
     });
 
-    eventsChannel.bind('eventUpdated', (updatedEvent) => {
+    eventsChannel.bind('eventUpdated', (data) => {
+      const updatedEvent = data.updatedEvent
       if (updatedEvent.user_id != currentUser.current && activeCalendar?.id !== updatedEvent.server_id) return;
 
-      const startTime = new Date(event.start_time);
-      const endTime = new Date(event.end_time);
-      event.date = startTime.toLocaleDateString(),
-      event.startTime = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      event.endTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      event.calendarType = event.calendar || 'default';
-      const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
+      const startTime = new Date(updatedEvent.start_time);
+      const endTime = new Date(updatedEvent.end_time);
+      const calendarType = updatedEvent.calendar || 'default';
+      updatedEvent.date = startTime.toLocaleDateString()
+      updatedEvent.startTime = startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      updatedEvent.endTime = endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      const {visibleAny} = getVisibility(updatedEvent, calendarType, activeCalendar);
       if (!visibleAny) return
       setEvents((prevEvents) =>
         prevEvents.map((event) => (event.id === updatedEvent.id ? updatedEvent : event))
       );
     });
 
-    eventsChannel.bind('eventDeleted', (deletedEvent) => {
+    eventsChannel.bind('eventDeleted', (data) => {
+      const deletedEvent = data.deletedEvent
       if (deletedEvent.user_id !== currentUser.current && activeCalendar?.id !== deletedEvent.server_id) return;
       setEvents((prevEvents) => prevEvents.filter((event) => event.id !== deletedEvent.id));
     });
@@ -214,14 +215,17 @@ import Pusher from 'pusher-js';
     });
     */
 
-    serversChannel.bind('userJoined', (userInfo) => {
-      if (Number(userInfo.server_id) != activeCalendar.id) return;
+    serversChannel.bind('userJoined', (data) => {
+      const userInfo = data.userInfo;
+      console.log('userJoined', userInfo)
+      if (Number(userInfo.server_id) != activeCalendar?.id) return;
       setServerUsers((prevUsers) => [...prevUsers, userInfo])
     });
 
-    serversChannel.bind('userLeft', (userInfo) => {
-      if (Number(userInfo.server_id) != activeCalendar.id) return;
-      setServersUsers((prev) => prev.filter((user) => (user.server_id !== userInfo.server_id && user.id !==userInfo.id)));
+    serversChannel.bind('userLeft', (data) => {
+      const userInfo = data.userInfo;
+      if (Number(userInfo.server_id) != activeCalendar?.id) return;
+      setServerUsers((prev) => prev.filter((user) => !(user.server_id === userInfo.server_id && user.id ===userInfo.user_id)));
     });
   
     return () => {
@@ -229,7 +233,7 @@ import Pusher from 'pusher-js';
       pusher.unsubscribe('events-channel');
       pusher.unsubscribe('servers-channel');
     };
-  }, []);
+  }, [activeCalendar, currentUser, lastSavedEvent]);
 
   const showNotification = (message, action = '') => {
     setNotification({ message, action, isVisible: true });
@@ -478,6 +482,7 @@ import Pusher from 'pusher-js';
       if (response.ok) {
         const savedEventResponse = await response.json();
         const savedEvent = savedEventResponse.event;
+        lastSavedEvent.current=savedEvent.id;
   
         if (savedEvent) {
           setEvents((prevEvents) => {

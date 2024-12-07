@@ -72,7 +72,7 @@ module.exports = (app, pool, pusher) => {
         return res.status(404).json({ error: 'Server not found or user not a member' });
       }
       pusher.trigger("servers-channel", "userLeft", {
-        userInfo: {server_id:serverId, user_id:userId} 
+        userInfo: {server_id:Number(serverId), user_id:userId} 
       });
 
       res.json({ message: 'Successfully left the server' });
