@@ -137,8 +137,6 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
       );
     }
 
-    
-
     const {eventColor, otherColorList} = getEventColor(event)
     if (eventColor == null) {
       return
@@ -181,7 +179,7 @@ const MonthView = ({ currentDate, selectedDate, events, onDateClick, onDateDoubl
         });
       }
     };
-  
+    
     return (
       <div
         key={event.id}

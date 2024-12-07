@@ -62,7 +62,7 @@ import { useTheme } from '@/contexts/ThemeContext';
       socket.on('eventCreated', (event) => {
         if (event.user_id !== currentUser.current && activeCalendar?.id !== event.server_id) return;
         const eventList = Array.isArray(event) ? event : [event]
-        const formattedEvents = data.map(event => {
+        const formattedEvents = eventList.map(event => {
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
           const calendarType = event.calendar || 'default';
@@ -103,6 +103,7 @@ import { useTheme } from '@/contexts/ThemeContext';
         setEvents((prevEvents) => prevEvents.filter((event) => event.id !== deletedEvent.id));
       });
 
+      // serverLeft not implemented yet
       socket.on('serverLeft', ( leftServer ) => {
         if (!(leftServer.user_id === currentUser.current)) return;
         const serverId = Number(leftServer.server_id)
@@ -219,7 +220,6 @@ import { useTheme } from '@/contexts/ThemeContext';
     weekStart.setDate(today.getDate() - today.getDay());
     setSelectedWeekStart(weekStart);
     setSelectedDate(today);
-    console.log('bahh')
 
     fetchEvents();
   }, [displayName, activeCalendar, visibleItems]); 
@@ -235,7 +235,7 @@ import { useTheme } from '@/contexts/ThemeContext';
     const visibleType = typeof visibleItems[calendarType]  === 'boolean' ? visibleItems[calendarType] : false;
     const visibleUser = (typeof visibleItems[`server${event.server_id}:user${event.user_id}`] === 'boolean' && activeCalendar?.id === event.server_id)? visibleItems[`server${event.server_id}:user${event.user_id}`] : false; 
     const visibleServer = (typeof visibleItems[`server${event.server_id}`]  === 'boolean' && !activeCalendar)? visibleItems[`server${event.server_id}`] : false;
-    const visibleImport = typeof visibleItems[`${event.imported_from}:${event.imported_username}`] === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
+    const visibleImport = (typeof visibleItems[`${event.imported_from}:${event.imported_username}`]) === 'boolean' ? visibleItems[`${event.imported_from}:${event.imported_username}`] : false;
     const visibleAny = (visibleType || visibleUser || visibleServer || visibleImport)
 
     return {visibleType, visibleUser, visibleServer, visibleImport, visibleAny}
@@ -320,8 +320,7 @@ import { useTheme } from '@/contexts/ThemeContext';
           const startTime = new Date(event.start_time);
           const endTime = new Date(event.end_time);
           const calendarType = event.calendar || 'default';
-          const {visibleAny} = getVisibility(event, calendarType, activeCalendar);
-          return (visibleAny) ? {
+          const formattedEvent = {
             ...event,
             date: startTime.toLocaleDateString(),
             startTime: startTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
@@ -331,7 +330,9 @@ import { useTheme } from '@/contexts/ThemeContext';
             server_id: event.server_id,
             imported_from: event.imported_from,
             imported_username: event.imported_username || event.imported_from
-          } : {};
+          }
+          const {visibleAny, visibleImport} = getVisibility(formattedEvent, calendarType, activeCalendar);
+          return (visibleAny) ? formattedEvent : {};
         });
 
         const tempOtherCalendars = [...new Set(formattedEvents.map(event=>{return ({imported_from: event.imported_from, imported_username: event.imported_username})}).filter(calendar=>calendar.imported_from!==null).map(calendar=>JSON.stringify(calendar)))].map(calendar => JSON.parse(calendar))

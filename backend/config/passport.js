@@ -184,7 +184,7 @@ module.exports = (pool) => {
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
+      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
       accessType: 'offline', // Request offline access to get a refresh token
       prompt: 'consent' // Force re-consent to receive the refresh token
     },
@@ -241,7 +241,7 @@ module.exports = (pool) => {
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
-    res.redirect('/calendar');
+    user.redirectTo = '/calendar';
     return done(null, user);
     
   } catch (error) {
