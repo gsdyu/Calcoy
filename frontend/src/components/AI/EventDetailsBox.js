@@ -127,7 +127,7 @@ const EventDetailsBox = ({
 
   if (isEditing) {
     return (
-      <div className={styles.eventDetailsBox}>
+      <div className={`${styles.eventDetailsBox} ${darkMode ? styles.dark : ''}`}>
         <div className="grid grid-cols-2 gap-4">
           <div className={styles.contentSection}>
             <div className={styles.formGroup}>
@@ -204,7 +204,7 @@ const EventDetailsBox = ({
   const endDateTime = formatDateForDisplay(eventDetails.end_time);
 
   return (
-    <div className={styles.eventDetailsBox}>
+    <div className={`${styles.eventDetailsBox} ${darkMode ? styles.dark : ''}`}>
       <div className="grid grid-cols-2 gap-4">
         <div className={styles.contentSection}>
           <div className={`${styles.titleRow} flex flex-col space-y-2`}>

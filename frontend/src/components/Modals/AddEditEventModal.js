@@ -523,8 +523,6 @@ const AddEditEventModal = ({ onClose, onSave, initialDate, event }) => {
                 className={`w-full p-3 mb-4 ${darkMode ? 'bg-gray-700 border-gray-600' : 'bg-gray-100 border-gray-100'} rounded-[7px]`}
               >
                 <option>Personal</option>
-                <option>Work</option>
-                <option>Family</option>
               </select>
             </>
           )}

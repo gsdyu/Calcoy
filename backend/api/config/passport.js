@@ -48,7 +48,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
           imported_username: email
         };
       } else if (!event.start.datetime && !event.end.datetime) {
-        event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
+        const event_end_date = new Date (new Date (`${event.start.date}T00:00:00`).getTime()+24*60*60*1000)
         eventData = {
           user_id: userId,
           title: event.summary || 'No Title',
@@ -100,7 +100,7 @@ const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
             pool.query(`UPDATE events
               SET embedding = $6
               WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
-              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result[0])]
+              [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result)]
             );  
           }
          ) 
@@ -192,13 +192,15 @@ module.exports = (pool) => {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
-        accessType: 'offline', // Request offline access
         prompt: 'consent',     // Force re-consent to receive the refresh token
+
       },
       async (accessToken, refreshToken, profile, done) => {
         const email = profile.emails[0].value;
         const googleUsername = profile.displayName; // Retrieve the Google username
-  
+        if (!email) {
+          return done(new Error("No email found in profile"), null);
+      }
         try {
           // Find or create the user
           const user = await findOrCreateUser(email, googleUsername, pool); // Include username
@@ -212,62 +214,75 @@ module.exports = (pool) => {
   );
 
 
-  // Google OAuth Strategy for Calendar access
- passport.use('google-calendar', new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: `${process.env.SERVER_URL}/auth/google/calendar/callback`,
+  passport.use('google-calendar', new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+    callbackURL: `${process.env.SERVER_URL}/auth/google/calendar/callback`,
+    scope: [
+      'https://www.googleapis.com/auth/calendar.readonly',
+      'https://www.googleapis.com/auth/userinfo.email',
+      'https://www.googleapis.com/auth/userinfo.profile',
+    ],
+    prompt: 'consent',
+  }, async (accessToken, refreshToken, profile, done) => {
+    try {
+      console.log(process.env.SERVER_URL)
+      const email = profile.emails?.[0]?.value;
+      const googleUsername = profile.displayName || profile.name?.givenName;
   
-  scope: [
-    'https://www.googleapis.com/auth/calendar.readonly',
-    'https://www.googleapis.com/auth/userinfo.email',
-    'https://www.googleapis.com/auth/userinfo.profile'
-  ],
-  accessType: 'offline',
-  prompt: 'consent',
-}, async (accessToken, refreshToken, profile, done) => {
-  try {
-    const email = profile.emails && profile.emails[0] && profile.emails[0].value;
-    if (!email) return done(new Error("No email found in profile"));
-
-    // Fetch or create the user
-    const user = await findOrCreateUser(email, pool);
-    if (refreshToken) {
-      await pool.query(
-        'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
-        [accessToken, refreshToken, user.id]
-      );
-    } else {
-      await pool.query(
-        'UPDATE users SET access_token = $1 WHERE id = $2',
-        [accessToken, user.id]
-      );
+      if (!email) {
+        console.error('Error: No email found in profile');
+        return done(new Error("No email found in profile"), null);
+      }
+  
+      // Debugging
+      console.log('Processing user with email:', email);
+  
+      const user = await findOrCreateUser(email, googleUsername, pool);
+  
+      if (!user) {
+        console.error('Error: User creation or retrieval failed');
+        return done(new Error("User creation or retrieval failed"), null);
+      }
+  
+      if (refreshToken) {
+        await pool.query(
+          'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
+          [accessToken, refreshToken, user.id]
+        );
+      } else {
+        await pool.query(
+          'UPDATE users SET access_token = $1 WHERE id = $2',
+          [accessToken, user.id]
+        );
+      }
+  
+      await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
+  
+      // Webhook URL for Google Calendar notifications
+      const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
+       
+      // Set up Google Calendar notification only once
+      await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool, email);
+      user.accessToken = accessToken;
+      user.redirectTo = '/calendar'; 
+  
+      return done(null, user);
+  
+    } catch (error) {
+      console.error('Google Calendar OAuth error:', error);
+      return done(error, null);
     }
-    // Save calendar events to the database
-    await fetchAndSaveGoogleCalendarEvents(accessToken, user.id, pool, email);
-
-    // Webhook URL for Google Calendar notifications
-    const webhookUrl = `${process.env.WEBHOOK_DOMAIN_URL}/webhook/google-calendar`;
-     
-    // Set up Google Calendar notification only once
-    await subscribeToGoogleCalendarUpdates(accessToken, webhookUrl, user.id, pool, email);
-
-    // Add accessToken to the user object for further use
-    user.accessToken = accessToken;
-    
-    return done(null, user);
-  } catch (error) {
-    console.error('Google Calendar OAuth error:', error);
-    return done(error, null);
-  }
-}));
-
+  }));
 
   // Serialize user to session
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id, done) => {
     try {
       const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [id]);
+      if (!userResult.rows.length) {
+        throw new Error(`No user found with id ${id}`);
+    }
       done(null, userResult.rows[0]);
     } catch (error) {
       done(error, null);

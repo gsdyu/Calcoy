@@ -93,6 +93,7 @@ class GeminiAgent {
 
  function handleContext(request) {
   // handles context type request 
+  let json_request;
   if (typeof request === "string") {
     try {
     json_request = JSON.parse(request)

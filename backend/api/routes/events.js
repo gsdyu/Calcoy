@@ -18,6 +18,12 @@ app.post('/events', authenticateToken, async (req, res) => {
   }
 
   try {
+      let embed = '';
+      try {
+        embed = await createEmbeddings(JSON.stringify(req.body));
+      } catch {
+        console.error('Embed error: failed to create embedding for event');
+      }
      const result = await pool.query(
       `INSERT INTO events (user_id, title, description, start_time, end_time, location, frequency, calendar, time_zone, server_id, include_in_personal, privacy) 
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) 
@@ -31,6 +37,13 @@ app.post('/events', authenticateToken, async (req, res) => {
     pusher.trigger("events-channel", "eventCreated", {
       event: newEvent
     });
+      if (embed) {
+        await pool.query(`
+          UPDATE events
+          SET embedding = $1
+          WHERE id = $2
+        `, [JSON.stringify(embed), result.rows[0].id]);
+      }
 
     res.status(201).json({
       message: 'Event created successfully',

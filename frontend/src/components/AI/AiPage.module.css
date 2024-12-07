@@ -29,20 +29,33 @@
     transition: all 0.3s ease;
     width: 600px;
     border-radius: 15px;
-    background-color: rgb(63, 79, 105);
     margin-top: 10px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+
+    .eventDetailsBox.dark {
+    background-color: rgb(63, 79, 105);
+    border: none;
+    box-shadow: none;
   }
 
   .contentSection {
   padding: 20px;
   flex-grow: 1;
   }
-  
+
   .eventDetailsBox p {
     margin: 5px 0;
+    color: #4b5563;
+    font-weight: 500;
+    }
+
+    .eventDetailsBox.dark p {
     color: #b7c5e4;
     font-weight: 600;
   }
@@ -50,6 +63,10 @@
   .eventTitle {
     font-size: 20px;
     font-weight: 750;
+    color: #1f2937;
+    }
+
+    .eventDetailsBox.dark .eventTitle {
     color: #ffffff;
   }
 
@@ -65,7 +82,8 @@
   }
 
   .buttonSection {
-    background-color: rgb(86, 107, 139);
+    background-color: #f9fafb;
+    border-top: 1px solid #e5e7eb;
     padding: 20px;
     display: flex;
     justify-content: center;
@@ -74,7 +92,12 @@
     opacity: 1;
     transform: translateY(0);
   }
-  
+
+    .eventDetailsBox.dark .buttonSection {
+    background-color: rgb(86, 107, 139);
+    border-top: none;
+    }
+
   .buttonSection.hidden {
     max-height: 0;
     opacity: 0;
@@ -82,16 +105,15 @@
     transform: translateY(-100%);
     pointer-events: none;
   }
-  
+
   .buttonContainer {
     display: flex;
     gap: 8px;
-  }
-  
-  .confirmButton svg, .denyButton svg {
+    }
+
+    .confirmButton svg, .denyButton svg {
     margin-right: 30px;
   }
-
 
   .confirmButton, .denyButton {
     display: flex;
@@ -105,27 +127,46 @@
     font-weight: 700;
     transition: background-color 0.3s, transform 0.2s;
   }
-  
+
   .confirmButton {
-    background-color: #325ba8;
+    background-color: #3b82f6;
     color: white;
   }
-  
-  .confirmButton:hover {
-    background-color: #123c8a;
-    transform: scale(1.05);
+
+  .eventDetailsBox.dark .confirmButton {
+  background-color: #325ba8;
   }
-  
+
+  .confirmButton:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+  }
+
+  .eventDetailsBox.dark .confirmButton:hover {
+    background-color: #123c8a;
+  }
+
   .denyButton {
+  background-color: #f3f4f6;
+  color: #4b5563;
+  border: 1px solid #e5e7eb;
+  }
+
+  .eventDetailsBox.dark .denyButton {
     background-color: #525a6b;
     color: white;
+  border: none;
   }
-  
+
   .denyButton:hover {
-    background-color: #414a5c;
-    transform: scale(1.05);
+  background-color: #e5e7eb;
+  transform: scale(1.05);
   }
-  
+
+  .eventDetailsBox.dark .denyButton:hover {
+    background-color: #414a5c;
+  }
+
   .container {
     padding-top: 200px;
     max-width: 1000px;
@@ -135,7 +176,7 @@
     flex-direction: column;
     height: 100vh;
   }
-  
+
   .chatWindow {
     display: flex;
     flex-direction: column;
@@ -144,7 +185,7 @@
     overflow-y: auto;
     padding-bottom: 80px;
   }
-  
+
   .message {
     padding: 10px 15px;
     border-radius: 10px;
@@ -156,7 +197,7 @@
     align-items: flex-start;
     gap: 12px
   }
-  
+
   .user {
     background-color: #b7d2fa;
     align-self: flex-end;
@@ -166,7 +207,7 @@
     background-color: rgb(67, 85, 112);
     align-self: flex-end;
   }
-  
+
   .bot {
     text-align: left;
     align-self: flex-start;
@@ -180,7 +221,7 @@
   .textarea::placeholder {
     color: #6e6e6e;
   }
-  
+
   .textareaDark::placeholder {
     color: #b8b8b8;
   }
@@ -208,7 +249,7 @@
     border: 2px solid rgb(97, 121, 156);
     padding: 5px;
   }
-  
+
   .textarea {
     background-color: rgb(215, 219, 224);
     width: 90%;
@@ -267,12 +308,12 @@
     border-radius: 6px;
     font-size: 14px;
   }
-  
+
   .inputContainerDark .clipTip {
     background-color: rgb(26, 26, 26);
     color: rgb(255, 255, 255);
   }
-  
+
   .clip {
     height: 35px;
     width: 35px;
@@ -287,47 +328,47 @@
     transition: background-color 0.2s;
     cursor: pointer;
   }
-  
+
   .clip:hover {
     background-color: rgba(0, 0, 0, 0.05);
   }
-  
+
   .inputContainerDark .clip:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-  
+
   .clip:hover .clipTip {
     visibility: visible;
     opacity: 1;
   }
-  
+
   .clipIcon {
     color: #6e6e6e;
     transition: color 0.2s;
   }
-  
+
   .inputContainerDark .clipIcon {
     color: #dadada;
   }
-  
+
   .clip:hover .clipIcon {
     color: #3e7bdf;
   }
-  
+
   .buttonActive {
     background-color: #3e7bdf;
     color: rgb(255, 255, 255);
   }
-  
+
   .buttonActiveDark {
-    background-color: #dadada;
+    background-color: #3e7bdf;
     color: rgb(255, 255, 255);
   }
-  
+
   .sendicon {
     color: #272727;
   }
-  
+
   .inputContainerDark .sendicon {
     color: #ffffff;
   }
@@ -337,17 +378,17 @@
   .chatWindow::-webkit-scrollbar, .chatScroll::-webkit-scrollbar {
     width: 8px;
   }
-  
+
   .chatWindow::-webkit-scrollbar-track, .chatScroll::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
-  
+
   .chatWindow::-webkit-scrollbar-thumb, .chatScroll::-webkit-scrollbar-thumb {
     background: rgba(67, 85, 112, 0.6);
     border-radius: 10px;
   }
-  
+
   .chatWindow::-webkit-scrollbar-thumb:hover, .chatScroll::-webkit-scrollbar-thumb:hover {
     background: rgba(75, 93, 121, 0.8);
   }
@@ -357,17 +398,17 @@
   .textarea::-webkit-scrollbar {
     width: 12px;
   }
-  
+
   .textarea::-webkit-scrollbar-track {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
   }
-  
+
   .textarea::-webkit-scrollbar-thumb {
     background: rgba(126, 145, 173, 0.6);
     border-radius: 10px;
   }
-  
+
   .textarea::-webkit-scrollbar-thumb:hover {
     background: rgba(102, 126, 165, 0.8);
   }
@@ -381,41 +422,50 @@
     padding: 8px;
     margin: 4px 0;
     border-radius: 4px;
-    border: none;
+    background-color: white;
+    border: 1px solid #e5e7eb;
+    color: #1f2937;
   }
-  
+
   .editInputDark {
     background: #667486;
-    border-color: #444;
-    color: white;
-    border-radius: 10px;
-  }
-  
-  .editTextarea {
-    width: 100%;
-    padding: 8px;
-    margin: 4px 0;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    min-height: 100px;
-    resize: vertical;
     border: none;
-  }
-  
-  .editTextareaDark {
-    background: #667486;
     color: white;
     border-radius: 10px;
   }
 
+  .editTextarea {
+    width: 100%;
+    padding: 8px;
+    margin: 4px 0;
+    border-radius: 4px;
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  color: #1f2937;
+    min-height: 100px;
+    resize: vertical;
+  }
+
+  .editTextareaDark {
+    background: #667486;
+    color: white;
+    border-radius: 10px;
+    border: none;
+  }
+
   .editLabel {
     display: block;
-    font-weight: 700;
-    color: #ffffff;
+    font-weight: 600;
+    color: #374151;
     margin-top: 5px;
     font-size: 15px;
   }
-  
+
+    .eventDetailsBox.dark .editLabel {
+    color: #ffffff;
+    font-weight: 700;
+    }
+
   .editButton {
     display: flex;
     align-items: center;
@@ -423,14 +473,23 @@
     padding: 0.5rem 1rem;
     border-radius: 0.375rem;
     background-color: transparent;
-    border: 1.5px solid #ffffff;
-    color: #ffffff;
+    border: 1.5px solid #6b7280;
+    color: #4b5563;
     font-size: 0.875rem;
     cursor: pointer;
     transition: all 0.2s;
   }
-  
+
+  .eventDetailsBox.dark .editButton {
+  border-color: #ffffff;
+  color: #ffffff;
+  }
+
   .editButton:hover {
+  background-color: #f3f4f6;
+  }
+
+  .eventDetailsBox.dark .editButton:hover {
     background: rgb(102, 144, 207);
   }
 
@@ -447,10 +506,14 @@
     display: flex;
     align-items: center;
     gap: 5px;
-    color: white;
     font-weight: 600;
     font-size: 14px;
-}
+    color: #4b5563;
+  }
+
+  .eventDetailsBox.dark .statusIcon {
+  color: white;
+  }
 
 /* Animation for the icon appearance */
 @keyframes scaleIn {
@@ -467,14 +530,21 @@
     }
 }
 
-.confirmed {
-  color: #4a97de;
-}
+  .confirmed {
+  color: #3b82f6;
+  }
 
-.discarded {
+  .eventDetailsBox.dark .confirmed {
+  color: #4a97de;
+  }
+
+  .discarded {
+  color: #ef4444;
+  }
+
+  .eventDetailsBox.dark .discarded {
   color: #e77b7b;
 }
-
 
 .messageContent {
   flex: 1;
@@ -489,7 +559,6 @@
   border-radius: 50%;
   background-color: #3e7bdf;
   flex-shrink: 0;
-
 }
 
 .botIconContainerDark {
@@ -520,11 +589,11 @@
 }
 
 .message {
-  opacity: 0; /* Start hidden */
+  opacity: 0;
   animation: fadeIn 0.3s ease-out forwards;
 }
 
-.fadereplace{
+.fadereplace {
   opacity: 0;
   animation: fadeIn 0.3s ease-out forwards;
 }
@@ -578,4 +647,39 @@
   max-height: 200px;
   border-radius: 8px;
   object-fit: cover;
+}
+
+.eventTime {
+    color: #6b7280;
+    font-size: 0.875rem;
+}
+
+.eventDetailsBox.dark .eventTime {
+    color: #b7c5e4;
+}
+
+.eventDescription {
+    margin-top: 1rem;
+    color: #4b5563;
+    line-height: 1.5;
+}
+
+.eventDetailsBox.dark .eventDescription {
+    color: #b7c5e4;
+}
+
+.dateTimeInputGroup {
+    margin-bottom: 1rem;
+}
+
+.formGroup {
+    margin-bottom: 1.5rem;
+}
+
+.dateTimeInputGroup input[type="datetime-local"] {
+    color-scheme: light;
+}
+
+.eventDetailsBox.dark .dateTimeInputGroup input[type="datetime-local"] {
+    color-scheme: dark;
 }

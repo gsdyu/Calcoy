@@ -13,7 +13,7 @@ const colorOptions = [
   { value: 'bg-gray-400', label: 'Gray' }
 ];
 
-const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, setVisibleItems }) => {
+const CalendarFilter = ({ onColorChange, onVisibleChange, itemColors, activeServer, servers, setServers, serverUsers, setServerUsers, otherCalendars, visibleItems, savePreferences }) => {
   const { darkMode } = useTheme();
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
@@ -51,6 +51,38 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
   useEffect(() => {
     localStorage.setItem('serversExpanded', JSON.stringify(showServers));
   }, [showServers]);
+
+  useEffect(() => {
+    serverUsers.forEach(user => {
+      const key = `server${user.server_id}:user${user.id}`
+      if(!(key in itemColors)) {
+        changeColor(key, 
+        itemColors?.[`server${user.server_id}`] || 
+        'bg-blue-500')
+      }
+    })
+  }, [serverUsers])
+
+  useEffect(() => {
+    otherCalendars.forEach(otherCalendar => {
+      const key = `${otherCalendar.imported_from}:${otherCalendar.imported_username}`
+      if(!(key in itemColors)) {
+        changeColor(key,
+        'bg-green-500')
+      }
+    })
+  }, [otherCalendars])
+
+  useEffect(() => {
+    servers.forEach(server => {
+
+      const key = `server${server.id}`
+      if(!(key in itemColors)) {
+        changeColor(key,
+        'bg-purple-500')
+      }
+    })
+  }, [servers])
 
   useEffect(() => {
     localStorage.setItem('otherCalendarsExpanded', JSON.stringify(showOtherCalendars));
@@ -127,17 +159,25 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     fetchServers();
   }, [setServers]);
 
-  const renderServerItem = (server, color , showEyeIcon = true) => (
+  const renderServerItem = (server, color , showEyeIcon = true) => {
+    const key = `server${server.id}`
+    if (!(key in visibleItems)) {
+      onVisibleChange(key);
+    }
+
+    return (
     <div
-      key={`server${server.id}`}
+      key={key}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
-        visibleItems[`server${server.id}`] ? '' : 'opacity-50'
+        visibleItems[key] ? '' : 'opacity-50'
       }`}
       onClick={(e) => {
         e.preventDefault();
-        toggleVisibility(`server${server.id}`, e);
+        toggleVisibility(key, e);
       }}
-      onContextMenu={(e) => togglePopup(`server${server.id}`, e)}
+      onContextMenu={(e) => {
+        if (visibleItems[key]) return togglePopup(key, e)
+      }}
     >
       <div className="flex items-center">
         {/* Display server image or fallback initial */}
@@ -155,7 +195,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         )}
         {/* Color circle and server name */}
         <div className="flex items-center">
-          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[`server${server.id}`] || 'bg-gray-400'}`}></div>
+          <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors[key] || 'bg-gray-400'}`}></div>
           <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{server.name}</p>
         </div>
       </div>
@@ -166,15 +206,15 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
           className="p-2 hover:bg-gray-500/20 rounded"
           onClick={(e) => {
             e.stopPropagation();
-            toggleVisibility(`server${server.id}`, e);
+            toggleVisibility(key, e);
           }}
         >
-          {visibleItems[`server${server.id}`] ? <FiEye /> : <FiEyeOff />}
+          {visibleItems[key] ? <FiEye /> : <FiEyeOff />}
         </button>
       )}
   
       {/* Color picker popup */}
-      {popupVisible[`server${server.id}`] && (
+      {popupVisible[key] && (
         <div 
           className={`
             absolute z-50 right-0 top-full mt-1 
@@ -193,7 +233,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
                   group relative w-7 h-7 rounded-full ${value}
                   transition-all duration-200
                   hover:scale-110
-                  ${itemColors?.[`server${server.id}`] === value ? 
+                  ${itemColors?.[key] === value ? 
                     'ring-2 ring-blue-400 ring-offset-2 ' + 
                     (darkMode ? 'ring-offset-gray-900' : 'ring-offset-white')
                     : ''
@@ -206,7 +246,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
                 `}
                 onClick={(e) => {
                   e.stopPropagation();
-                  changeColor(`server${server.id}`, value);
+                  changeColor(key, value, true);
                 }}
               >
                 <span className={`
@@ -223,7 +263,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
       )}
     </div>
-  );
+    );
+  };
 
   // Fetch users tied to the selected server
   useEffect(() => {
@@ -255,9 +296,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     if (e) {
       e.stopPropagation();
     }
-    const updatedVisibility = { ...visibleItems, [item]: !visibleItems[item] };
-    setVisibleItems(updatedVisibility);
-    savePreferences({ visibility: updatedVisibility, colors: itemColors });
+    if (popupVisible[item]) togglePopup(item)
+    onVisibleChange(item)
   };
 
   const togglePopup = (item, e) => {
@@ -271,36 +311,25 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
     }));
   };
 
-  const changeColor = (item, color) => {
+  const changeColor = (item, color, toggle=false) => {
     if (onColorChange) {
       onColorChange(item, color);  
     }
-    togglePopup(item);
+    if (toggle) togglePopup(item);
   };
 
-  const savePreferences = async (preferences) => {
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ preferences: { ...preferences } }),    
-      });
-      if (!response.ok) {
-        throw new Error('Failed to save preferences');
-      }
-    } catch (error) {
-      console.error('Error saving preferences:', error);
-    }
-  };
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
-  const renderCalendarItem = (key, label, color, showEyeIcon = true) => (
+  const renderCalendarItem = (key, label, color, showEyeIcon = true) => { 
+
+    if (!(key in visibleItems)) {
+      onVisibleChange(key);
+    }
+
+    return (
     <div
       key={key}
       className={`flex items-center justify-between p-2 rounded transition-all duration-200 relative hover:bg-gray-500/10 ${
@@ -310,7 +339,9 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         e.preventDefault();
         toggleVisibility(key, e);
       }}
-      onContextMenu={(e) => togglePopup(key, e)}
+      onContextMenu={(e) => { 
+        if (visibleItems[key]) return togglePopup(key, e)
+      }}
     >
       <div className="flex items-center">
         <div className={`w-3 h-3 rounded-full mr-2 ${color || itemColors?.[key] || 'bg-gray-400'}`}></div>
@@ -359,7 +390,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
                 `}
                 onClick={(e) => {
                   e.stopPropagation();
-                  changeColor(key, value);
+                  changeColor(key, value, true);
                 }}
               >
                 <span className={`
@@ -376,7 +407,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
         </div>
       )}
     </div>
-  );
+    )};
 
   return (
     <div className={`flex-1 overflow-y-auto time-grid-container ${darkMode ? 'dark-scrollbar' : ''} relative`}>
@@ -399,8 +430,6 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
           <div className="space-y-1 pl-2">
             {renderCalendarItem('Personal', 'Personal', itemColors?.Personal || 'bg-blue-500')}
             {renderCalendarItem('Task', 'Tasks', itemColors?.Task || 'bg-red-500')}
-            {renderCalendarItem('Birthday', 'Birthdays', 'bg-green-500')}
-            {renderCalendarItem('Family', 'Family', 'bg-gray-400')}
           </div>
         )}
       </div>
@@ -422,7 +451,8 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
             </div>
             {showServers && (
               <div className="space-y-1 pl-2">
-                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] || itemColors?.server_default))}
+                {servers.map((server) => renderServerItem(server, itemColors?.[`server${server.id}`] ?
+                  itemColors?.[`server${server.id}`] : 'bg-blue-500'))}
               </div>
             )}
           </div>
@@ -485,7 +515,7 @@ const CalendarFilter = ({ onColorChange, itemColors, activeServer, servers, setS
                 user.username, 
                 itemColors?.[`server${user.server_id}:user${user.id}`] || 
                 itemColors?.[`server${user.server_id}`] || 
-                itemColors?.server_default
+                'bg-blue-500'
               ))}
             </div>
           )}

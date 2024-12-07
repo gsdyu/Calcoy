@@ -18,7 +18,7 @@ const PrivacyControl = () => {
   useEffect(() => {
     const fetchServers = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/servers', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/servers`, {
           credentials: 'include',
         });
         if (!response.ok) throw new Error('Failed to fetch servers');
@@ -61,10 +61,10 @@ const PrivacyControl = () => {
 
   const fetchPrivacySettings = async () => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-setting`, {
-        method: 'GET',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-settings`, {
+        method: "GET",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
       });
       if (!response.ok) throw new Error(`Error: ${response.statusText} (${response.status})`);
 
@@ -81,11 +81,11 @@ const PrivacyControl = () => {
 
   const savePrivacySettings = async (privacy, serverId = null) => {
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-setting`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId, privacy: newPrivacy }), // Include userId and new privacy setting
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/user/privacy-settings`, {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, privacy, serverId }),
       });
       if (!response.ok) throw new Error(`Error: ${response.statusText} (${response.status})`);
 
@@ -110,7 +110,7 @@ const PrivacyControl = () => {
     return (
       <div key={server.id} className="mb-4">
         <div className="flex items-center mb-2">
-        {server.image_url ? (
+          {server.image_url ? (
             <img
               src={`http://localhost:5000${server.image_url}`}
               alt={`${server.name} icon`}
@@ -145,6 +145,7 @@ const PrivacyControl = () => {
       </div>
     );
   };
+  
   
   useEffect(() => {
     fetchPrivacySettings();

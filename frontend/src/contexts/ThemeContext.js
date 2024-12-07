@@ -54,6 +54,7 @@ const BASE_COLORS = {
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
+  const [preferences, setPreferences] = useState({});
   const [darkMode, setDarkMode] = useState(null);
   const [selectedTheme, setSelectedTheme] = useState(null);
 
@@ -107,30 +108,37 @@ export const ThemeProvider = ({ children }) => {
     initializeTheme();
   }, []);
 
+  const savePreferences = async (preference) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ preferences: preference }),    
+      });
+      if (!response.ok) {
+        throw new Error('Failed to save preferences');
+      }
+    } catch (error) {
+      console.error('Error saving preferences:', error);
+    }
+  };
+
   const handleThemeChange = async (themeId) => {
     setSelectedTheme(themeId);
     if (themeId) {
       localStorage.setItem('selectedTheme', themeId);
       localStorage.removeItem('darkMode');
       setDarkMode(PRESET_THEMES[themeId]?.isDark ?? false);
+      setPreferences(prevPref => {
+        const tempPref = { ...prevPref, theme: themeId, dark_mode: [PRESET_THEMES[themeId]?.isDark ?? false] }
+        savePreferences(tempPref);
+        return tempPref 
+      });
     } else {
       localStorage.removeItem('selectedTheme');
-    }
-
-    // Sync with backend
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          theme: themeId
-        })
-      });
-    } catch (error) {
-      console.error('Error saving theme preference to backend:', error);
     }
   };
 
@@ -146,23 +154,12 @@ export const ThemeProvider = ({ children }) => {
     } else {
       const isDark = mode === 'dark';
       setDarkMode(isDark);
-      localStorage.setItem('darkMode', isDark.toString());
-    }
-
-    // Sync with backend
-    try {
-      await fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/profile/preferences`, {
-        method: 'PUT',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          dark_mode: mode === 'dark' ? true : mode === 'light' ? false : null
-        })
+      setPreferences(prevPref => {
+        const tempPref = ({ ...prevPref, dark_mode: isDark})
+        savePreferences(tempPref)
+        return tempPref 
       });
-    } catch (error) {
-      console.error('Error saving color mode preference to backend:', error);
+      localStorage.setItem('darkMode', isDark.toString());
     }
   };
 
@@ -183,11 +180,14 @@ export const ThemeProvider = ({ children }) => {
 
   return (
     <ThemeContext.Provider value={{ 
+      preferences,
+      setPreferences,
       darkMode,
       selectedTheme,
       currentMode: getCurrentMode(),
       colors: getColors(),
       presetThemes: PRESET_THEMES,
+      savePreferences,
       handleThemeChange,
       handleColorModeChange
     }}>

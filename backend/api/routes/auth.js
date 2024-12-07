@@ -5,6 +5,7 @@ const msal = require('@azure/msal-node');
 const expressSession = require('express-session');
 const pgSession = require('connect-pg-simple')(expressSession);
 const passport = require('passport');
+const { createEmbeddings } = require('../ai/embeddings');
 const ICAL = require('ical.js');
 const ICALgen = require('ical-generator').default
 
@@ -36,26 +37,28 @@ module.exports = (app, pool) => {
     auth: {
       clientId: process.env.MICROSOFT_ID,
       authority: `https://login.microsoftonline.com/${process.env.MICROSOFT_TENANT_ID}`,
-      clientSecret: process.env.MICROSOFT_SECRET,
+      clientSecret: process.env.MICROSOFT_SECRET, // Required for confidential client
     },
     system: {
       loggerOptions: {
         loggerCallback(loglevel, message, containsPii) {
-         },
+          console.log(`[MSAL] ${loglevel}: ${message}`);
+        },
         piiLoggingEnabled: false,
         logLevel: msal.LogLevel.Info,
       },
     },
   };
-  const transporter = nodemailer.createTransport({
-    service: 'gmail', 
-    auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS,  
-    },
-});
+  
+const pca = new msal.ConfidentialClientApplication(msalConfig);
 
-  const pca = new msal.ConfidentialClientApplication(msalConfig);
+const transporter = nodemailer.createTransport({
+  service: 'gmail', 
+  auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,  
+  },
+});
 
 // Initialize Passport middleware
 app.use(passport.initialize());
@@ -127,7 +130,7 @@ async (req, res) => {
       const accessToken = req.user.accessToken; 
     
     
-    res.redirect(`${process.env.CLIENT_URL}`);
+    res.redirect('https://www.calcoy.com/calendar');
   } catch (error) {
     console.error('Callback error:', error);
     res.status(500).send('Internal server error');
@@ -226,7 +229,32 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           event.time_zone,
           event.imported_from
         ]
-      )
+    ).then(async result => {
+       // checks for embedding on all events. can convert to function
+       // using this rather than create events gain from callback as using callback as it may recreate embedding even if the event already exist
+       // callback events will always be given even if our calendar already has it stored
+       const row = result.rows;
+       if (!row[0]) {
+         console.log('Import: Event already added')
+         return};
+       try {
+         const embed = await createEmbeddings(JSON.stringify(row)
+         ).then(embed_result => {
+           if (embed_result === null || embed_result === undefined) { 
+             console.error(`Error: No embeddings were created. Possibly out of tokens.`);
+             return
+           }
+           pool.query(`UPDATE events
+                       SET embedding = $6
+                       WHERE user_id=$1 AND title=$2 AND location=$3 AND start_time=$4 AND end_time=$5;`, 
+                       [row[0].user_id, row[0].title, row[0].location, row[0].start_time.toISOString(), row[0].end_time.toISOString(), JSON.stringify(embed_result)]);  
+         }) 
+       } catch (error) {
+           if (error.status===402) {
+             console.log("Error: Out of tokens")
+           }
+         }
+    })
     );
 
     await Promise.all(insertPromises);
@@ -237,99 +265,98 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Error fetching data from the URL' });
   }
 });
+app.get('/auth/azure', (req, res) => {
+  const cryptoProvider = new msal.CryptoProvider();
 
-  // Azure AD Authentication route
-  app.get('/auth/azure', (req, res) => {
-    const cryptoProvider = new msal.CryptoProvider();
+  cryptoProvider
+    .generatePkceCodes()
+    .then(({ verifier, challenge }) => {
+      req.session.codeVerifier = verifier; // Store the codeVerifier in session
 
-    cryptoProvider
-      .generatePkceCodes()
-      .then(({ verifier, challenge }) => {
-        req.expressSession.codeVerifier = verifier;
+      const authCodeUrlParameters = {
+        scopes: ['openid', 'profile', 'email'],
+        redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`, // Fully qualified URI
+        codeChallenge: challenge,
+        codeChallengeMethod: 'S256',
+      };
 
-        const authCodeUrlParameters = {
-          scopes: ['openid', 'profile', 'email'],
-          redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
-          codeChallenge: challenge,
-          codeChallengeMethod: 'S256',
-        };
+      console.log('Auth Code URL Params:', authCodeUrlParameters); // Debugging
 
-        pca
-          .getAuthCodeUrl(authCodeUrlParameters)
-          .then((response) => {
-            res.redirect(response);
-          })
-          .catch((error) => {
-            console.error('AuthCodeUrl Error:', error);
-            res.status(500).send('Error generating auth code URL');
-          });
-      })
-      .catch((error) => {
-        console.error('PKCE Code Generation Error:', error);
-        res.status(500).send('Error generating PKCE codes');
-      });
-  });
+      pca
+        .getAuthCodeUrl(authCodeUrlParameters)
+        .then((response) => {
+          res.redirect(response);
+        })
+        .catch((error) => {
+          console.error('AuthCodeUrl Error:', error);
+          res.status(500).send('Error generating auth code URL');
+        });
+    })
+    .catch((error) => {
+      console.error('PKCE Code Generation Error:', error);
+      res.status(500).send('Error generating PKCE codes');
+    });
+});
+app.get('/auth/azure/callback', (req, res) => {
+  const tokenRequest = {
+    code: req.query.code,
+    scopes: ['openid', 'profile', 'email'],
+    redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
+    codeVerifier: req.session.codeVerifier, // Retrieve codeVerifier from session
+  };
 
-  // Azure AD Authentication callback route
-  app.get('/auth/azure/callback', (req, res) => {
-    const tokenRequest = {
-      code: req.query.code,
-      scopes: ['openid', 'profile', 'email'],
-      redirectUri: `${process.env.SERVER_URL}/auth/azure/callback`,
-      codeVerifier: req.expressSession.codeVerifier,
-    };
+  pca
+    .acquireTokenByCode(tokenRequest)
+    .then(async (response) => {
+      const idTokenClaims = response.idTokenClaims;
+      const email = idTokenClaims?.preferred_username || idTokenClaims?.email;
+      const microsoftUsername = idTokenClaims?.name; // Retrieve the username from Microsoft claims
 
-    pca
-      .acquireTokenByCode(tokenRequest)
-      .then(async (response) => {
-        const idTokenClaims = response.idTokenClaims;
-        const email = idTokenClaims.preferred_username || idTokenClaims.email;
+      if (!email) {
+        return res.status(400).send('Email not found in ID token claims');
+      }
 
-        try {
-          let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
-          let user = userResult.rows[0];
+      try {
+        // Check if the user exists in the database
+        let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
+        let user = userResult.rows[0];
 
-          // If user does not exist, create the user without a username
-          if (!user) {
-            const newUserResult = await pool.query(
-              'INSERT INTO users (email) VALUES ($1) RETURNING *',
-              [email]
-            );
-            user = newUserResult.rows[0];
-          }
-
-          // Create JWT token for your application
-          const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
-
-          // Store the token in the expressSession or cookies
-          res.cookie('auth_token', token, {
-            httpOnly: true,
-            sameSite: 'none',
-            secure: true, 
-            path: '/',
-          });
-
-          // Redirect to the username page if the user is new and has no username set
-          console.log('cat', user)
-          if (!user.username) {
-            req.expressSession.tempUser = { email }; // Save email in expressSession for username setup
-            console.log(req.expressSession)
-            console.log("DOG")
-            return res.redirect(`${process.env.CLIENT_URL}/auth/username`);
-          }
-
-          // Otherwise, redirect to the calendar page
-          res.redirect(`${process.env.CLIENT_URL}`);
-        } catch (error) {
-          console.error('Azure login error:', error);
-          res.status(500).send('Internal server error');
+        if (!user) {
+          // User doesn't exist, insert into the database
+          const newUserResult = await pool.query(
+            'INSERT INTO users (email, username) VALUES ($1, $2) RETURNING *',
+            [email, microsoftUsername]
+          );
+          user = newUserResult.rows[0];
+        } else if (!user.username) {
+          // Update existing user with the Microsoft username if not already set
+          await pool.query('UPDATE users SET username = $1 WHERE email = $2', [microsoftUsername, email]);
+          user.username = microsoftUsername;
         }
-      })
-      .catch((error) => {
-        console.error('Token Acquisition Error:', error);
-        res.status(500).send('Authentication failed');
-      });
-  });
+
+        // Create JWT token
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+
+        // Set the token in cookies
+        res.cookie('auth_token', token, {
+          httpOnly: true,
+          sameSite: 'none',
+          secure: process.env.NODE_ENV === 'production',
+          path: '/',
+        });
+
+        // Redirect directly to the calendar page
+        res.redirect(`${process.env.CLIENT_URL}/calendar`);
+      } catch (error) {
+        console.error('Database error:', error);
+        res.status(500).send('Internal server error');
+      }
+    })
+    .catch((error) => {
+      console.error('Token Acquisition Error:', error);
+      res.status(500).send('Authentication failed');
+    });
+});
 
   // Route to handle setting the username for first-time login users
 // Route to handle setting the username for first-time login users

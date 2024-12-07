@@ -6,6 +6,7 @@ import Navbar from '@/components/Navigation/Navbar';
 import FriendCalendar from '@/components/Friends/FriendCalendar';
 import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
+import axios from 'axios';
 
 const FriendPage = ({ userId }) => {
   const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
