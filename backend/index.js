@@ -22,9 +22,9 @@ const io = new Server(server, {
 });
 
 const pusher = new Pusher({
-  appId: "1907546",
+  appId: process.env.PUSHER_APPID,
   key: process.env.PUSHER_KEY, 
-  secret: "88a34798a4ac4ff5a016",
+  secret: process.env.PUSHER_SECRET,
   cluster: process.env.PUSHER_CLUSTER, 
   useTLS: true
 });
