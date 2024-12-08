@@ -51,7 +51,7 @@ app.use(passport.session());
 
 
 // Google Auth Route
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account', }));
  
 // Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
@@ -90,17 +90,20 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 ;
 
 // Google Auth Route for Importing Calendar Events
-app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
+app.get('/auth/google/calendar', authenticateToken, (req, res, next) => {
+  passport.authenticate('google-calendar', {
   scope: [
       'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
   accessType: 'offline',
-  approvalPrompt: 'force',
-}),
-async (req, res) => {console.log("User authenticated:", req.user);}
-);
+  prompt: 'select_account',
+  state: JSON.stringify({userId: req.user.userId}),
+  })(req, res, next), // pass (req, res, next) so that the passport middleware can pass next. required when passport.authenticate is wrapped in function
+  (req, res, next) => {console.log("User authenticated:", req.id);}
+  ; 
+});
 
 // Google Auth Callback Route for Importing Calendar Events
 app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
