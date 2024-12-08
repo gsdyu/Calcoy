@@ -22,7 +22,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-module.exports = (app, pool) => {
+module.exports = (app, pool, pusher) => {
   // Route to fetch user profile
 
   app.get('/profile', authenticateToken, async (req, res) => {
@@ -181,10 +181,18 @@ module.exports = (app, pool) => {
       }
   
       // Insert the new friend request if no existing request was found
-      await pool.query(
-        `INSERT INTO friend_requests (sender_id, receiver_id, status) VALUES ($1, $2, 'pending')`,
+      const result = await pool.query(
+        `INSERT INTO friend_requests (sender_id, receiver_id, status) VALUES ($1, $2, 'pending') RETURNING *`,
         [senderId, receiverId]
       );
+
+      
+      pusher.trigger("friends-channel", "pendingRequest", {
+        data: [{id: result.rows[0].id, sender: req.user.username}],
+        senderId: req.user.userId,
+        receiverId: receiverId,
+      });
+      
   
       res.json({ message: 'Friend request sent' });
     } catch (error) {
@@ -204,6 +212,7 @@ module.exports = (app, pool) => {
          WHERE fr.receiver_id = $1 AND fr.status = 'pending'`,
         [userId]
       );
+
       res.json(result.rows);
     } catch (error) {
       console.error('Error fetching friend requests:', error);
@@ -213,12 +222,25 @@ module.exports = (app, pool) => {
   
   app.post('/api/friend-request/accept', authenticateToken, async (req, res) => {
     const { requestId } = req.body;
-  
     try {
       await pool.query(
         `UPDATE friend_requests SET status = 'accepted' WHERE id = $1`,
         [requestId]
       );
+
+      const result = await pool.query(
+      `SELECT u.id as "senderId", fr.id as "frId"
+       FROM friend_requests fr
+       JOIN users u ON fr.sender_id = u.id
+       WHERE fr.id = $1`,
+      [requestId]);
+
+      pusher.trigger("friends-channel", "acceptRequest", {
+        data: [{id: req.user.userId, name: req.user.username}],
+        frId: result.rows[0].frId,
+        senderId: result.rows[0].senderId,
+      });
+      
       res.json({ message: 'Friend request accepted' });
     } catch (error) {
       console.error('Error accepting friend request:', error);
@@ -234,6 +256,19 @@ module.exports = (app, pool) => {
         `UPDATE friend_requests SET status = 'declined' WHERE id = $1`,
         [requestId]
       );
+
+      const result = await pool.query(
+      `SELECT u.id as "senderId", fr.id
+       FROM friend_requests fr
+       JOIN users u ON fr.sender_id = u.id
+       WHERE fr.id = $1`,
+      [requestId]);
+      result.rows[0].receiverId = req.user.userId;
+
+      pusher.trigger("friends-channel", "declineRequest", {
+        data: [{id: result.rows[0].id, name: req.user.username}],
+        receiverId: req.user.userId,
+      });
       res.json({ message: 'Friend request declined' });
     } catch (error) {
       console.error('Error declining friend request:', error);
@@ -272,6 +307,11 @@ module.exports = (app, pool) => {
             OR (sender_id = $2 AND receiver_id = $1)`,
         [userId, friendId]
       );
+
+      pusher.trigger("friends-channel", "deleteFriend", {
+        data: [{id: userId, name: req.user.username}],
+        receiverId: friendId,
+      });
       
       res.json({ message: 'Friend removed successfully' });
     } catch (error) {

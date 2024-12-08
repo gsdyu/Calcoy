@@ -57,7 +57,7 @@ app.use(session({
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
 require('./routes/events')(app, pool, io, pusher); // Pass `io` to the routes for real-time events
-require('./routes/profile')(app, pool);
+require('./routes/profile')(app, pool, pusher);
 require('./routes/servers')(app, pool, io, pusher); // Pass `io` to the servers route
 
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
