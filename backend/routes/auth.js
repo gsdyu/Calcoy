@@ -51,7 +51,7 @@ app.use(passport.session());
 
 
 // Google Auth Route
-app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+app.get('/auth/google', passport.authenticate('google', { scope: ['profile', 'email'], prompt: 'select_account', }));
  
 // Google Auth Callback Route
 app.get('/auth/google/callback', passport.authenticate('google', { failureRedirect: '/auth/login' }),
@@ -62,7 +62,7 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
       let user = userResult.rows[0];
 
       // Create JWT token
-      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
       // Store the token in the session or cookies
       req.session.token = token;
@@ -90,17 +90,20 @@ app.get('/auth/google/callback', passport.authenticate('google', { failureRedire
 ;
 
 // Google Auth Route for Importing Calendar Events
-app.get('/auth/google/calendar', authenticateToken, passport.authenticate('google-calendar', {
+app.get('/auth/google/calendar', authenticateToken, (req, res, next) => {
+  passport.authenticate('google-calendar', {
   scope: [
       'https://www.googleapis.com/auth/calendar.readonly',
       'https://www.googleapis.com/auth/userinfo.email',
       'https://www.googleapis.com/auth/userinfo.profile'
     ],
   accessType: 'offline',
-  approvalPrompt: 'force',
-}),
-async (req, res) => {console.log("User authenticated:", req.user);}
-);
+  prompt: 'select_account',
+  state: JSON.stringify({userId: req.user.userId}),
+  })(req, res, next), // pass (req, res, next) so that the passport middleware can pass next. required when passport.authenticate is wrapped in function
+  (req, res, next) => {console.log("User authenticated:", req.id);}
+  ; 
+});
 
 // Google Auth Callback Route for Importing Calendar Events
 app.get('/auth/google/calendar/callback', passport.authenticate('google-calendar', { failureRedirect: '/auth/login', session: false }),
@@ -281,7 +284,7 @@ app.post('/auth/proxy-fetch', authenticateToken, async (req, res) => {
           }
 
           // Create JWT token for your application
-          const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+          const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
           // Store the token in the session or cookies
           res.cookie('auth_token', token, {
@@ -369,7 +372,7 @@ app.post('/auth/set-username', async (req, res) => {
       );
 
       // Create a JWT token
-      const token = jwt.sign({ userId: newUser.rows[0].id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+      const token = jwt.sign({ userId: newUser.rows[0].id, username: newUser.rows[0].username }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
       // Send the response
       res.cookie('auth_token', token, {
@@ -514,7 +517,7 @@ app.post('/auth/set-username', async (req, res) => {
                 await pool.query('UPDATE users SET two_factor_code = NULL, two_factor_expires = NULL WHERE email = $1', [email]);
 
                 // Generate JWT token
-                const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '24h' });
+              const token = jwt.sign({ userId: user.id, username: user.username }, process.env.JWT_SECRET, { expiresIn: '24h' });
 
                 // Return the JWT token to the client
                 res.cookie('auth_token', token, {
@@ -572,6 +575,6 @@ app.post('/auth/set-username', async (req, res) => {
   
   app.get('/auth/check', authenticateToken, (req, res) => {
     
-    return res.status(200).json({isLoggedIn: "True", userId: req.user.userId});
+    return res.status(200).json({isLoggedIn: "True", userId: req.user.userId, username: req.user.username});
   });
 };

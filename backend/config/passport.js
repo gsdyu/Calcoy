@@ -8,7 +8,7 @@ require('dotenv').config({ path: path.join(__dirname,'../.env') });
 const { createEmbeddings } = require('../ai/embeddings');
 
 // Helper function to find or create a user by email
-const findOrCreateUser = async (email, pool) => {
+const findOrCreateUserEmail = async (email, pool) => {
   let userResult = await pool.query('SELECT * FROM users WHERE email = $1', [email]);
   let user = userResult.rows[0];
 
@@ -20,6 +20,17 @@ const findOrCreateUser = async (email, pool) => {
     user = newUserResult.rows[0];
   }
   return user;
+};
+
+const findOrCreateUserId = async (userId, pool) => {
+  let userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
+  let user = userResult.rows[0];
+
+  if (!user) {
+    console.error('No user found with userId ', userId)
+  }
+  return user;
+
 };
 const addGoogleCalendarEvents = async (calendarData, userId, pool, email) => {
   try {
@@ -184,14 +195,14 @@ module.exports = (pool) => {
     {
       clientID: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: '/auth/google/callback',
+      callbackURL: `${process.env.SERVER_URL}/auth/google/callback`,
       accessType: 'offline', // Request offline access to get a refresh token
       prompt: 'consent' // Force re-consent to receive the refresh token
     },
     async (accessToken, refreshToken, profile, done) => {
       const email = profile.emails[0].value;
       try {
-        const user = await findOrCreateUser(email, pool);
+        const user = await findOrCreateUserEmail(email, pool);
         return done(null, user);
       } catch (error) {
         console.error('Google signup error:', error);
@@ -210,15 +221,15 @@ module.exports = (pool) => {
     'https://www.googleapis.com/auth/userinfo.email',
     'https://www.googleapis.com/auth/userinfo.profile'
   ],
-  accessType: 'offline',
   prompt: 'consent',
-}, async (accessToken, refreshToken, profile, done) => {
+  passReqToCallback: true,
+}, async (req, accessToken, refreshToken, profile, done) => {
   try {
     const email = profile.emails && profile.emails[0] && profile.emails[0].value;
     if (!email) return done(new Error("No email found in profile"));
 
     // Fetch or create the user
-    const user = await findOrCreateUser(email, pool);
+    const user = await findOrCreateUserId(JSON.parse(req.query.state).userId, pool);
     if (refreshToken) {
       await pool.query(
         'UPDATE users SET access_token = $1, refresh_token = $2 WHERE id = $3',
@@ -241,12 +252,14 @@ module.exports = (pool) => {
 
     // Add accessToken to the user object for further use
     user.accessToken = accessToken;
-    
+    user.redirectTo = '/calendar';
     return done(null, user);
+    
   } catch (error) {
     console.error('Google Calendar OAuth error:', error);
     return done(error, null);
   }
+  
 }));
 
 

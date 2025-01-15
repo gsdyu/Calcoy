@@ -9,15 +9,24 @@ const cookieParser = require('cookie-parser');
 const http = require('http');
 const { Server } = require('socket.io');
 const handleGoogleCalendarWebhook = require('./routes/webhook');
+const Pusher = require('pusher');
 
 // Initialize express app
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000',
+    origin: process.env.CLIENT_URL,
     methods: ['GET', 'POST'],
   },
+});
+
+const pusher = new Pusher({
+  appId: process.env.PUSHER_APPID,
+  key: process.env.PUSHER_KEY, 
+  secret: process.env.PUSHER_SECRET,
+  cluster: process.env.PUSHER_CLUSTER, 
+  useTLS: true
 });
 
 app.use(cookieParser());
@@ -47,9 +56,9 @@ app.use(session({
 
 // Routes for authentication and events
 require('./routes/auth')(app, pool);
-require('./routes/events')(app, pool, io); // Pass `io` to the routes for real-time events
-require('./routes/profile')(app, pool);
-require('./routes/servers')(app, pool, io); // Pass `io` to the servers route
+require('./routes/events')(app, pool, io, pusher); // Pass `io` to the routes for real-time events
+require('./routes/profile')(app, pool, pusher);
+require('./routes/servers')(app, pool, io, pusher); // Pass `io` to the servers route
 
 pool.query('CREATE EXTENSION IF NOT EXISTS vector;')
   .then(() => { console.log("Vector extension ready"); })

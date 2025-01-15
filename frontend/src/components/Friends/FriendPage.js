@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Search, UserPlus, Calendar, X, ArrowLeft, Users, Inbox } from 'lucide-react';
 import Navbar from '@/components/Navigation/Navbar';
 import FriendCalendar from '@/components/Friends/FriendCalendar';
 import { useTheme } from '@/contexts/ThemeContext';
 import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
+import Pusher from 'pusher-js';
 
 const FriendPage = ({ userId }) => {
   const { darkMode, selectedTheme, presetThemes, colors } = useTheme();
@@ -25,6 +26,7 @@ const FriendPage = ({ userId }) => {
     action: '',
     isVisible: false
   });
+  const currentUser = useRef({});
 
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -62,6 +64,24 @@ const FriendPage = ({ userId }) => {
       : 'text-gray-500';
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      const check = await fetch('http://localhost:5000/auth/check', {
+        credentials: 'include',
+      });
+      if (!check.ok) {
+        console.error('No token found. Please login.');
+        setPreferencesLoading(false);
+        return;
+      }
+      const checkJson = await check.json();
+      //localStorage.setItem('userId', Number(checkJson.userId));
+      currentUser.current=checkJson;
+    }
+    fetchCurrentUser();
+  }, []);
+
+
+  useEffect(() => {
     localStorage.setItem('navbarCollapsed', JSON.stringify(isCollapsed));
   }, [isCollapsed]);
 
@@ -73,7 +93,7 @@ const FriendPage = ({ userId }) => {
   }, [searchTerm, friends]);
 
   const fetchPendingRequests = () => {
-    fetch('http://localhost:5000/api/friend-income', {
+    fetch(`${process.env.NEXT_PUBLIC_SERVER_URL}/api/friend-income`, {
       method: 'GET',
       credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -100,6 +120,71 @@ const FriendPage = ({ userId }) => {
       fetchPendingRequests();
     }
   }, [activeTab]);
+
+  useEffect(() => {
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+    })
+
+    const friendsChannel = pusher.subscribe('friends-channel');
+
+    friendsChannel.bind('pendingRequest', (data) => {
+      if (data.senderId === currentUser.current.userId && data.receiverId !== currentUser.current.userId) return
+      setInbox(data.data);
+      setPendingRequests(data.data.length);
+    })
+
+    friendsChannel.bind('acceptRequest', (data) => {
+      if (data.data[0].id === currentUser.current.userId) {
+        // special case if user have 2 tab open on friend page.
+        // decided to handle this case since it'll be possible to accept the friend request, and decline right after
+        // so the user would be friends but the friend request said its declined; would mess up credibility of our data
+        setInbox((prevInbox) => {
+          const updatedInbox = prevInbox.filter(request => request.id !== data.data[0].id);
+          setPendingRequests(updatedInbox.length);
+          return updatedInbox;
+        });
+        return
+      }
+      if (data.senderId !== currentUser.current.userId) return
+      setFriends(data.data);
+      setFilteredFriends(data.data);
+
+    })
+
+    friendsChannel.bind('declineRequest', (data) => {
+      if (data.receiverId === currentUser.current.userId) {
+        // special case if user have 2 tab open on friend page.
+        // decided to handle this case since it'll be possible to accept the friend request, and decline right after
+        // so the user would be friends but the friend request said its declined
+        setInbox((prevInbox) => {
+          const updatedInbox = prevInbox.filter(request => request.id !== data.data[0].id);
+          setPendingRequests(updatedInbox.length);
+          return updatedInbox;
+        });
+        return
+      }
+    })
+
+    friendsChannel.bind('deleteFriend', (data) => {
+      if (data.data[0].id === currentUser.current.userId) {
+        const updatedFriends = friends.filter(friend => friend.id !== data.receiverId);
+        setFriends(updatedFriends);
+        setFilteredFriends(updatedFriends);
+      }
+      if (data.receiverId !== currentUser.current.userId) return
+      if (selectedFriend?.id === data.data[0].id) setSelectedFriend(null) 
+      const updatedFriends = friends.filter(friend => friend.id !== data.data[0].id);
+      setFriends(updatedFriends);
+      setFilteredFriends(updatedFriends);
+      showNotification(`${data.data[0].name} removed you from friends`);
+
+    })
+
+    return () => {
+      pusher.unsubscribe('friends-channel');
+    };
+  }, [activeTab, currentUser, friends, selectedFriend])
 
   const handleBackToMainTab = () => {
     setActiveTab('friends');
@@ -183,6 +268,10 @@ const FriendPage = ({ userId }) => {
 
   const handleAddFriend = async () => {
     if (newFriend.trim()) {
+      if (currentUser.current.username === newFriend){
+        showNotification('You cannot add yourself.')
+        return
+      }
       try {
         const response = await fetch('http://localhost:5000/api/friend-request', {
           method: 'POST',
@@ -219,7 +308,6 @@ const FriendPage = ({ userId }) => {
   };
 
   const handleCreateServer = () => {
-    console.log(`Creating server for ${selectedFriend.name}'s calendar`);
     showNotification('Creating calendar server...');
   };
 

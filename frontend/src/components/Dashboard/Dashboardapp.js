@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import TaskOverviewComponent from './Taskoverview/TaskOverview';
 import AIInsightsComponent from './AI';
 import RecentCheckIns from './CheckIns';
+import NotificationSnackbar from '@/components/Modals/NotificationSnackbar';
 import { useTheme } from '@/contexts/ThemeContext'; 
 
 const DashboardHeader = ({ colors, selectedTheme, presetThemes }) => (
@@ -26,10 +27,41 @@ const Dashboard = () => {
     presetThemes 
   } = useTheme();
   const [events, setEvents] = useState([]);
+  const [insights, setInsights] = useState([]);
+  const [view, setView] = useState('week');
+  const [notification, setNotification] = useState({ message: '', action: '', isVisible: false });
 
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  useEffect(() => {
+    fetchInsights();
+  }, [view]);
+
+   
+  const showNotification = (message, action = '') => {
+    setNotification({ message, action, isVisible: true });
+    setTimeout(() => setNotification((prev) => ({ ...prev, isVisible: false })), 3000);
+  };
+
+  const fetchInsights = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/insights/${view}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`Error fetching ${view} insights: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setInsights(data);
+    } catch (error) { 
+      console.error(`Failed to fetch ${view} insights:`, error);
+      showNotification(`Failed to load ${view} insights.`)
+    }
+  }
 
   const fetchEvents = async () => {
     try {
@@ -187,12 +219,24 @@ const Dashboard = () => {
             events={events}
             onTaskComplete={handleTaskComplete}
             onUpdateTask={handleUpdateTask} 
+            setView={setView}
           />
+        <NotificationSnackbar
+          message={notification.message}
+          action={notification.action}
+          isVisible={notification.isVisible}
+          onActionClick={() => {
+            console.log('placeholder');
+          }}
+        />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>
               <AIInsightsComponent 
                 darkMode={darkMode}
-                colors={colors} 
+                insights={insights}
+                setInsights={setInsights}
+                view={view}
+                showNotification={showNotification}
               />
             </div>
             <div className={`${darkMode ? 'scrollbar-dark' : 'scrollbar-light'}`}>

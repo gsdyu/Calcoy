@@ -1,7 +1,7 @@
 const { authenticateToken } = require('../authMiddleware');
 const { createEmbeddings } = require('../ai/embeddings');
 
-module.exports = (app, pool, io) => {
+module.exports = (app, pool, io, pusher) => {
   // Create event route
   app.post('/events', authenticateToken, async (req, res) => {
     const { title, description, start_time, end_time, location, frequency, calendar, time_zone, completed, server_id, privacy } = req.body;
@@ -40,7 +40,9 @@ module.exports = (app, pool, io) => {
         `, [JSON.stringify(embed[0]), result.rows[0].id]);
       }
   
-      io.emit('eventCreated', result.rows[0]);
+    pusher.trigger("events-channel", "eventCreated", {
+      event: result.rows[0] 
+    });
   
       res.status(201).json({
         message: 'Event created successfully',
@@ -163,6 +165,9 @@ module.exports = (app, pool, io) => {
         // Emit the updated event to WebSocket clients
         io.emit('eventUpdated', updateResult.rows[0]);
         
+        pusher.trigger("events-channel", "eventUpdated", {
+          updatedEvent: updateResult.rows[0] 
+        });
         res.json({ message: 'Event updated successfully', event: updateResult.rows[0] });
       } else {
         res.status(500).json({ error: 'Failed to update the event' });
@@ -191,6 +196,9 @@ module.exports = (app, pool, io) => {
         // Emit the deleted event ID to WebSocket clients
         io.emit('eventDeleted', deleteResult.rows[0] );
 
+        pusher.trigger("events-channel", "eventDeleted", {
+          deletedEvent: deleteResult.rows[0] 
+        });
         res.json({ message: 'Event deleted successfully' });
       } else {
         res.status(500).json({ error: 'Failed to delete the event' });
